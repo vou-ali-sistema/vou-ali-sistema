@@ -1,0 +1,65 @@
+================================================================================
+  SOLUCAO RAPIDA - Node.js nao encontrado
+================================================================================
+
+PROBLEMA:
+---------
+O terminal nao encontra o Node.js mesmo apos instalar.
+
+CAUSA COMUM:
+-----------
+O PATH nao foi atualizado. Isso acontece quando:
+- O terminal nao foi fechado e reaberto
+- O computador nao foi reiniciado
+- A opcao "Add to PATH" nao foi marcada durante a instalacao
+
+SOLUCAO 1: REINICIAR O COMPUTADOR (MAIS FACIL)
+----------------------------------------------
+1. Feche todos os programas
+2. Reinicie o computador
+3. Abra um NOVO terminal
+4. Execute: start.bat
+
+SOLUCAO 2: USAR SCRIPT ALTERNATIVO
+----------------------------------
+Execute:
+  start-com-caminho-completo.bat
+
+Este script procura o Node.js em locais comuns e usa o caminho completo.
+
+SOLUCAO 3: DIAGNOSTICO COMPLETO
+--------------------------------
+Execute:
+  diagnostico-nodejs.bat
+
+Este script vai:
+- Procurar Node.js em varios locais
+- Verificar se esta no PATH
+- Dar instrucoes especificas para seu caso
+
+SOLUCAO 4: ADICIONAR MANUALMENTE AO PATH
+-----------------------------------------
+1. Pressione Win + R
+2. Digite: sysdm.cpl
+3. Vá em "Avançado" > "Variáveis de Ambiente"
+4. Em "Variáveis do sistema", encontre "Path"
+5. Clique em "Editar"
+6. Clique em "Novo"
+7. Adicione: C:\Program Files\nodejs
+   (ou o caminho onde o Node.js foi instalado)
+8. Clique em "OK" em todas as janelas
+9. FECHE e abra um NOVO terminal
+10. Execute: start.bat
+
+================================================================================
+  RECOMENDACAO
+================================================================================
+
+A forma MAIS FACIL e REINICIAR O COMPUTADOR.
+
+Depois de reiniciar:
+1. Abra um novo terminal
+2. Execute: start.bat
+
+================================================================================
+

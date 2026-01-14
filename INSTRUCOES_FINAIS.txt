@@ -1,0 +1,97 @@
+================================================================================
+  INSTRUCOES FINAIS - Node.js nao encontrado
+================================================================================
+
+PROBLEMA:
+---------
+O terminal continua dizendo que Node.js nao esta instalado, mesmo apos
+tentar varias solucoes.
+
+POSSIVEIS CAUSAS:
+-----------------
+1. Node.js realmente NAO foi instalado
+2. Node.js foi instalado mas o PATH nao foi atualizado
+3. O terminal precisa ser fechado e reaberto
+4. O computador precisa ser reiniciado
+
+SOLUCAO DEFINITIVA - PASSO A PASSO:
+------------------------------------
+
+PASSO 1: VERIFICAR SE ESTA INSTALADO
+-------------------------------------
+1. Abra o Windows Explorer
+2. Navegue para: C:\Program Files\nodejs\
+3. Veja se existe o arquivo "node.exe" la dentro
+
+Se NAO existir:
+  -> Node.js nao foi instalado
+  -> Va para PASSO 2
+
+Se existir:
+  -> Node.js esta instalado mas PATH nao foi atualizado
+  -> Va para PASSO 3
+
+PASSO 2: INSTALAR NODE.JS (se nao estiver instalado)
+------------------------------------------------------
+1. Acesse: https://nodejs.org/
+2. Baixe a versao LTS (botao verde)
+3. Execute o instalador (.msi)
+4. IMPORTANTE: Durante a instalacao:
+   - Marque TODAS as opcoes
+   - Especialmente "Add to PATH"
+5. Conclua a instalacao
+6. REINICIE O COMPUTADOR (muito importante!)
+7. Va para PASSO 4
+
+PASSO 3: ATUALIZAR PATH MANUALMENTE (se ja esta instalado)
+-----------------------------------------------------------
+1. Pressione Win + R
+2. Digite: sysdm.cpl
+3. Clique em "Avançado"
+4. Clique em "Variáveis de Ambiente"
+5. Em "Variáveis do sistema", encontre "Path"
+6. Clique em "Editar"
+7. Clique em "Novo"
+8. Adicione: C:\Program Files\nodejs
+9. Clique em "OK" em todas as janelas
+10. FECHE TODOS os terminais
+11. REINICIE O COMPUTADOR
+12. Va para PASSO 4
+
+PASSO 4: TESTAR
+---------------
+1. Apos reiniciar, abra um NOVO terminal
+2. Digite: node --version
+3. Se mostrar uma versao (ex: v20.11.0), esta funcionando!
+4. Execute: start.bat
+
+PASSO 5: SE AINDA NAO FUNCIONAR
+--------------------------------
+Execute o script alternativo:
+  start-com-caminho-completo.bat
+
+Este script procura Node.js em varios locais e usa o caminho completo.
+
+================================================================================
+  TESTE RAPIDO
+================================================================================
+
+Execute no terminal:
+  testar-nodejs-simples.bat
+
+Este script vai testar se node funciona e dar instrucoes especificas.
+
+================================================================================
+  IMPORTANTE
+================================================================================
+
+A forma MAIS CONFIAVEL de resolver e:
+1. Instalar Node.js (se nao instalou)
+2. REINICIAR O COMPUTADOR
+3. Abrir NOVO terminal
+4. Executar: start.bat
+
+Reiniciar o computador e ESSENCIAL porque atualiza o PATH do sistema.
+
+================================================================================
+

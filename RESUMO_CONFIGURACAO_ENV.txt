@@ -1,0 +1,49 @@
+================================================================================
+  RESUMO: Como Configurar o .env
+================================================================================
+
+SITUACAO 1: PostgreSQL COM SENHA
+---------------------------------
+No arquivo .env, use:
+DATABASE_URL="postgresql://postgres:SUA_SENHA@localhost:5432/vouali_vendas?schema=public"
+                                    ^^^^^^^^^^
+                                    Coloque sua senha aqui
+
+Exemplo se a senha for "admin123":
+DATABASE_URL="postgresql://postgres:admin123@localhost:5432/vouali_vendas?schema=public"
+
+
+SITUACAO 2: PostgreSQL SEM SENHA
+----------------------------------
+No arquivo .env, use:
+DATABASE_URL="postgresql://postgres@localhost:5432/vouali_vendas?schema=public"
+                                    ^
+                                    Sem senha (direto para @)
+
+Note: Nao tem ":senha" entre postgres e @
+
+
+COMO SABER SE TEM OU NAO SENHA?
+--------------------------------
+1. Tente executar: testar-senha-postgres.bat
+2. Ou tente conectar sem senha primeiro
+3. Se nao funcionar, execute: redefinir-senha-postgres.bat
+
+
+SCRIPTS DISPONIVEIS:
+--------------------
+- criar-env.bat              → Cria o arquivo .env
+- configurar-sem-senha.bat   → Configura para usar sem senha
+- testar-conexao.bat         → Testa se a conexao esta funcionando
+- testar-senha-postgres.bat  → Testa se uma senha esta correta
+- redefinir-senha-postgres.bat → Redefine a senha do PostgreSQL
+
+
+DEPOIS DE CONFIGURAR:
+---------------------
+Execute: testar-conexao.bat
+
+Se funcionar, voce esta pronto para usar o sistema!
+
+================================================================================
+

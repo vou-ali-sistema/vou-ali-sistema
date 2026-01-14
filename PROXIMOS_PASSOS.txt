@@ -1,0 +1,67 @@
+================================================================================
+  PROXIMOS PASSOS - Sistema Bloco Vou Ali
+================================================================================
+
+STATUS: Node.js e npm instalados com sucesso! ✓
+
+AGORA EXECUTE:
+--------------
+start.bat
+
+Este script vai:
+1. Instalar todas as dependencias do projeto
+2. Gerar o Prisma Client
+3. Criar as tabelas no banco de dados
+4. Criar usuario admin e lote inicial
+5. Iniciar o servidor de desenvolvimento
+
+AGUARDE:
+--------
+A primeira execucao pode demorar alguns minutos porque precisa:
+- Baixar todas as dependencias (Next.js, Prisma, etc)
+- Compilar o projeto
+- Criar o banco de dados
+
+QUANDO ESTIVER PRONTO:
+---------------------
+Voce vera uma mensagem como:
+  "Ready - started server on 0.0.0.0:3000"
+  "Local: http://localhost:3000"
+
+ACESSE NO NAVEGADOR:
+--------------------
+http://localhost:3000
+
+PAINEL ADMIN:
+-------------
+URL: http://localhost:3000/admin/login
+Email: admin@vouali.com
+Senha: admin123
+
+O QUE FAZER NO PAINEL:
+----------------------
+1. Dashboard - Ver estatisticas do sistema
+2. Pedidos - Gerenciar pedidos
+3. Trocas - Gerenciar retiradas
+4. Cortesias - Criar e gerenciar cortesias
+5. Lotes - Configurar preços (Abada e Pulseira)
+
+PRIMEIRO LOTE:
+-------------
+O sistema ja cria automaticamente o "Lote 1" com:
+- Abada: R$ 50,00
+- Pulseira Extra: R$ 20,00
+
+Voce pode editar ou criar novos lotes em: /admin/lotes
+
+================================================================================
+  COMANDOS UTEIS
+================================================================================
+
+Iniciar servidor:     start.bat
+Verificar Node.js:    verificar-nodejs.bat
+Testar conexao DB:    testar-conexao.bat
+Ver banco (Prisma):   npx prisma studio
+
+================================================================================
+

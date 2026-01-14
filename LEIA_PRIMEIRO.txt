@@ -1,0 +1,96 @@
+================================================================================
+  LEIA PRIMEIRO - Configurar Node.js Local
+================================================================================
+
+SOLUCAO RECOMENDADA: Node.js na Pasta do Projeto
+-------------------------------------------------
+
+A melhor solucao e ter o Node.js diretamente na pasta do projeto.
+Isso evita problemas de PATH e funciona em qualquer computador!
+
+================================================================================
+  PASSO 1: Copiar Node.js para Pasta do Projeto
+================================================================================
+
+Execute no terminal:
+  copiar-nodejs-local.bat
+
+Este script vai:
+1. Procurar Node.js instalado no sistema
+2. Copiar para a pasta "nodejs\" dentro do projeto
+3. Configurar tudo automaticamente
+
+IMPORTANTE:
+- Se o Node.js nao estiver instalado, instale primeiro de: https://nodejs.org/
+- Escolha a versao LTS (Long Term Support)
+- Apos instalar, execute: copiar-nodejs-local.bat
+
+================================================================================
+  PASSO 2: Iniciar o Sistema
+================================================================================
+
+Apos copiar o Node.js para a pasta do projeto, execute:
+  start.bat
+
+O sistema vai usar automaticamente o Node.js local da pasta "nodejs\".
+
+================================================================================
+  VANTAGENS DO NODE.JS LOCAL
+================================================================================
+
+✓ Funciona sem configurar PATH
+✓ Nao precisa reiniciar o computador
+✓ Funciona em qualquer computador (portatil)
+✓ Evita conflitos com outras instalacoes
+✓ Mais facil de gerenciar
+
+================================================================================
+  SE O NODE.JS JA ESTA NA PASTA DO PROJETO
+================================================================================
+
+Se a pasta "nodejs\" ja existe e tem node.exe dentro:
+- Execute diretamente: start.bat
+- O sistema vai usar automaticamente o Node.js local
+
+================================================================================
+  SE NAO TEM NODE.JS INSTALADO
+================================================================================
+
+1. Acesse: https://nodejs.org/
+2. Clique no botao verde "LTS" (Long Term Support)
+3. Baixe o arquivo .msi
+4. Execute o instalador
+5. IMPORTANTE: Marque "Add to PATH" durante a instalacao
+6. Conclua a instalacao
+7. Execute: copiar-nodejs-local.bat
+8. Execute: start.bat
+
+================================================================================
+  ESTRUTURA DO PROJETO
+================================================================================
+
+Apos copiar, a estrutura ficara assim:
+
+VOU_ALI_SISTEMA/
+  ├── nodejs/          <- Node.js local (copiado aqui)
+  │   ├── node.exe
+  │   ├── npm.cmd
+  │   └── ...
+  ├── start.bat         <- Usa Node.js local automaticamente
+  ├── copiar-nodejs-local.bat
+  └── ...
+
+================================================================================
+  SOLUCAO ALTERNATIVA (Se nao quiser copiar)
+================================================================================
+
+Se preferir usar Node.js do sistema (requer PATH configurado):
+
+1. Instale Node.js de: https://nodejs.org/
+2. Marque "Add to PATH" durante instalacao
+3. REINICIE o computador
+4. Execute: start.bat
+
+Mas a solucao LOCAL e mais facil e recomendada!
+
+================================================================================

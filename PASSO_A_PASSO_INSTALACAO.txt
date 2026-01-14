@@ -1,0 +1,81 @@
+================================================================================
+  PASSO A PASSO: Instalar Node.js e Rodar o Projeto
+================================================================================
+
+PASSO 1: INSTALAR NODE.JS
+-------------------------
+1. Abra seu navegador
+2. Acesse: https://nodejs.org/
+3. Clique no botao verde "LTS" (Long Term Support)
+   - Exemplo: "20.11.0 LTS" ou versao similar
+4. O download comecara automaticamente
+5. Quando terminar, abra o arquivo baixado (.msi)
+6. Siga o assistente de instalacao
+7. IMPORTANTE: Marque a opcao "Automatically install the necessary tools"
+   e "Add to PATH" se aparecer
+8. Clique em "Next" e depois "Install"
+9. Aguarde a instalacao terminar
+10. Clique em "Finish"
+
+PASSO 2: FECHAR E ABRIR NOVO TERMINAL
+-------------------------------------
+1. Feche TODOS os terminais abertos (PowerShell, CMD, etc)
+2. Feche o Cursor/VS Code se estiver aberto
+3. Abra um NOVO terminal ou o Cursor novamente
+   - Isso e importante para o PATH ser atualizado!
+
+PASSO 3: VERIFICAR SE FUNCIONOU
+--------------------------------
+1. No terminal, execute:
+   node --version
+   
+2. Se mostrar algo como "v20.11.0" ou similar, esta funcionando!
+   
+3. Execute tambem:
+   npm --version
+   
+4. Se mostrar algo como "10.2.4" ou similar, esta tudo OK!
+
+PASSO 4: EXECUTAR O PROJETO
+---------------------------
+1. Navegue ate a pasta do projeto (se nao estiver la):
+   cd "C:\Users\Nicholas Cordeiro\Desktop\VOU_ALI_SISTEMA"
+
+2. Execute o script de verificacao:
+   verificar-nodejs.bat
+   
+3. Se tudo estiver OK, execute:
+   start.bat
+
+PASSO 5: AGUARDAR
+-----------------
+O start.bat vai:
+- Instalar dependencias (pode demorar alguns minutos)
+- Criar o banco de dados
+- Criar usuario admin e lote
+- Iniciar o servidor
+
+Quando aparecer:
+   "Iniciando servidor de desenvolvimento
+    Acesse: http://localhost:3000"
+
+Esta pronto! Abra o navegador em http://localhost:3000
+
+================================================================================
+  PROBLEMAS COMUNS
+================================================================================
+
+PROBLEMA: "node nao e reconhecido" apos instalar
+SOLUCAO: Feche e abra um NOVO terminal
+
+PROBLEMA: "npm nao e reconhecido"
+SOLUCAO: Reinstale o Node.js e marque "Add to PATH"
+
+PROBLEMA: Download muito lento
+SOLUCAO: Use uma conexao mais rapida ou tente mais tarde
+
+PROBLEMA: Instalacao falha
+SOLUCAO: Execute o instalador como Administrador (botao direito)
+
+================================================================================
+

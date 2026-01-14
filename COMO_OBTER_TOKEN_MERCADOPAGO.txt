@@ -1,0 +1,117 @@
+========================================
+  COMO OBTER TOKEN DO MERCADO PAGO
+========================================
+
+PASSO 1: CRIAR CONTA NO MERCADO PAGO
+-------------------------------------
+1. Acesse: https://www.mercadopago.com.br
+2. Clique em "Criar conta" (se não tiver)
+3. Preencha seus dados e confirme o email
+
+PASSO 2: ACESSAR O PAINEL DE DESENVOLVEDORES
+---------------------------------------------
+1. Acesse: https://www.mercadopago.com.br/developers/panel/app
+2. Faça login com sua conta do Mercado Pago
+3. Se for a primeira vez, aceite os termos
+
+PASSO 3: CRIAR UMA APLICAÇÃO
+-----------------------------
+1. Clique no botão "Criar aplicação" ou "Nova aplicação"
+2. Preencha:
+   - Nome: "Bloco Vou Ali Sistema" (ou qualquer nome)
+   - Descrição: "Sistema de vendas do Bloco Vou Ali"
+3. Clique em "Criar"
+
+PASSO 4: OBTER O TOKEN DE TESTE
+--------------------------------
+1. Após criar a aplicação, você verá duas abas:
+   - "Credenciais de teste" (para testes)
+   - "Credenciais de produção" (para vendas reais)
+
+2. Clique na aba "Credenciais de teste"
+
+3. Você verá:
+   - Public Key (não precisa)
+   - Access Token (É ESTE QUE VOCÊ PRECISA!)
+
+4. Clique no botão "Copiar" ao lado do "Access Token"
+   OU
+   Selecione o texto do token e copie (Ctrl+C)
+
+PASSO 5: ADICIONAR NO ARQUIVO .env
+-----------------------------------
+1. Abra o arquivo .env na raiz do projeto
+2. Localize a linha:
+   MERCADOPAGO_ACCESS_TOKEN="seu-token-do-mercadopago-aqui"
+
+3. Substitua "seu-token-do-mercadopago-aqui" pelo token que você copiou
+   Exemplo:
+   MERCADOPAGO_ACCESS_TOKEN="APP_USR-1234567890123456-123456-abc123def456ghi789jkl012mno345pqr678stu901vwx234yz"
+
+4. Salve o arquivo
+
+PASSO 6: REINICIAR O SERVIDOR
+------------------------------
+1. Pare o servidor (Ctrl+C no terminal)
+2. Inicie novamente com: npm run dev
+   OU
+   Execute: INICIAR_SISTEMA.bat
+
+PASSO 7: TESTAR
+---------------
+1. Acesse: http://localhost:3000/comprar
+2. Preencha o formulário e tente criar um pedido
+3. Você deve ser redirecionado para o checkout do Mercado Pago
+
+========================================
+  IMPORTANTE: TOKEN DE TESTE vs PRODUÇÃO
+========================================
+
+TOKEN DE TESTE:
+- Use para testar o sistema sem fazer pagamentos reais
+- Não processa pagamentos de verdade
+- Você pode usar cartões de teste
+
+TOKEN DE PRODUÇÃO:
+- Use quando o sistema estiver em produção
+- Processa pagamentos reais
+- Você receberá dinheiro de verdade
+- Só use quando estiver pronto para vender!
+
+========================================
+  CARTÕES DE TESTE
+========================================
+
+Para testar pagamentos, use estes cartões:
+
+Cartão Aprovado:
+- Número: 5031 4332 1540 6351
+- CVV: 123
+- Vencimento: 11/25
+- Nome: APRO
+
+Cartão Recusado:
+- Número: 5031 4332 1540 6351
+- CVV: 123
+- Vencimento: 11/25
+- Nome: OTHE
+
+========================================
+  PROBLEMAS COMUNS
+========================================
+
+Erro: "Invalid access_token"
+- Verifique se copiou o token completo
+- Certifique-se de que não há espaços extras
+- Verifique se salvou o arquivo .env
+
+Erro: "Token não encontrado"
+- Verifique se o nome da variável está correto: MERCADOPAGO_ACCESS_TOKEN
+- Certifique-se de que reiniciou o servidor após adicionar o token
+
+Link de pagamento não aparece:
+- Verifique os logs do servidor
+- Certifique-se de que o token está correto
+- Tente criar um novo token no painel do Mercado Pago
+
+========================================

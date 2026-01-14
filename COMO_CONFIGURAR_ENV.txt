@@ -1,0 +1,63 @@
+================================================================================
+  CONFIGURAÇÃO DO ARQUIVO .env - BLOCO VOU ALI
+================================================================================
+
+PASSO 1: CRIAR O ARQUIVO .env
+------------------------------
+1. Na raiz do projeto (mesma pasta do package.json)
+2. Crie um arquivo chamado: .env
+3. (Sem extensão, apenas .env)
+
+PASSO 2: CONTEÚDO DO ARQUIVO .env
+----------------------------------
+Cole este conteúdo no arquivo .env:
+
+DATABASE_URL="postgresql://postgres:SUA_SENHA_AQUI@localhost:5432/vouali_vendas?schema=public"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="altere-esta-chave-para-uma-chave-secreta-aleatoria"
+MERCADOPAGO_ACCESS_TOKEN="seu-token-aqui"
+EMAIL_FROM="blocovouali@gmail.com"
+EMAIL_PASSWORD="sua-senha-de-app-do-email"
+APP_BASE_URL="http://localhost:3000"
+
+PASSO 3: SUBSTITUIR A SENHA (MUITO IMPORTANTE!)
+------------------------------------------------
+Na primeira linha, você verá:
+
+DATABASE_URL="postgresql://postgres:SUA_SENHA_AQUI@localhost:5432/vouali_vendas?schema=public"
+                                          ^^^^^^^^^^^^^^^^
+                                          SUBSTITUA ISSO!
+
+EXEMPLO:
+--------
+Se a senha do seu PostgreSQL for "minhasenha123", a linha ficará:
+
+DATABASE_URL="postgresql://postgres:minhasenha123@localhost:5432/vouali_vendas?schema=public"
+
+O QUE CADA PARTE SIGNIFICA:
+---------------------------
+postgresql://postgres:SUA_SENHA_AQUI@localhost:5432/vouali_vendas?schema=public
+                ^^^^^^  ^^^^^^^^^^^^^^  ^^^^^^^^  ^^^^  ^^^^^^^^^^^^
+                usuario   senha        host    porta   banco
+
+- postgres = usuário do PostgreSQL (não altere)
+- SUA_SENHA_AQUI = SUA SENHA REAL (substitua!)
+- localhost = servidor local (não altere)
+- 5432 = porta padrão (não altere)
+- vouali_vendas = nome do banco (não altere)
+
+PASSO 4: TESTAR A CONEXÃO
+-------------------------
+Execute o arquivo: testar-conexao.bat
+
+Ou no terminal:
+npx prisma db push
+
+SE DER ERRO:
+-----------
+1. Verifique se o PostgreSQL está rodando
+2. Verifique se a senha está correta (sem espaços extras)
+3. Verifique se o banco 'vouali_vendas' existe
+
+================================================================================
+

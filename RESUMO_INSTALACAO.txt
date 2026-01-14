@@ -1,0 +1,43 @@
+================================================================================
+  PROBLEMA: 'npm' não é reconhecido
+================================================================================
+
+CAUSA:
+------
+O Node.js nao esta instalado ou nao esta no PATH do sistema.
+
+SOLUCAO RAPIDA:
+---------------
+1. Baixe o Node.js de: https://nodejs.org/
+2. Escolha a versao LTS (Long Term Support) - recomendada
+3. Execute o instalador (.msi)
+4. IMPORTANTE: Durante a instalacao, marque a opcao "Add to PATH"
+5. Conclua a instalacao
+6. FECHE todos os terminais abertos
+7. Abra um NOVO terminal
+8. Execute: verificar-nodejs.bat
+9. Se tudo OK, execute: start.bat
+
+VERIFICAR SE ESTA INSTALADO:
+----------------------------
+Execute no terminal:
+  node --version
+  npm --version
+
+Se mostrar as versoes, esta instalado!
+Se mostrar "nao e reconhecido", precisa instalar.
+
+DEPOIS DE INSTALAR:
+-------------------
+1. Feche TODOS os terminais
+2. Abra um NOVO terminal
+3. Navegue ate a pasta do projeto:
+   cd "C:\Users\Nicholas Cordeiro\Desktop\VOU_ALI_SISTEMA"
+4. Execute: start.bat
+
+================================================================================
+  Arquivos de ajuda criados:
+  - INSTALAR_NODEJS.md (guia completo)
+  - verificar-nodejs.bat (verifica se esta instalado)
+================================================================================
+

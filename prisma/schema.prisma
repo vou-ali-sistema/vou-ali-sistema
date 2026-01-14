@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  ATENDIMENTO
+  CAIXA
+}
+
+enum OrderStatus {
+  PENDENTE
+  PAGO
+  RETIRADO
+  CANCELADO
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REFUNDED
+}
+
+enum ItemType {
+  ABADA
+  PULSEIRA_EXTRA
+}
+
+enum CourtesyStatus {
+  ATIVA
+  RETIRADA
+  CANCELADA
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ATENDIMENTO)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  deliveredOrders   Order[]    @relation("DeliveredOrders")
+  createdCourtesies Courtesy[] @relation("CreatedCourtesies")
+  deliveredCourtesies Courtesy[] @relation("DeliveredCourtesies")
+  deliveredItems     OrderItem[] @relation("DeliveredItems")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  email     String?
+  createdAt DateTime @default(now())
+
+  orders Order[]
+}
+
+model Lot {
+  id                String   @id @default(cuid())
+  name              String
+  abadaPriceCents   Int
+  pulseiraPriceCents Int
+  active            Boolean  @default(false)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([active])
+}
+
+model Order {
+  id                 String      @id @default(cuid())
+  customerId         String
+  customer           Customer    @relation(fields: [customerId], references: [id])
+  lotId              String
+  lot                Lot         @relation(fields: [lotId], references: [id])
+
+  status             OrderStatus @default(PENDENTE)
+  totalValueCents    Int
+
+  paymentLink        String?
+  paymentStatus      PaymentStatus @default(PENDING)
+  mpPreferenceId     String?
+  mpPaymentId        String?
+  externalReference  String? // pode ser igual ao id
+  paidAt             DateTime?
+  
+  exchangeToken      String?   @unique
+
+  deliveredAt        DateTime?
+  deliveredByUserId  String?
+  deliveredByUser    User?     @relation("DeliveredOrders", fields: [deliveredByUserId], references: [id])
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  items OrderItem[]
+
+  @@index([status])
+  @@index([exchangeToken])
+  @@index([lotId])
+}
+
+model OrderItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id])
+
+  itemType          ItemType
+  size              String?  // só ABADA
+  quantity          Int
+  unitPriceCents    Int
+
+  deliveredQuantity Int      @default(0)
+  lastDeliveredAt   DateTime?
+  lastDeliveredByUserId String?
+  lastDeliveredByUser   User? @relation("DeliveredItems", fields: [lastDeliveredByUserId], references: [id])
+
+  createdAt         DateTime @default(now())
+
+  @@index([itemType])
+}
+
+model Courtesy {
+  id            String         @id @default(cuid())
+  name          String
+  phone         String?
+  status        CourtesyStatus @default(ATIVA)
+  exchangeToken String         @unique
+
+  createdByUserId String
+  createdByUser   User @relation("CreatedCourtesies", fields: [createdByUserId], references: [id])
+
+  deliveredByUserId String?
+  deliveredByUser   User? @relation("DeliveredCourtesies", fields: [deliveredByUserId], references: [id])
+
+  deliveredAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items CourtesyItem[]
+}
+
+model CourtesyItem {
+  id         String   @id @default(cuid())
+  courtesyId String
+  courtesy   Courtesy @relation(fields: [courtesyId], references: [id])
+
+  itemType   ItemType
+  size       String?
+  quantity   Int
+
+  deliveredQuantity Int @default(0)
+}
+
+model PromoCard {
+  id            String   @id @default(cuid())
+  title         String
+  content       String   @db.Text
+  imageUrl      String?  // Mantido para compatibilidade
+  active        Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  backgroundColor String? // Cor de fundo em hex (ex: #f8f9fa)
+  textColor     String?  // Cor do texto em hex (ex: #333333)
+  autoPlay      Boolean  @default(true) // Se o carrossel deve passar automaticamente
+  slideInterval Int      @default(5000) // Intervalo em milissegundos (padrão 5 segundos)
+  linkEnabled   Boolean  @default(true) // Se o card tem link clicável
+  linkUrl       String?  // URL do link (se vazio, usa /comprar como padrão)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  media PromoCardMedia[]
+
+  @@index([active, displayOrder])
+}
+
+model PromoCardMedia {
+  id          String   @id @default(cuid())
+  promoCardId String
+  promoCard   PromoCard @relation(fields: [promoCardId], references: [id], onDelete: Cascade)
+  mediaUrl    String   // URL da imagem ou vídeo
+  mediaType  String   // 'image' ou 'video'
+  displayOrder Int    @default(0) // Ordem de exibição no carrossel
+  createdAt   DateTime @default(now())
+
+  @@index([promoCardId, displayOrder])
+}

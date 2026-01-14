@@ -1,0 +1,28 @@
+================================================================================
+  QUICK START - Inicio Rapido
+================================================================================
+
+SE O NODE.JS NAO ESTA INSTALADO:
+
+1. Baixe de: https://nodejs.org/ (versao LTS)
+2. Instale (marque "Add to PATH")
+3. Feche e abra NOVO terminal
+4. Execute: verificar-nodejs.bat
+5. Execute: start.bat
+
+SE O NODE.JS JA ESTA INSTALADO:
+
+1. Execute: verificar-nodejs.bat
+2. Se OK, execute: start.bat
+3. Acesse: http://localhost:3000
+
+================================================================================
+  LOGIN DO PAINEL ADMIN
+================================================================================
+
+URL: http://localhost:3000/admin/login
+Email: admin@vouali.com
+Senha: admin123
+
+================================================================================
+
