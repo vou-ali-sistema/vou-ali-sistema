@@ -114,13 +114,23 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-600">
           <h2 className="text-xl font-bold mb-4 text-blue-900">Pedidos Retirados</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center p-2 bg-green-50 rounded-lg">
               <span className="text-gray-700 font-medium">Total Retirado:</span>
               <span className="font-bold text-green-600 text-lg">{stats.orders.retirados}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-600">
+          <h2 className="text-xl font-bold mb-4 text-blue-900">Pedidos Cancelados</h2>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-2 bg-red-50 rounded-lg">
+              <span className="text-gray-700 font-medium">Total Cancelado:</span>
+              <span className="font-bold text-red-600 text-lg">{stats.orders.cancelados}</span>
             </div>
           </div>
         </div>
