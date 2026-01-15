@@ -11,6 +11,8 @@ const criarLotSchema = z.object({
   name: z.string().min(1),
   abadaPriceCents: z.number().int().positive(),
   pulseiraPriceCents: z.number().int().positive(),
+  abadaProducedQty: z.number().int().min(0).optional(),
+  pulseiraProducedQty: z.number().int().min(0).optional(),
   startsAt: z.string().datetime().optional().nullable(),
   endsAt: z.string().datetime().optional().nullable(),
 })
@@ -54,6 +56,8 @@ export async function POST(request: NextRequest) {
         name: data.name,
         abadaPriceCents: data.abadaPriceCents,
         pulseiraPriceCents: data.pulseiraPriceCents,
+        abadaProducedQty: data.abadaProducedQty ?? 0,
+        pulseiraProducedQty: data.pulseiraProducedQty ?? 0,
         active: false, // Sempre criar como inativo
         startsAt: data.startsAt ? new Date(data.startsAt) : null,
         endsAt: data.endsAt ? new Date(data.endsAt) : null,

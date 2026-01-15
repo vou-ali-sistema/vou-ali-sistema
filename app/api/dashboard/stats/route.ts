@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     const whereActiveOrders = { archivedAt: null as any }
+    const courtesyWhereAtivasOuRetiradas = { courtesy: { status: { in: ['ATIVA', 'RETIRADA'] } } } as any
     const [
       totalOrders,
       ordersPendentes,
@@ -28,6 +29,8 @@ export async function GET(request: NextRequest) {
       courtesiesAtivas,
       courtesiesRetiradas,
       receitaTotalCents,
+      courtesyItemsByType,
+      activeLot,
     ] = await Promise.all([
       prisma.order.count({ where: whereActiveOrders }),
       prisma.order.count({ where: { ...whereActiveOrders, status: 'PENDENTE' } }),
@@ -43,9 +46,27 @@ export async function GET(request: NextRequest) {
           totalValueCents: true,
         }
       }),
+      prisma.courtesyItem.groupBy({
+        by: ['itemType'],
+        where: courtesyWhereAtivasOuRetiradas,
+        _sum: { quantity: true },
+      }),
+      prisma.lot.findFirst({
+        where: { active: true },
+        select: { id: true, name: true, abadaProducedQty: true, pulseiraProducedQty: true },
+      }),
     ])
 
     const receitaTotal = (receitaTotalCents._sum.totalValueCents || 0) / 100
+    const courtesyByType = {
+      ABADA: 0,
+      PULSEIRA_EXTRA: 0,
+    }
+    for (const row of courtesyItemsByType) {
+      const qty = row._sum.quantity || 0
+      if (row.itemType === 'ABADA') courtesyByType.ABADA = qty
+      if (row.itemType === 'PULSEIRA_EXTRA') courtesyByType.PULSEIRA_EXTRA = qty
+    }
 
     return NextResponse.json({
       orders: {
@@ -59,6 +80,12 @@ export async function GET(request: NextRequest) {
         total: totalCourtesies,
         ativas: courtesiesAtivas,
         retiradas: courtesiesRetiradas,
+      },
+      courtesiesByItem: courtesyByType,
+      production: {
+        activeLotName: activeLot?.name || null,
+        abadas: activeLot?.abadaProducedQty ?? 0,
+        pulseiras: activeLot?.pulseiraProducedQty ?? 0,
       },
       receitaTotal,
     })

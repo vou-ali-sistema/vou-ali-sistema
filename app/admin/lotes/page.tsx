@@ -7,6 +7,8 @@ interface Lot {
   name: string
   abadaPriceCents: number
   pulseiraPriceCents: number
+  abadaProducedQty: number
+  pulseiraProducedQty: number
   active: boolean
   startsAt: string | null
   endsAt: string | null
@@ -123,6 +125,9 @@ export default function LotesPage() {
                 Preço Pulseira
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                Produzidos (A/P)
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
@@ -141,6 +146,9 @@ export default function LotesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                   R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  {lote.abadaProducedQty ?? 0} / {lote.pulseiraProducedQty ?? 0}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -189,6 +197,8 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
   const [name, setName] = useState(lot?.name || '')
   const [abadaPriceCents, setAbadaPriceCents] = useState(lot?.abadaPriceCents ? (lot.abadaPriceCents / 100).toString() : '')
   const [pulseiraPriceCents, setPulseiraPriceCents] = useState(lot?.pulseiraPriceCents ? (lot.pulseiraPriceCents / 100).toString() : '')
+  const [abadaProducedQty, setAbadaProducedQty] = useState(lot?.abadaProducedQty?.toString() || '0')
+  const [pulseiraProducedQty, setPulseiraProducedQty] = useState(lot?.pulseiraProducedQty?.toString() || '0')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -217,6 +227,8 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
         name: name.trim(),
         abadaPriceCents: Math.round(abadaPrice * 100),
         pulseiraPriceCents: Math.round(pulseiraPrice * 100),
+        abadaProducedQty: Math.max(0, parseInt(abadaProducedQty || '0', 10) || 0),
+        pulseiraProducedQty: Math.max(0, parseInt(pulseiraProducedQty || '0', 10) || 0),
       }
 
       const res = await fetch(url, {
@@ -298,6 +310,35 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
                 required
                 className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Qtde de Abadás Produzidos
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={abadaProducedQty}
+                  onChange={(e) => setAbadaProducedQty(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Qtde de Pulseiras Produzidas
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={pulseiraProducedQty}
+                  onChange={(e) => setPulseiraProducedQty(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
             </div>
 
             {error && (

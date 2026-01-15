@@ -68,6 +68,8 @@ model Lot {
   name              String
   abadaPriceCents   Int
   pulseiraPriceCents Int
+  abadaProducedQty  Int      @default(0)
+  pulseiraProducedQty Int    @default(0)
   active            Boolean  @default(false)
   startsAt          DateTime?
   endsAt            DateTime?

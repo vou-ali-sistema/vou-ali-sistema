@@ -13,6 +13,8 @@ export async function GET() {
         name: true,
         abadaPriceCents: true,
         pulseiraPriceCents: true,
+        abadaProducedQty: true,
+        pulseiraProducedQty: true,
       }
     })
 

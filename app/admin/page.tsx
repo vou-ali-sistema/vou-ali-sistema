@@ -7,6 +7,7 @@ import Link from 'next/link'
 async function getStats() {
   try {
     const whereActiveOrders = { archivedAt: null as any }
+    const courtesyWhereAtivasOuRetiradas = { courtesy: { status: { in: ['ATIVA', 'RETIRADA'] } } } as any
     const [
       totalOrders,
       ordersPendentes,
@@ -17,6 +18,8 @@ async function getStats() {
       courtesiesAtivas,
       courtesiesRetiradas,
       receitaTotalCents,
+      courtesyItemsByType,
+      activeLot,
     ] = await Promise.all([
       prisma.order.count({ where: whereActiveOrders }),
       prisma.order.count({ where: { ...whereActiveOrders, status: 'PENDENTE' } }),
@@ -32,9 +35,27 @@ async function getStats() {
           totalValueCents: true,
         }
       }),
+      prisma.courtesyItem.groupBy({
+        by: ['itemType'],
+        where: courtesyWhereAtivasOuRetiradas,
+        _sum: { quantity: true },
+      }),
+      prisma.lot.findFirst({
+        where: { active: true },
+        select: { id: true, name: true, abadaProducedQty: true, pulseiraProducedQty: true },
+      }),
     ])
 
     const receitaTotal = (receitaTotalCents._sum.totalValueCents || 0) / 100
+    const courtesyByType = {
+      ABADA: 0,
+      PULSEIRA_EXTRA: 0,
+    }
+    for (const row of courtesyItemsByType) {
+      const qty = row._sum.quantity || 0
+      if (row.itemType === 'ABADA') courtesyByType.ABADA = qty
+      if (row.itemType === 'PULSEIRA_EXTRA') courtesyByType.PULSEIRA_EXTRA = qty
+    }
 
     return {
       orders: {
@@ -48,6 +69,12 @@ async function getStats() {
         total: totalCourtesies,
         ativas: courtesiesAtivas,
         retiradas: courtesiesRetiradas,
+      },
+      courtesiesByItem: courtesyByType,
+      production: {
+        activeLotName: activeLot?.name || null,
+        abadas: activeLot?.abadaProducedQty ?? 0,
+        pulseiras: activeLot?.pulseiraProducedQty ?? 0,
       },
       receitaTotal,
     }
@@ -150,6 +177,31 @@ export default async function DashboardPage() {
             <div className="flex justify-between items-center p-2 bg-green-50 rounded-lg">
               <span className="text-gray-700 font-medium">Retiradas:</span>
               <span className="font-bold text-green-600 text-lg">{stats.courtesies.retiradas}</span>
+            </div>
+            <div className="border-t border-gray-200 pt-3 mt-3">
+              <p className="text-sm font-semibold text-gray-800 mb-2">Cortesias dadas (itens)</p>
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg mb-2">
+                <span className="text-gray-700 font-medium">Abadá:</span>
+                <span className="font-bold text-gray-900 text-lg">{stats.courtesiesByItem.ABADA}</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Pulseira Extra:</span>
+                <span className="font-bold text-gray-900 text-lg">{stats.courtesiesByItem.PULSEIRA_EXTRA}</span>
+              </div>
+            </div>
+            <div className="border-t border-gray-200 pt-3 mt-3">
+              <p className="text-sm font-semibold text-gray-800 mb-2">Produção (lote ativo)</p>
+              <p className="text-xs text-gray-600 mb-2">
+                {stats.production.activeLotName ? `Lote: ${stats.production.activeLotName}` : 'Nenhum lote ativo'}
+              </p>
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg mb-2">
+                <span className="text-gray-700 font-medium">Abadás produzidos:</span>
+                <span className="font-bold text-gray-900 text-lg">{stats.production.abadas}</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Pulseiras produzidas:</span>
+                <span className="font-bold text-gray-900 text-lg">{stats.production.pulseiras}</span>
+              </div>
             </div>
           </div>
         </div>
