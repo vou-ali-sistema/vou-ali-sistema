@@ -62,39 +62,103 @@ export default function HomePage() {
   const percursoCard = promoCards.find((c) =>
     (c.title || '').toLowerCase().includes('percurso')
   )
+  const abadaCard = promoCards.find((c) => {
+    const t = (c.title || '').toLowerCase()
+    return t.includes('abad') || t.includes('camisa') || t.includes('uniforme')
+  })
   const highlightCards = percursoCard
     ? promoCards.filter((c) => c.id !== percursoCard.id)
     : promoCards
 
   return (
-    <div className="min-h-screen relative bg-[linear-gradient(180deg,#ffffff_0%,#f6f7f9_50%,#ffffff_100%)]">
+    <div className="min-h-screen relative overflow-hidden bg-white">
+      {/* Fundo estilo abadá (faixas diagonais bem suaves) */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-32 -left-40 h-[520px] w-[520px] rounded-full bg-[#1f9d55] opacity-[0.08]" />
+        <div className="absolute -top-52 -right-56 h-[620px] w-[620px] rounded-full bg-[#1e3a8a] opacity-[0.07]" />
+        <div className="absolute -bottom-60 left-1/2 h-[680px] w-[680px] -translate-x-1/2 rounded-full bg-[#f6c700] opacity-[0.10]" />
+
+        <div className="absolute inset-0 opacity-[0.12] bg-[linear-gradient(135deg,transparent_0%,transparent_42%,#1f9d55_42%,#1f9d55_50%,#f6c700_50%,#f6c700_58%,#1e3a8a_58%,#1e3a8a_66%,transparent_66%,transparent_100%)]" />
+      </div>
+
       {/* Faixa Brasil */}
-      <div className="h-2 w-full bg-[linear-gradient(90deg,#1f9d55_0%,#1f9d55_33%,#f6c700_33%,#f6c700_66%,#1e3a8a_66%,#1e3a8a_100%)]" />
+      <div className="relative h-2 w-full bg-[linear-gradient(90deg,#1f9d55_0%,#1f9d55_33%,#f6c700_33%,#f6c700_66%,#1e3a8a_66%,#1e3a8a_100%)]" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10">
-          {/* fundo com cores do abadá (bem suave) */}
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#1f9d55_0%,#f6c700_45%,#1e3a8a_100%)] opacity-[0.10]" />
-          <div className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full bg-[#1f9d55] opacity-[0.08]" />
-          <div className="pointer-events-none absolute -bottom-12 -left-12 h-56 w-56 rounded-full bg-[#1e3a8a] opacity-[0.06]" />
+        <div className="relative overflow-hidden bg-white/90 backdrop-blur border border-[#dee2e6] rounded-3xl p-6 sm:p-10 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div>
+              <div className="inline-flex flex-wrap gap-2 mb-4">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1f9d55] text-white border border-[#0f6b35]">
+                  Brasil
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#f6c700] text-gray-900 border border-[#d2ab00]">
+                  Ano XI
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1e3a8a] text-white border border-[#12285e]">
+                  Desde 2016
+                </span>
+              </div>
 
-          <div className="text-center">
-            <div className="inline-block mb-4">
-              <Logo size="large" />
+              <div className="mb-4">
+                <Logo size="large" />
+              </div>
+
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">
+                Esse é o último!
+              </h1>
+              <p className="text-base sm:text-lg text-gray-700 mb-6 max-w-xl">
+                Ano de Copa, clima de Brasil: garanta seu <span className="font-semibold">Abadá</span> e venha com a gente nessa festa.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/comprar"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-[#1f9d55] text-white rounded-xl hover:bg-[#188a49] font-bold text-lg shadow transition-all border border-[#0f6b35]"
+                >
+                  Comprar Agora
+                </Link>
+                <a
+                  href="#percurso"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 rounded-xl hover:bg-gray-50 font-bold text-lg shadow-sm border border-[#dee2e6]"
+                >
+                  Ver Percurso
+                </a>
+              </div>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-              Esse é o último!
-            </h1>
-            <p className="text-base sm:text-lg text-gray-700 mb-6">
-              Garanta seu Abadá do Bloco Vou Ali
-            </p>
-            <Link
-              href="/comprar"
-              className="inline-block px-8 py-4 bg-[#1f9d55] text-white rounded-xl hover:bg-[#188a49] font-bold text-lg shadow transition-all border border-[#0f6b35]"
-            >
-              Comprar Agora
-            </Link>
+
+            <div className="lg:justify-self-end w-full">
+              {abadaCard && (Array.isArray(abadaCard.media) && abadaCard.media.length > 0) ? (
+                <PromoMediaCarousel
+                  media={abadaCard.media}
+                  autoPlay={true}
+                  intervalMs={abadaCard.slideInterval ?? 5000}
+                  altBase={abadaCard.title || 'Abadá'}
+                />
+              ) : abadaCard?.imageUrl ? (
+                <div className="rounded-xl border border-[#dee2e6] overflow-hidden bg-white">
+                  <div className="aspect-[16/9] bg-[#f8f9fa]">
+                    <img
+                      src={abadaCard.imageUrl}
+                      alt={abadaCard.title || 'Abadá'}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-[#dee2e6] bg-[#f8f9fa] p-6 text-sm text-gray-700">
+                  <p className="font-semibold text-gray-900 mb-2">Coloque a imagem do abadá aqui</p>
+                  <p>
+                    No admin, crie um card com título contendo <span className="font-mono">Abadá</span> e envie a foto como mídia.
+                  </p>
+                </div>
+              )}
+              <p className="text-xs text-gray-600 mt-3">
+                Dica: marque o card como <span className="font-mono">Somente Inicial</span> para ele virar destaque na home.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -211,7 +275,7 @@ export default function HomePage() {
       )}
 
       {/* Percurso do Bloco */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div id="percurso" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 scroll-mt-24">
         <div className="bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <div>
