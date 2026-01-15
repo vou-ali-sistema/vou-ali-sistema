@@ -32,13 +32,14 @@ async function getOrder(id: string) {
 export default async function PedidoDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   let order: Awaited<ReturnType<typeof getOrder>> | null = null
+  const { id } = await params
   try {
-    order = await getOrder(params.id)
+    order = await getOrder(id)
   } catch (err) {
-    console.error('Erro ao carregar pedido:', { id: params.id, err })
+    console.error('Erro ao carregar pedido:', { id, err })
     // Não derrubar a página inteira em produção; mostrar uma UI amigável.
     order = null
   }
