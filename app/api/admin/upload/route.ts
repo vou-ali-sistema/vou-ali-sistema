@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { put } from '@vercel/blob'
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,25 +56,58 @@ export async function POST(request: NextRequest) {
     const randomString = Math.random().toString(36).substring(2, 15)
     const extension = file.name.split('.').pop()
     const fileName = `${timestamp}-${randomString}.${extension}`
-    const filePath = join(uploadsDir, fileName)
 
     // Converter File para Buffer e salvar
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+
+    // Em produção (Vercel), não dá pra gravar em public/uploads.
+    // Use Vercel Blob se tiver token configurado.
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN
+    const isVercel = !!process.env.VERCEL
+
+    if (blobToken) {
+      const blob = await put(`uploads/${fileName}`, buffer, {
+        access: 'public',
+        contentType: file.type,
+        token: blobToken,
+      })
+
+      return NextResponse.json({
+        success: true,
+        url: blob.url,
+        fileName: fileName,
+        storage: 'vercel-blob',
+      })
+    }
+
+    if (isVercel) {
+      return NextResponse.json(
+        {
+          error:
+            'Upload em produção requer armazenamento externo. Configure BLOB_READ_WRITE_TOKEN (Vercel Blob) para habilitar uploads.',
+        },
+        { status: 500 }
+      )
+    }
+
+    // Dev/local: salvar no filesystem
+    const filePath = join(uploadsDir, fileName)
     await writeFile(filePath, buffer)
 
-    // Retornar URL da imagem
+    // Retornar URL da imagem local
     const imageUrl = `/uploads/${fileName}`
 
     return NextResponse.json({ 
       success: true, 
       url: imageUrl,
-      fileName: fileName
+      fileName: fileName,
+      storage: 'local',
     })
   } catch (error) {
     console.error('Erro ao fazer upload:', error)
     return NextResponse.json(
-      { error: 'Erro ao fazer upload da imagem' },
+      { error: 'Erro ao fazer upload da imagem', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
