@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
+import FinanceiroWidget from './FinanceiroWidget'
 
 async function getStats() {
   try {
@@ -35,7 +36,8 @@ async function getStats() {
       prisma.courtesy.count({ where: { status: 'ATIVA' } }),
       prisma.courtesy.count({ where: { status: 'RETIRADA' } }),
       prisma.order.aggregate({
-        where: { ...whereActiveOrders, status: 'PAGO' },
+        // Receita = pedidos pagos + retirados (retirado também conta como receita)
+        where: { ...whereActiveOrders, status: { in: ['PAGO', 'RETIRADO'] } as any },
         _sum: {
           totalValueCents: true,
         }
@@ -139,6 +141,7 @@ async function getStats() {
         },
       },
       receitaTotal,
+      receitaTotalCents: receitaTotalCents._sum.totalValueCents || 0,
     }
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error)
@@ -294,6 +297,8 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
+
+        <FinanceiroWidget receitaVendasCents={stats.receitaTotalCents} />
       </div>
     </div>
   )

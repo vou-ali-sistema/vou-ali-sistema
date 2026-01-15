@@ -49,6 +49,17 @@ enum PromoCardComprarSlot {
   BOTTOM
 }
 
+enum FinanceEntryType {
+  INCOME
+  EXPENSE
+}
+
+enum FinanceCategory {
+  PATROCINIO
+  PAGAMENTO
+  OUTROS
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -215,4 +226,18 @@ model PromoCardMedia {
   createdAt   DateTime @default(now())
 
   @@index([promoCardId, displayOrder])
+}
+
+model FinanceEntry {
+  id          String            @id @default(cuid())
+  type        FinanceEntryType
+  category    FinanceCategory  @default(OUTROS)
+  amountCents Int
+  description String?
+  occurredAt  DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([occurredAt])
+  @@index([type, category, occurredAt])
 }

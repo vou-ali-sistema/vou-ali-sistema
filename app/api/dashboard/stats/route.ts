@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
       prisma.courtesy.count({ where: { status: 'ATIVA' } }),
       prisma.courtesy.count({ where: { status: 'RETIRADA' } }),
       prisma.order.aggregate({
-        where: { ...whereActiveOrders, status: 'PAGO' },
+        // Receita = pedidos pagos + retirados (retirado também conta como receita)
+        where: { ...whereActiveOrders, status: { in: ['PAGO', 'RETIRADO'] } as any },
         _sum: {
           totalValueCents: true,
         }
