@@ -68,8 +68,11 @@ export default function TrocasPage() {
 
   async function startScanner() {
     setShowQRScanner(true)
-    setScanning(true)
     setError('')
+    // Deixar o React renderizar o container antes de iniciar o scanner
+    setTimeout(() => {
+      setScanning(true)
+    }, 0)
   }
 
   async function stopScanner() {
@@ -97,10 +100,10 @@ export default function TrocasPage() {
       try {
         // Esperar o container renderizar
         let el: HTMLElement | null = null
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 60; i++) {
           el = document.getElementById(scannerId)
           if (el) break
-          await new Promise((r) => setTimeout(r, 50))
+          await new Promise((r) => setTimeout(r, 100))
         }
 
         if (!el) {
