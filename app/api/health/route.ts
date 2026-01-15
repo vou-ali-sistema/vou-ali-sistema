@@ -29,7 +29,21 @@ export async function GET() {
     }),
     safeCheck('db:table:user', async () => prisma.user.count()),
     safeCheck('db:table:lot', async () => prisma.lot.count()),
+    safeCheck('db:table:lot_active', async () => prisma.lot.count({ where: { active: true } })),
     safeCheck('db:table:promoCard', async () => prisma.promoCard.count()),
+    safeCheck('db:activeLot', async () =>
+      prisma.lot.findFirst({
+        where: { active: true },
+        select: { id: true, name: true, active: true },
+      })
+    ),
+    safeCheck('db:lots_summary', async () =>
+      prisma.lot.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, name: true, active: true, createdAt: true },
+      })
+    ),
   ])
 
   const ok = checks.every((c) => c.ok)
