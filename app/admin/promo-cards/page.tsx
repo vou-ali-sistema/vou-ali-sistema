@@ -37,6 +37,7 @@ export default function PromoCardsPage() {
   const [cards, setCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingCard, setEditingCard] = useState<PromoCard | null>(null)
   const [formData, setFormData] = useState({
@@ -99,6 +100,7 @@ export default function PromoCardsPage() {
   async function openModal(card?: PromoCard) {
     if (card) {
       setEditingCard(card)
+      setInfo('')
       setFormData({
         title: card.title,
         content: card.content,
@@ -131,6 +133,7 @@ export default function PromoCardsPage() {
       }
     } else {
       setEditingCard(null)
+      setInfo('')
       setFormData({
         title: '',
         content: '',
@@ -157,8 +160,79 @@ export default function PromoCardsPage() {
     setShowModal(false)
     setEditingCard(null)
     setError('')
+    setInfo('')
     setPreviewImage(null)
     setCardMedia([])
+  }
+
+  async function handleAddImages(files: FileList | File[]) {
+    if (!editingCard) {
+      setError('Salve o card primeiro antes de adicionar fotos')
+      return
+    }
+
+    const list = Array.from(files || [])
+    if (!list.length) return
+
+    // Validar tipos e tamanho (compatível com /api/admin/upload)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    const maxSize = 5 * 1024 * 1024
+    for (const f of list) {
+      if (!allowedTypes.includes(f.type)) {
+        setError('Tipo de arquivo não permitido. Use JPG, PNG, GIF ou WEBP')
+        return
+      }
+      if (f.size > maxSize) {
+        setError('Arquivo muito grande. Tamanho máximo: 5MB')
+        return
+      }
+    }
+
+    setUploadingMedia(true)
+    setError('')
+    setInfo('')
+
+    try {
+      for (const file of list) {
+        const fd = new FormData()
+        fd.append('file', file)
+
+        const uploadRes = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: fd,
+        })
+
+        if (!uploadRes.ok) {
+          const msg = await getUploadError(uploadRes)
+          throw new Error(msg || 'Erro ao fazer upload')
+        }
+
+        const uploadData = await uploadRes.json()
+
+        const mediaRes = await fetch(`/api/admin/promo-cards/${editingCard.id}/media`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mediaUrl: uploadData.url,
+            mediaType: 'image',
+            displayOrder: cardMedia.length,
+          }),
+        })
+
+        if (!mediaRes.ok) {
+          const msg = await getUploadError(mediaRes)
+          throw new Error(msg || 'Erro ao adicionar mídia ao card')
+        }
+
+        const newMedia = await mediaRes.json()
+        setCardMedia((prev) => [...prev, newMedia])
+      }
+      setInfo('Fotos adicionadas ao card.')
+    } catch (err: any) {
+      setError(err.message || 'Erro ao adicionar fotos')
+    } finally {
+      setUploadingMedia(false)
+    }
   }
 
   async function handleAddMedia(file: File, mediaType: 'image' | 'video') {
@@ -273,6 +347,7 @@ export default function PromoCardsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setInfo('')
 
     try {
       const url = editingCard
@@ -311,8 +386,19 @@ export default function PromoCardsPage() {
         throw new Error(errorMsg + details)
       }
 
+      const saved = await res.json().catch(() => null)
+      await fetchCards()
+
+      // Se estiver criando, manter modal aberto para adicionar fotos ao carrossel
+      if (!editingCard && saved?.id) {
+        setEditingCard(saved)
+        setInfo('Card criado! Agora você pode adicionar várias fotos no bloco "Fotos do Carrossel".')
+        setCardMedia(Array.isArray(saved.media) ? saved.media : [])
+        return
+      }
+
+      setInfo('Card salvo com sucesso.')
       closeModal()
-      fetchCards()
     } catch (err: any) {
       setError(err.message)
     }
@@ -488,6 +574,11 @@ export default function PromoCardsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {info && (
+                <div className="bg-green-50 border-2 border-green-200 text-green-800 px-4 py-3 rounded-lg">
+                  {info}
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Título *
@@ -575,6 +666,62 @@ export default function PromoCardsPage() {
                     Formatos aceitos: JPG, PNG, GIF, WEBP. Tamanho máximo: 5MB
                   </p>
                 </div>
+              </div>
+
+              {/* Fotos do carrossel (múltiplas) */}
+              <div className="border-t-2 border-gray-200 pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">🖼️ Fotos do Carrossel (várias)</h3>
+                <p className="text-xs text-gray-600 mb-3">
+                  Use esse bloco para adicionar várias fotos no mesmo card (ideal para “Galeria / Outros anos” na página inicial).
+                </p>
+
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  disabled={!editingCard || uploadingMedia}
+                  onChange={async (e) => {
+                    const files = e.target.files
+                    if (!files) return
+                    await handleAddImages(files)
+                    e.target.value = ''
+                  }}
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                />
+                {!editingCard && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Dica: clique em <strong>Criar Card</strong> primeiro. O modal vai continuar aberto e liberar esse campo.
+                  </p>
+                )}
+                {uploadingMedia && <p className="text-sm text-blue-600 mt-2">Adicionando fotos...</p>}
+
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {cardMedia
+                    .filter((m) => m.mediaType === 'image')
+                    .slice()
+                    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+                    .map((m) => (
+                      <div key={m.id} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                        <div className="aspect-square bg-[#f8f9fa]">
+                          <img src={m.mediaUrl} alt="Foto do carrossel" className="h-full w-full object-cover" />
+                        </div>
+                        <div className="p-2 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-gray-600">Ordem: {m.displayOrder}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMedia(m.id)}
+                            className="text-xs font-semibold text-red-700 hover:text-red-900"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {editingCard && cardMedia.filter((m) => m.mediaType === 'image').length === 0 && (
+                  <p className="text-sm text-gray-600 mt-3">Nenhuma foto adicionada ainda.</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
