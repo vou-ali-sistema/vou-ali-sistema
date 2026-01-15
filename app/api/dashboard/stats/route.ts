@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const whereActiveOrders = { archivedAt: null as any }
     const [
       totalOrders,
       ordersPendentes,
@@ -28,16 +29,16 @@ export async function GET(request: NextRequest) {
       courtesiesRetiradas,
       receitaTotalCents,
     ] = await Promise.all([
-      prisma.order.count(),
-      prisma.order.count({ where: { status: 'PENDENTE' } }),
-      prisma.order.count({ where: { status: 'PAGO' } }),
-      prisma.order.count({ where: { status: 'RETIRADO' } }),
-      prisma.order.count({ where: { status: 'CANCELADO' } }),
+      prisma.order.count({ where: whereActiveOrders }),
+      prisma.order.count({ where: { ...whereActiveOrders, status: 'PENDENTE' } }),
+      prisma.order.count({ where: { ...whereActiveOrders, status: 'PAGO' } }),
+      prisma.order.count({ where: { ...whereActiveOrders, status: 'RETIRADO' } }),
+      prisma.order.count({ where: { ...whereActiveOrders, status: 'CANCELADO' } }),
       prisma.courtesy.count(),
       prisma.courtesy.count({ where: { status: 'ATIVA' } }),
       prisma.courtesy.count({ where: { status: 'RETIRADA' } }),
       prisma.order.aggregate({
-        where: { status: 'PAGO' },
+        where: { ...whereActiveOrders, status: 'PAGO' },
         _sum: {
           totalValueCents: true,
         }

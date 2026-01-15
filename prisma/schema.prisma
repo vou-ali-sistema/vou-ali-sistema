@@ -98,6 +98,9 @@ model Order {
   
   exchangeToken      String?   @unique
 
+  // Arquivamento (para "limpar lista" entre eventos sem perder histórico)
+  archivedAt         DateTime?
+
   deliveredAt        DateTime?
   deliveredByUserId  String?
   deliveredByUser    User?     @relation("DeliveredOrders", fields: [deliveredByUserId], references: [id])
@@ -110,6 +113,7 @@ model Order {
   @@index([status])
   @@index([exchangeToken])
   @@index([lotId])
+  @@index([archivedAt])
 }
 
 model OrderItem {

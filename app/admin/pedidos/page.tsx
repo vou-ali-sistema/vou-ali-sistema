@@ -1,14 +1,21 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import PedidosToolbar from './PedidosToolbar'
 
 export const dynamic = 'force-dynamic'
 
-async function getOrders(params: { q?: string; status?: string }) {
+async function getOrders(params: { q?: string; status?: string; archived?: string }) {
   try {
     const q = (params.q || '').trim()
     const status = (params.status || '').trim()
+    const archived = (params.archived || '').trim()
 
     const where: any = {}
+
+    // Por padrão, esconder arquivados
+    if (archived !== '1') {
+      where.archivedAt = null
+    }
 
     if (status) {
       where.status = status
@@ -42,12 +49,13 @@ async function getOrders(params: { q?: string; status?: string }) {
 export default async function PedidosPage({
   searchParams,
 }: {
-  searchParams?: { q?: string; status?: string }
+  searchParams?: { q?: string; status?: string; archived?: string }
 }) {
   const q = searchParams?.q || ''
   const status = searchParams?.status || ''
+  const archived = searchParams?.archived || ''
 
-  const { orders } = await getOrders({ q, status })
+  const { orders } = await getOrders({ q, status, archived })
 
   return (
     <div className="px-4 py-6">
@@ -55,52 +63,7 @@ export default async function PedidosPage({
         <h1 className="text-3xl font-bold text-blue-900">Pedidos</h1>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-4 mb-6 border-2 border-gray-200">
-        <form className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Buscar (cliente, telefone, email, pedido, MP)
-            </label>
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Ex: Maria, 1199999..., admin@..., ID do pedido..."
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Status
-            </label>
-            <select
-              name="status"
-              defaultValue={status}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-              <option value="">Todos</option>
-              <option value="PENDENTE">PENDENTE</option>
-              <option value="PAGO">PAGO</option>
-              <option value="RETIRADO">RETIRADO</option>
-              <option value="CANCELADO">CANCELADO</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-3 flex gap-3">
-            <button
-              type="submit"
-              className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg hover:from-green-700 hover:to-blue-950 font-semibold shadow-lg transition-all"
-            >
-              Filtrar
-            </button>
-            <Link
-              href="/admin/pedidos"
-              className="px-6 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 font-semibold border border-gray-300"
-            >
-              Limpar
-            </Link>
-          </div>
-        </form>
-      </div>
+      <PedidosToolbar q={q} status={status} archived={archived} />
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-green-600">
         <table className="min-w-full divide-y divide-gray-200">
