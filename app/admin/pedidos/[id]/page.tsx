@@ -7,17 +7,26 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 async function getOrder(id: string) {
+  // OBS: não usar include customer aqui.
+  // Se existir algum pedido com customerId órfão (cliente deletado/inconsistente),
+  // o Prisma pode lançar "Inconsistent query result" ao incluir customer (relação obrigatória),
+  // derrubando a renderização do Server Component em produção.
   const order = await prisma.order.findUnique({
     where: { id },
     include: {
       items: true,
-      customer: true,
       deliveredByUser: true,
       lot: true,
     }
   })
 
-  return order
+  if (!order) return null
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: order.customerId },
+  })
+
+  return { ...order, customer }
 }
 
 export default async function PedidoDetailPage({
@@ -30,7 +39,8 @@ export default async function PedidoDetailPage({
     order = await getOrder(params.id)
   } catch (err) {
     console.error('Erro ao carregar pedido:', { id: params.id, err })
-    throw new Error('Falha ao carregar pedido.')
+    // Não derrubar a página inteira em produção; mostrar uma UI amigável.
+    order = null
   }
 
   if (!order) {
@@ -39,7 +49,30 @@ export default async function PedidoDetailPage({
 
   if (!order.customer) {
     console.error('Pedido sem customer relacionado:', { id: order.id })
-    throw new Error('Pedido inválido: cliente não encontrado.')
+    return (
+      <div className="px-4 py-6">
+        <div className="mb-6">
+          <Link
+            href="/admin/pedidos"
+            className="text-blue-600 hover:text-blue-900 mb-4 inline-block font-semibold"
+          >
+            ← Voltar para Pedidos
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-200">
+          <h1 className="text-2xl font-bold text-blue-900 mb-2">
+            Pedido {order.id.substring(0, 8)}...
+          </h1>
+          <p className="text-gray-700">
+            Este pedido está com dados incompletos: <span className="font-semibold">cliente não encontrado</span>.
+          </p>
+          <p className="text-sm text-gray-600 mt-2">
+            ID completo: <span className="font-mono break-all">{order.id}</span>
+          </p>
+        </div>
+      </div>
+    )
   }
 
   const total = order.totalValueCents / 100
