@@ -40,7 +40,7 @@ const promoCardSchema = z.object({
 // GET - Buscar card específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -49,8 +49,9 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const card = await prisma.promoCard.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         media: {
           orderBy: { displayOrder: 'asc' },
@@ -78,7 +79,7 @@ export async function GET(
 // PUT - Atualizar card
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -87,11 +88,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = promoCardSchema.parse(body)
 
     const card = await prisma.promoCard.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         title: data.title,
         content: data.content,
@@ -141,7 +143,7 @@ export async function PUT(
 // DELETE - Deletar card
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -150,9 +152,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    await prisma.promoCard.delete({
-      where: { id: params.id },
-    })
+    const { id } = await params
+    await prisma.promoCard.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

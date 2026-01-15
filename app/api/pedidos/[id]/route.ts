@@ -38,7 +38,7 @@ async function buscarStatusPagamentoMP(externalReference: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -46,8 +46,9 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
         customer: true,
@@ -75,7 +76,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -83,11 +84,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { status, action } = body
 
     const order = await prisma.order.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!order) {
@@ -99,7 +101,7 @@ export async function PATCH(
 
     if (action === 'confirmar') {
       await prisma.order.update({
-        where: { id: params.id },
+        where: { id },
         data: { 
           status: 'PAGO',
           paymentStatus: 'APPROVED',
@@ -108,7 +110,7 @@ export async function PATCH(
       })
     } else if (action === 'cancelar') {
       await prisma.order.update({
-        where: { id: params.id },
+        where: { id },
         data: { 
           status: 'CANCELADO',
           paymentStatus: 'REJECTED',
@@ -126,7 +128,7 @@ export async function PATCH(
       if (!order.exchangeToken) {
         const token = gerarTokenTroca()
         await prisma.order.update({
-          where: { id: params.id },
+          where: { id },
           data: { exchangeToken: token },
         })
       }
@@ -140,7 +142,7 @@ export async function PATCH(
       }
 
       const orderWithCustomer = await prisma.order.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: { customer: true },
       })
 
@@ -152,7 +154,7 @@ export async function PATCH(
         // Se não tiver token ainda, gere e siga
         const token = gerarTokenTroca()
         await prisma.order.update({
-          where: { id: params.id },
+          where: { id },
           data: { exchangeToken: token },
         })
         orderWithCustomer.exchangeToken = token
@@ -212,7 +214,7 @@ export async function PATCH(
       }
 
       await prisma.order.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           status: novoStatus,
           paymentStatus: paymentStatusEnum,
@@ -222,13 +224,13 @@ export async function PATCH(
       })
     } else if (status) {
       await prisma.order.update({
-        where: { id: params.id },
+        where: { id },
         data: { status }
       })
     }
 
     const orderAtualizado = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
         customer: true,

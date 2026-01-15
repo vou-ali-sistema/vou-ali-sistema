@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,11 +13,12 @@ export async function POST(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { itemId, quantity } = body
 
     const courtesy = await prisma.courtesy.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
       }
@@ -57,7 +58,7 @@ export async function POST(
 
       // Verificar se todos os itens foram entregues
       const courtesyAtualizada = await prisma.courtesy.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: { items: true }
       })
 
@@ -67,7 +68,7 @@ export async function POST(
 
       if (todosEntregues) {
         await prisma.courtesy.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'RETIRADA',
             deliveredAt: new Date(),
@@ -78,7 +79,7 @@ export async function POST(
     } else {
       // Marcar cortesia completa como entregue
       await prisma.courtesy.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           status: 'RETIRADA',
           deliveredAt: new Date(),
@@ -88,7 +89,7 @@ export async function POST(
     }
 
     const courtesyFinal = await prisma.courtesy.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
         createdByUser: true,

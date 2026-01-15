@@ -19,7 +19,7 @@ const atualizarLotSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -27,6 +27,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = atualizarLotSchema.parse(body)
 
@@ -40,7 +41,7 @@ export async function PUT(
     if (data.endsAt !== undefined) updateData.endsAt = data.endsAt ? new Date(data.endsAt) : null
 
     const lot = await prisma.lot.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
@@ -64,7 +65,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -72,8 +73,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const lot = await prisma.lot.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, active: true },
     })
 
@@ -81,7 +83,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Lote não encontrado' }, { status: 404 })
     }
 
-    const ordersCount = await prisma.order.count({ where: { lotId: params.id } })
+    const ordersCount = await prisma.order.count({ where: { lotId: id } })
     if (ordersCount > 0) {
       return NextResponse.json(
         { error: 'Não é possível excluir este lote porque já existem pedidos vinculados a ele.' },
@@ -93,12 +95,12 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       if (lot.active) {
         await tx.lot.update({
-          where: { id: params.id },
+          where: { id },
           data: { active: false },
         })
       }
 
-      await tx.lot.delete({ where: { id: params.id } })
+      await tx.lot.delete({ where: { id } })
     })
 
     return NextResponse.json({ ok: true })

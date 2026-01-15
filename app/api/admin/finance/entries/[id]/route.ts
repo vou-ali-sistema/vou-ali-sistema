@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    await prisma.financeEntry.delete({ where: { id: params.id } })
+    const { id } = await params
+    await prisma.financeEntry.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Erro ao deletar lançamento:', error)

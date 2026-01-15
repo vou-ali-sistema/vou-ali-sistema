@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,6 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     // Usar transação para garantir que só um lote fique ativo
     const result = await prisma.$transaction(async (tx) => {
       // Desativar todos os lotes
@@ -26,7 +27,7 @@ export async function POST(
 
       // Ativar o lote solicitado
       const activatedLot = await tx.lot.update({
-        where: { id: params.id },
+        where: { id },
         data: { active: true },
       })
 

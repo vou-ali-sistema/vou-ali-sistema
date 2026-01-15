@@ -5,6 +5,9 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  turbopack: {
+    root: __dirname,
+  },
   async redirects() {
     return [
       // Canonicalizar domínio: redirecionar sem www -> com www

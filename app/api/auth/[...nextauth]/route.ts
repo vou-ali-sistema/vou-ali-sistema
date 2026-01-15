@@ -20,12 +20,13 @@ function normalizeNextAuthUrl(req: Request) {
   }
 }
 
-type RouteCtx = { params: { nextauth: string[] } }
+type Next16RouteCtx = { params: Promise<{ nextauth: string[] }> }
 
-export async function GET(req: NextRequest, ctx: RouteCtx) {
+export async function GET(req: NextRequest, ctx: Next16RouteCtx) {
   normalizeNextAuthUrl(req)
   try {
-    return await handler(req, ctx as any)
+    const params = await ctx.params
+    return await handler(req, { params } as any)
   } catch (err) {
     console.error('NextAuth fatal error:', err)
     const message = err instanceof Error ? err.message : String(err)
@@ -36,10 +37,11 @@ export async function GET(req: NextRequest, ctx: RouteCtx) {
   }
 }
 
-export async function POST(req: NextRequest, ctx: RouteCtx) {
+export async function POST(req: NextRequest, ctx: Next16RouteCtx) {
   normalizeNextAuthUrl(req)
   try {
-    return await handler(req, ctx as any)
+    const params = await ctx.params
+    return await handler(req, { params } as any)
   } catch (err) {
     console.error('NextAuth fatal error:', err)
     const message = err instanceof Error ? err.message : String(err)

@@ -13,7 +13,7 @@ const mediaSchema = z.object({
 // GET - Listar mídias de um card
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -22,8 +22,9 @@ export async function GET(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const media = await prisma.promoCardMedia.findMany({
-      where: { promoCardId: params.id },
+      where: { promoCardId: id },
       orderBy: { displayOrder: 'asc' },
     })
 
@@ -40,7 +41,7 @@ export async function GET(
 // POST - Adicionar mídia a um card
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -49,12 +50,13 @@ export async function POST(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = mediaSchema.parse(body)
 
     // Verificar se o card existe
     const card = await prisma.promoCard.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!card) {
@@ -66,7 +68,7 @@ export async function POST(
 
     const media = await prisma.promoCardMedia.create({
       data: {
-        promoCardId: params.id,
+        promoCardId: id,
         mediaUrl: data.mediaUrl,
         mediaType: data.mediaType,
         displayOrder: data.displayOrder,

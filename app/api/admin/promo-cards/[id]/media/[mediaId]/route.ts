@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // DELETE - Remover mídia de um card
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; mediaId: string } }
+  { params }: { params: Promise<{ id: string; mediaId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,8 +15,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { mediaId } = await params
     await prisma.promoCardMedia.delete({
-      where: { id: params.mediaId },
+      where: { id: mediaId },
     })
 
     return NextResponse.json({ success: true })

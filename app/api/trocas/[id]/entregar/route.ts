@@ -11,7 +11,7 @@ const entregarItemSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,11 +19,12 @@ export async function POST(
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = entregarItemSchema.parse(body)
 
     const order = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
       }
@@ -65,7 +66,7 @@ export async function POST(
 
     // Verificar se todos os itens foram entregues
     const orderAtualizado = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
       }
@@ -77,7 +78,7 @@ export async function POST(
 
     if (todosEntregues && orderAtualizado) {
       await prisma.order.update({
-        where: { id: params.id },
+        where: { id },
         data: { 
           status: 'RETIRADO',
           deliveredAt: new Date(),
@@ -87,7 +88,7 @@ export async function POST(
     }
 
     const orderFinal = await prisma.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         items: true,
         customer: true,
