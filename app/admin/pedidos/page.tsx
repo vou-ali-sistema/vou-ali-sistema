@@ -4,6 +4,21 @@ import PedidosToolbar from './PedidosToolbar'
 
 export const dynamic = 'force-dynamic'
 
+function paymentStatusLabel(status?: string | null) {
+  switch (status) {
+    case 'APPROVED':
+      return 'APROVADO'
+    case 'REJECTED':
+      return 'REJEITADO'
+    case 'REFUNDED':
+      return 'REEMBOLSADO'
+    case 'PENDING':
+      return 'PENDENTE'
+    default:
+      return '-'
+  }
+}
+
 async function getOrders(params: { q?: string; status?: string; archived?: string }) {
   try {
     const q = (params.q || '').trim()
@@ -118,7 +133,7 @@ export default async function PedidosPage({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {order.paymentStatus || '-'}
+                  {paymentStatusLabel(order.paymentStatus)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">
                   R$ {(order.totalValueCents / 100).toFixed(2).replace('.', ',')}
