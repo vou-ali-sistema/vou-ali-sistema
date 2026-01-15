@@ -59,6 +59,13 @@ export default function HomePage() {
     }
   }, [])
 
+  const percursoCard = promoCards.find((c) =>
+    (c.title || '').toLowerCase().includes('percurso')
+  )
+  const highlightCards = percursoCard
+    ? promoCards.filter((c) => c.id !== percursoCard.id)
+    : promoCards
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -85,13 +92,13 @@ export default function HomePage() {
       </div>
 
       {/* Cards Promocionais */}
-      {!loading && promoCards.length > 0 && (
+      {!loading && highlightCards.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">
             Destaques
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {promoCards.map((card) => {
+            {highlightCards.map((card) => {
               const cardLink = card.linkEnabled 
                 ? (card.linkUrl || '/comprar')
                 : null
@@ -162,13 +169,13 @@ export default function HomePage() {
       )}
 
       {/* Galeria (a partir das mídias dos cards HOME) */}
-      {!loading && promoCards.length > 0 && (
+      {!loading && highlightCards.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">
             Galeria do Evento
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {promoCards
+            {highlightCards
               .flatMap((c) => (Array.isArray(c.media) ? c.media : []))
               .filter((m) => m.mediaType === 'image')
               .slice(0, 8)
@@ -198,8 +205,8 @@ export default function HomePage() {
       {/* Percurso do Bloco */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
                 Percurso do bloco
               </h2>
@@ -239,6 +246,36 @@ export default function HomePage() {
               <p className="text-xs text-gray-500 mt-5">
                 Observação: percurso sujeito a ajustes pela organização.
               </p>
+            </div>
+
+            {/* Imagem ao lado do percurso (vinda de um card com "percurso" no título) */}
+            <div>
+              {percursoCard && (Array.isArray(percursoCard.media) && percursoCard.media.length > 0) ? (
+                <PromoMediaCarousel
+                  media={percursoCard.media}
+                  autoPlay={false}
+                  intervalMs={percursoCard.slideInterval ?? 5000}
+                  altBase={percursoCard.title}
+                />
+              ) : percursoCard?.imageUrl ? (
+                <div className="rounded-xl border border-[#dee2e6] overflow-hidden bg-white">
+                  <div className="aspect-[3/4] bg-[#f8f9fa]">
+                    <img
+                      src={percursoCard.imageUrl}
+                      alt={percursoCard.title}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-[#dee2e6] bg-[#f8f9fa] p-6 text-sm text-gray-700">
+                  <p className="font-semibold text-gray-900 mb-2">Quer colocar a imagem do percurso aqui?</p>
+                  <p>
+                    No admin, crie um card com título contendo <span className="font-mono">Percurso</span> e envie essa foto como mídia.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
