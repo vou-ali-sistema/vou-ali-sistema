@@ -383,14 +383,14 @@ export default function PromoCardsPage() {
 
   return (
     <div className="px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-blue-900 mb-2">Cards de Divulgação</h1>
           <p className="text-gray-600">Gerencie os cards exibidos na página de compra</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-lg transition-all"
+          className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-lg transition-all"
         >
           + Novo Card
         </button>
