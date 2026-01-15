@@ -31,10 +31,16 @@ const promoCardSchema = z.object({
     return undefined
   }),
   placement: z.enum(['HOME', 'COMPRAR', 'BOTH']).default('BOTH'),
-  comprarSlot: z.enum(['TOP', 'BOTTOM']).optional().nullable().transform(val => {
-    if (!val) return undefined
-    return val
-  }),
+  // UI envia '' quando não selecionado; aceitar e normalizar para undefined.
+  comprarSlot: z
+    .enum(['TOP', 'BOTTOM'])
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => {
+      if (!val) return undefined
+      return val
+    }),
 })
 
 // GET - Listar todos os cards
