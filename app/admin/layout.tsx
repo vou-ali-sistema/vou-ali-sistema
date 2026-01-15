@@ -16,6 +16,7 @@ export default function AdminLayout({
   const { data: session, status } = useSession()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const isLoginPage = pathname === '/admin/login'
 
   const navItems = useMemo(
     () => [
@@ -29,22 +30,24 @@ export default function AdminLayout({
     []
   )
 
-  // Se for a página de login, não aplicar o layout
-  if (pathname === '/admin/login') {
-    return <>{children}</>
-  }
-
   // Se não tiver sessão e não for login, redirecionar
   useEffect(() => {
-    if (status === 'unauthenticated' && pathname !== '/admin/login') {
+    if (isLoginPage) return
+    if (status === 'unauthenticated') {
       router.push('/admin/login')
     }
-  }, [status, pathname, router])
+  }, [status, isLoginPage, router])
 
   // Fechar menu mobile ao trocar de rota
   useEffect(() => {
+    if (isLoginPage) return
     setMobileMenuOpen(false)
-  }, [pathname])
+  }, [pathname, isLoginPage])
+
+  // Se for a página de login, não aplicar o layout (mas sem pular hooks)
+  if (isLoginPage) {
+    return <>{children}</>
+  }
 
   // Se ainda está carregando ou não tem sessão, mostrar loading
   if (status === 'loading' || !session) {
