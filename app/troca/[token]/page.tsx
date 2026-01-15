@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation'
 import QRCodeDisplay from './QRCodeDisplay'
 import Logo from '@/app/components/Logo'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 async function getDataByToken(token: string) {
   // Buscar Order por exchangeToken
   const order = await prisma.order.findUnique({
@@ -83,9 +86,10 @@ function getStatusInfo(data: any, type: 'order' | 'courtesy') {
 export default async function TrocaPage({
   params,
 }: {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }) {
-  const result = await getDataByToken(params.token)
+  const { token } = await params
+  const result = await getDataByToken(token)
 
   if (!result) {
     return (
@@ -110,7 +114,7 @@ export default async function TrocaPage({
 
           <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
             <p className="text-sm text-red-700">
-              <strong>Token:</strong> {params.token.substring(0, 16)}...
+              <strong>Token:</strong> {token.substring(0, 16)}...
             </p>
           </div>
         </div>
@@ -120,7 +124,7 @@ export default async function TrocaPage({
 
   const { type, data } = result
   const statusInfo = getStatusInfo(data, type)
-  const url = `${process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'}/troca/${params.token}`
+  const url = `${process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'}/troca/${token}`
 
   // Determinar nome e informações do cliente
   const nome = type === 'order' ? data.customer.name : data.name
@@ -219,7 +223,7 @@ export default async function TrocaPage({
           </div>
         </div>
 
-        <QRCodeDisplay url={url} token={params.token} />
+        <QRCodeDisplay url={url} token={token} />
       </div>
     </div>
   )
