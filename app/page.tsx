@@ -70,9 +70,13 @@ export default function HomePage() {
     const t = (c.title || '').toLowerCase()
     return t.includes('galeria') || t.includes('fotos') || t.includes('outros anos') || t.includes('anos anteriores')
   })
-  const highlightCards = percursoCard
-    ? promoCards.filter((c) => c.id !== percursoCard.id)
-    : promoCards
+  // Destaques: excluir cards "especiais" que já têm lugar próprio na página (percurso e galeria)
+  const highlightCardsBase = promoCards.filter((c) => {
+    if (percursoCard && c.id === percursoCard.id) return false
+    if (galeriaCard && c.id === galeriaCard.id) return false
+    return true
+  })
+  const highlightCards = highlightCardsBase
 
   const galleryMedia: PromoCardMedia[] = (Array.isArray(galeriaCard?.media) && galeriaCard!.media!.length > 0
     ? galeriaCard!.media!
