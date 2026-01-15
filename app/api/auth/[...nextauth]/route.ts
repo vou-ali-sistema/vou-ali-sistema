@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 
 // NextAuth depende de headers (host/proto) e não deve ser pré-renderizado.
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 const handler = NextAuth(authOptions)
 
@@ -25,7 +26,17 @@ function normalizeNextAuthUrl(req: Request) {
 
 async function wrapped(req: Request) {
   normalizeNextAuthUrl(req)
-  return handler(req)
+  try {
+    return await handler(req)
+  } catch (err) {
+    // Garantir JSON (evita "Unexpected end of JSON input" no client)
+    console.error('NextAuth fatal error:', err)
+    const message = err instanceof Error ? err.message : String(err)
+    return new Response(JSON.stringify({ error: 'NextAuthError', message }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    })
+  }
 }
 
 export { wrapped as GET, wrapped as POST }
