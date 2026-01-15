@@ -8,6 +8,7 @@ async function getStats() {
   try {
     const whereActiveOrders = { archivedAt: null as any }
     const courtesyWhereAtivasOuRetiradas = { courtesy: { status: { in: ['ATIVA', 'RETIRADA'] } } } as any
+    const wherePaidOrDeliveredOrders = { ...whereActiveOrders, status: { in: ['PAGO', 'RETIRADO'] } } as any
     const [
       totalOrders,
       ordersPendentes,
@@ -19,6 +20,10 @@ async function getStats() {
       courtesiesRetiradas,
       receitaTotalCents,
       courtesyItemsByType,
+      orderItemsAbadaAgg,
+      orderItemsPulseiraAgg,
+      courtesyItemsAbadaAgg,
+      courtesyItemsPulseiraAgg,
       activeLot,
     ] = await Promise.all([
       prisma.order.count({ where: whereActiveOrders }),
@@ -40,6 +45,22 @@ async function getStats() {
         where: courtesyWhereAtivasOuRetiradas,
         _sum: { quantity: true },
       }),
+      prisma.orderItem.aggregate({
+        where: { itemType: 'ABADA', order: wherePaidOrDeliveredOrders },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
+      prisma.orderItem.aggregate({
+        where: { itemType: 'PULSEIRA_EXTRA', order: wherePaidOrDeliveredOrders },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
+      prisma.courtesyItem.aggregate({
+        where: { itemType: 'ABADA', ...courtesyWhereAtivasOuRetiradas },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
+      prisma.courtesyItem.aggregate({
+        where: { itemType: 'PULSEIRA_EXTRA', ...courtesyWhereAtivasOuRetiradas },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
       prisma.lot.findFirst({
         where: { active: true },
         select: { id: true, name: true, abadaProducedQty: true, pulseiraProducedQty: true },
@@ -57,6 +78,31 @@ async function getStats() {
       if (row.itemType === 'PULSEIRA_EXTRA') courtesyByType.PULSEIRA_EXTRA = qty
     }
 
+    const producedAbadas = activeLot?.abadaProducedQty ?? 0
+    const producedPulseiras = activeLot?.pulseiraProducedQty ?? 0
+
+    const soldAbadas = orderItemsAbadaAgg._sum.quantity ?? 0
+    const soldPulseiras = orderItemsPulseiraAgg._sum.quantity ?? 0
+    const deliveredAbadasOrders = orderItemsAbadaAgg._sum.deliveredQuantity ?? 0
+    const deliveredPulseirasOrders = orderItemsPulseiraAgg._sum.deliveredQuantity ?? 0
+
+    const courtesyAbadas = courtesyItemsAbadaAgg._sum.quantity ?? 0
+    const courtesyPulseiras = courtesyItemsPulseiraAgg._sum.quantity ?? 0
+    const deliveredAbadasCourtesies = courtesyItemsAbadaAgg._sum.deliveredQuantity ?? 0
+    const deliveredPulseirasCourtesies = courtesyItemsPulseiraAgg._sum.deliveredQuantity ?? 0
+
+    const committedAbadas = soldAbadas + courtesyAbadas
+    const committedPulseiras = soldPulseiras + courtesyPulseiras
+
+    const deliveredAbadas = deliveredAbadasOrders + deliveredAbadasCourtesies
+    const deliveredPulseiras = deliveredPulseirasOrders + deliveredPulseirasCourtesies
+
+    const toDeliverAbadas = Math.max(0, committedAbadas - deliveredAbadas)
+    const toDeliverPulseiras = Math.max(0, committedPulseiras - deliveredPulseiras)
+
+    const remainingAbadas = producedAbadas - committedAbadas
+    const remainingPulseiras = producedPulseiras - committedPulseiras
+
     return {
       orders: {
         total: totalOrders,
@@ -73,8 +119,24 @@ async function getStats() {
       courtesiesByItem: courtesyByType,
       production: {
         activeLotName: activeLot?.name || null,
-        abadas: activeLot?.abadaProducedQty ?? 0,
-        pulseiras: activeLot?.pulseiraProducedQty ?? 0,
+        abadas: producedAbadas,
+        pulseiras: producedPulseiras,
+        committed: {
+          abadas: committedAbadas,
+          pulseiras: committedPulseiras,
+        },
+        delivered: {
+          abadas: deliveredAbadas,
+          pulseiras: deliveredPulseiras,
+        },
+        toDeliver: {
+          abadas: toDeliverAbadas,
+          pulseiras: toDeliverPulseiras,
+        },
+        remaining: {
+          abadas: remainingAbadas,
+          pulseiras: remainingPulseiras,
+        },
       },
       receitaTotal,
     }
@@ -194,13 +256,40 @@ export default async function DashboardPage() {
               <p className="text-xs text-gray-600 mb-2">
                 {stats.production.activeLotName ? `Lote: ${stats.production.activeLotName}` : 'Nenhum lote ativo'}
               </p>
-              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg mb-2">
-                <span className="text-gray-700 font-medium">Abadás produzidos:</span>
-                <span className="font-bold text-gray-900 text-lg">{stats.production.abadas}</span>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
-                <span className="text-gray-700 font-medium">Pulseiras produzidas:</span>
-                <span className="font-bold text-gray-900 text-lg">{stats.production.pulseiras}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Abadá</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between"><span>Produzidos:</span><span className="font-bold">{stats.production.abadas}</span></div>
+                    <div className="flex justify-between"><span>Cortesias:</span><span className="font-bold">{stats.courtesiesByItem.ABADA}</span></div>
+                    <div className="flex justify-between"><span>Comprometidos:</span><span className="font-bold">{stats.production.committed.abadas}</span></div>
+                    <div className="flex justify-between"><span>Entregues:</span><span className="font-bold">{stats.production.delivered.abadas}</span></div>
+                    <div className="flex justify-between"><span>A entregar:</span><span className="font-bold">{stats.production.toDeliver.abadas}</span></div>
+                    <div className="flex justify-between">
+                      <span>Restantes:</span>
+                      <span className={`font-bold ${stats.production.remaining.abadas < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                        {stats.production.remaining.abadas}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">Pulseira Extra</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between"><span>Produzidas:</span><span className="font-bold">{stats.production.pulseiras}</span></div>
+                    <div className="flex justify-between"><span>Cortesias:</span><span className="font-bold">{stats.courtesiesByItem.PULSEIRA_EXTRA}</span></div>
+                    <div className="flex justify-between"><span>Comprometidas:</span><span className="font-bold">{stats.production.committed.pulseiras}</span></div>
+                    <div className="flex justify-between"><span>Entregues:</span><span className="font-bold">{stats.production.delivered.pulseiras}</span></div>
+                    <div className="flex justify-between"><span>A entregar:</span><span className="font-bold">{stats.production.toDeliver.pulseiras}</span></div>
+                    <div className="flex justify-between">
+                      <span>Restantes:</span>
+                      <span className={`font-bold ${stats.production.remaining.pulseiras < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                        {stats.production.remaining.pulseiras}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

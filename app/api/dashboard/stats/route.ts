@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
 
     const whereActiveOrders = { archivedAt: null as any }
     const courtesyWhereAtivasOuRetiradas = { courtesy: { status: { in: ['ATIVA', 'RETIRADA'] } } } as any
+    const wherePaidOrDeliveredOrders = { ...whereActiveOrders, status: { in: ['PAGO', 'RETIRADO'] } } as any
     const [
       totalOrders,
       ordersPendentes,
@@ -30,6 +31,10 @@ export async function GET(request: NextRequest) {
       courtesiesRetiradas,
       receitaTotalCents,
       courtesyItemsByType,
+      orderItemsAbadaAgg,
+      orderItemsPulseiraAgg,
+      courtesyItemsAbadaAgg,
+      courtesyItemsPulseiraAgg,
       activeLot,
     ] = await Promise.all([
       prisma.order.count({ where: whereActiveOrders }),
@@ -51,6 +56,22 @@ export async function GET(request: NextRequest) {
         where: courtesyWhereAtivasOuRetiradas,
         _sum: { quantity: true },
       }),
+      prisma.orderItem.aggregate({
+        where: { itemType: 'ABADA', order: wherePaidOrDeliveredOrders },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
+      prisma.orderItem.aggregate({
+        where: { itemType: 'PULSEIRA_EXTRA', order: wherePaidOrDeliveredOrders },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
+      prisma.courtesyItem.aggregate({
+        where: { itemType: 'ABADA', ...courtesyWhereAtivasOuRetiradas },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
+      prisma.courtesyItem.aggregate({
+        where: { itemType: 'PULSEIRA_EXTRA', ...courtesyWhereAtivasOuRetiradas },
+        _sum: { quantity: true, deliveredQuantity: true },
+      }),
       prisma.lot.findFirst({
         where: { active: true },
         select: { id: true, name: true, abadaProducedQty: true, pulseiraProducedQty: true },
@@ -68,6 +89,31 @@ export async function GET(request: NextRequest) {
       if (row.itemType === 'PULSEIRA_EXTRA') courtesyByType.PULSEIRA_EXTRA = qty
     }
 
+    const producedAbadas = activeLot?.abadaProducedQty ?? 0
+    const producedPulseiras = activeLot?.pulseiraProducedQty ?? 0
+
+    const soldAbadas = orderItemsAbadaAgg._sum.quantity ?? 0
+    const soldPulseiras = orderItemsPulseiraAgg._sum.quantity ?? 0
+    const deliveredAbadasOrders = orderItemsAbadaAgg._sum.deliveredQuantity ?? 0
+    const deliveredPulseirasOrders = orderItemsPulseiraAgg._sum.deliveredQuantity ?? 0
+
+    const courtesyAbadas = courtesyItemsAbadaAgg._sum.quantity ?? 0
+    const courtesyPulseiras = courtesyItemsPulseiraAgg._sum.quantity ?? 0
+    const deliveredAbadasCourtesies = courtesyItemsAbadaAgg._sum.deliveredQuantity ?? 0
+    const deliveredPulseirasCourtesies = courtesyItemsPulseiraAgg._sum.deliveredQuantity ?? 0
+
+    const committedAbadas = soldAbadas + courtesyAbadas
+    const committedPulseiras = soldPulseiras + courtesyPulseiras
+
+    const deliveredAbadas = deliveredAbadasOrders + deliveredAbadasCourtesies
+    const deliveredPulseiras = deliveredPulseirasOrders + deliveredPulseirasCourtesies
+
+    const toDeliverAbadas = Math.max(0, committedAbadas - deliveredAbadas)
+    const toDeliverPulseiras = Math.max(0, committedPulseiras - deliveredPulseiras)
+
+    const remainingAbadas = producedAbadas - committedAbadas
+    const remainingPulseiras = producedPulseiras - committedPulseiras
+
     return NextResponse.json({
       orders: {
         total: totalOrders,
@@ -84,8 +130,24 @@ export async function GET(request: NextRequest) {
       courtesiesByItem: courtesyByType,
       production: {
         activeLotName: activeLot?.name || null,
-        abadas: activeLot?.abadaProducedQty ?? 0,
-        pulseiras: activeLot?.pulseiraProducedQty ?? 0,
+        abadas: producedAbadas,
+        pulseiras: producedPulseiras,
+        committed: {
+          abadas: committedAbadas,
+          pulseiras: committedPulseiras,
+        },
+        delivered: {
+          abadas: deliveredAbadas,
+          pulseiras: deliveredPulseiras,
+        },
+        toDeliver: {
+          abadas: toDeliverAbadas,
+          pulseiras: toDeliverPulseiras,
+        },
+        remaining: {
+          abadas: remainingAbadas,
+          pulseiras: remainingPulseiras,
+        },
       },
       receitaTotal,
     })
