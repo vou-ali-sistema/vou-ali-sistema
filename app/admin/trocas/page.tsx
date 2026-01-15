@@ -69,8 +69,52 @@ export default function TrocasPage() {
   }
 
   async function startScanner() {
-    setShowQRScanner(true)
     setError('')
+
+    // Alguns navegadores só mostram o prompt de permissão se a chamada ocorrer
+    // diretamente dentro do clique (user gesture). Fazemos um "pré-request" aqui.
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('CAMERA_UNSUPPORTED')
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' } },
+        audio: false as any,
+      } as any)
+
+      // Para não manter a câmera aberta duas vezes, paramos imediatamente.
+      stream.getTracks().forEach((t) => t.stop())
+    } catch (e: any) {
+      const name = String(e?.name || '')
+      const msg = String(e?.message || '')
+
+      if (msg === 'CAMERA_UNSUPPORTED') {
+        setError('Este navegador/dispositivo não suporta acesso à câmera. Tente no Chrome/Firefox ou em outro aparelho.')
+        return
+      }
+
+      if (name === 'NotAllowedError' || name === 'SecurityError' || msg.toLowerCase().includes('permission')) {
+        setError('Permissão da câmera negada. Autorize a câmera no navegador e tente novamente.')
+        return
+      }
+
+      if (name === 'NotFoundError') {
+        setError('Nenhuma câmera foi encontrada neste dispositivo.')
+        return
+      }
+
+      if (name === 'NotReadableError') {
+        setError('Não foi possível acessar a câmera. Ela pode estar em uso por outro app.')
+        return
+      }
+
+      // Fallback genérico
+      setError('Não foi possível iniciar a câmera. Verifique permissões e se está acessando via HTTPS.')
+      return
+    }
+
+    setShowQRScanner(true)
   }
 
   async function stopScanner() {
