@@ -153,9 +153,6 @@ export default function HomePage() {
                   </p>
                 </div>
               )}
-              <p className="text-xs text-gray-600 mt-3">
-                Dica: marque o card como <span className="font-mono">Somente Inicial</span> para ele virar destaque na home.
-              </p>
             </div>
           </div>
         </div>
@@ -266,9 +263,6 @@ export default function HomePage() {
                 </Link>
               ))}
           </div>
-          <p className="text-xs text-gray-500 mt-3">
-            Dica: envie as artes (percurso, mockup do abadá, logo 2026) como mídias de um card marcado para “Somente Inicial”.
-          </p>
         </div>
       )}
 
