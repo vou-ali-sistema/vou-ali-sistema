@@ -10,6 +10,9 @@ export default withAuth(
     return NextResponse.next()
   },
   {
+    pages: {
+      signIn: '/admin/login',
+    },
     callbacks: {
       authorized: ({ token, req }) => {
         // Permitir acesso a /admin/login sem autenticação
