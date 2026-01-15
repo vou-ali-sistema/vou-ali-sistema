@@ -281,7 +281,7 @@ export default function HomePage() {
                     Momentos de outros anos
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 mt-2">
-                    Uma prévia do clima do Bloco — fotos passando automaticamente. Clique para garantir seu abadá.
+                    Uma prévia do clima do Bloco. Clique para garantir seu abadá.
                   </p>
                 </div>
               </Link>
@@ -300,7 +300,7 @@ export default function HomePage() {
                     Momentos de outros anos
                   </h3>
                   <p className="text-sm sm:text-base text-gray-700 mt-2">
-                    Uma prévia do clima do Bloco — fotos passando automaticamente.
+                    Uma prévia do clima do Bloco.
                   </p>
                 </div>
               </div>
