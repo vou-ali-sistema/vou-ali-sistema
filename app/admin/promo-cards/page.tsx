@@ -59,6 +59,18 @@ export default function PromoCardsPage() {
   const [cardMedia, setCardMedia] = useState<PromoCardMedia[]>([])
   const [uploadingMedia, setUploadingMedia] = useState(false)
 
+  async function getUploadError(res: Response) {
+    const text = await res.text().catch(() => '')
+    try {
+      const json = text ? JSON.parse(text) : null
+      const msg = json?.error || json?.message || ''
+      const details = json?.details ? ` (${json.details})` : ''
+      return msg ? `${msg}${details}` : text || `HTTP ${res.status}`
+    } catch {
+      return text || `HTTP ${res.status}`
+    }
+  }
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/admin/login')
@@ -168,8 +180,8 @@ export default function PromoCardsPage() {
       })
 
       if (!uploadRes.ok) {
-        const data = await uploadRes.json()
-        throw new Error(data.error || 'Erro ao fazer upload')
+        const msg = await getUploadError(uploadRes)
+        throw new Error(msg || 'Erro ao fazer upload')
       }
 
       const uploadData = await uploadRes.json()
@@ -244,8 +256,8 @@ export default function PromoCardsPage() {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao fazer upload')
+        const msg = await getUploadError(res)
+        throw new Error(msg || 'Erro ao fazer upload')
       }
 
       const data = await res.json()

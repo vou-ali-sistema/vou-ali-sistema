@@ -67,10 +67,18 @@ export default function HomePage() {
     : promoCards
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen relative bg-[linear-gradient(180deg,#ffffff_0%,#f6f7f9_50%,#ffffff_100%)]">
+      {/* Faixa Brasil */}
+      <div className="h-2 w-full bg-[linear-gradient(90deg,#1f9d55_0%,#1f9d55_33%,#f6c700_33%,#f6c700_66%,#1e3a8a_66%,#1e3a8a_100%)]" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Hero Section */}
-        <div className="bg-[#f8f9fa] border border-[#dee2e6] rounded-3xl p-6 sm:p-10">
+        <div className="relative overflow-hidden bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10">
+          {/* fundo com cores do abadá (bem suave) */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#1f9d55_0%,#f6c700_45%,#1e3a8a_100%)] opacity-[0.10]" />
+          <div className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full bg-[#1f9d55] opacity-[0.08]" />
+          <div className="pointer-events-none absolute -bottom-12 -left-12 h-56 w-56 rounded-full bg-[#1e3a8a] opacity-[0.06]" />
+
           <div className="text-center">
             <div className="inline-block mb-4">
               <Logo size="large" />
@@ -83,7 +91,7 @@ export default function HomePage() {
             </p>
             <Link
               href="/comprar"
-              className="inline-block px-8 py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-bold text-lg shadow transition-all"
+              className="inline-block px-8 py-4 bg-[#1f9d55] text-white rounded-xl hover:bg-[#188a49] font-bold text-lg shadow transition-all border border-[#0f6b35]"
             >
               Comprar Agora
             </Link>
@@ -135,7 +143,7 @@ export default function HomePage() {
                     <h3 className="text-xl font-bold mb-2">{card.title}</h3>
                     <p className="text-sm mb-4 line-clamp-3">{card.content}</p>
                     {cardLink && (
-                      <div className="flex items-center text-sm font-semibold text-gray-900">
+                      <div className="flex items-center text-sm font-semibold text-[#1f9d55]">
                         <span>Ver / Comprar</span>
                         <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -282,7 +290,8 @@ export default function HomePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-        <div className="bg-[#f8f9fa] border border-[#dee2e6] rounded-3xl p-6 sm:p-10 text-center">
+        <div className="bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#1f9d55_0%,#f6c700_45%,#1e3a8a_100%)] opacity-[0.07]" />
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
             Não perca essa oportunidade!
           </h2>
@@ -291,7 +300,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/comprar"
-            className="inline-block px-8 py-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-bold text-lg shadow transition-all"
+            className="inline-block px-8 py-4 bg-[#1e3a8a] text-white rounded-xl hover:bg-[#17306f] font-bold text-lg shadow transition-all border border-[#12285e]"
           >
             Comprar Meu Abadá Agora
           </Link>
