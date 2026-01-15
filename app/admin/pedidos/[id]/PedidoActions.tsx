@@ -33,30 +33,6 @@ export default function PedidoActions({ order }: { order: any }) {
     }
   }
 
-  async function handleCriarTroca() {
-    setLoading(true)
-    setError('')
-
-    try {
-      const res = await fetch('/api/trocas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.id }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao criar troca')
-      }
-
-      router.refresh()
-    } catch (error: any) {
-      setError(error.message || 'Erro ao criar troca')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="border-t pt-6">
       <h3 className="font-semibold mb-4 text-blue-900">Ações</h3>
@@ -88,6 +64,26 @@ export default function PedidoActions({ order }: { order: any }) {
           </button>
         )}
 
+        {order.status === 'PAGO' && !order.exchangeToken && (
+          <button
+            onClick={() => handleAction('generate_exchange_token')}
+            disabled={loading}
+            className="px-6 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 disabled:opacity-50 font-semibold shadow transition-all border border-gray-300"
+          >
+            Gerar Token/QR
+          </button>
+        )}
+
+        {order.status === 'PAGO' && order.exchangeToken && (
+          <button
+            onClick={() => handleAction('resend_token_email')}
+            disabled={loading}
+            className="px-6 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 disabled:opacity-50 font-semibold shadow transition-all border border-gray-300"
+          >
+            Reenviar Token por Email
+          </button>
+        )}
+
         {order.status !== 'CANCELADO' && (
           <button
             onClick={() => handleAction('cancelar')}
@@ -95,16 +91,6 @@ export default function PedidoActions({ order }: { order: any }) {
             className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-semibold shadow-lg transition-all"
           >
             Cancelar Pedido
-          </button>
-        )}
-
-        {order.status === 'PAGO' && !order.exchangeToken && (
-          <button
-            onClick={handleCriarTroca}
-            disabled={loading}
-            className="px-6 py-2 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-lg hover:from-blue-800 hover:to-blue-900 disabled:opacity-50 font-semibold shadow-lg transition-all"
-          >
-            Criar Troca
           </button>
         )}
       </div>

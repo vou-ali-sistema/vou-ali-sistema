@@ -85,6 +85,10 @@ export default async function PedidoDetailPage({
               <p className="text-gray-600">External Reference</p>
               <p className="font-mono text-gray-900 break-all">{order.externalReference || '-'}</p>
             </div>
+            <div>
+              <p className="text-gray-600">Token de Troca</p>
+              <p className="font-mono text-gray-900 break-all">{order.exchangeToken || '-'}</p>
+            </div>
           </div>
         </div>
 

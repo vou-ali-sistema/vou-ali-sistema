@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { gerarTokenTroca } from '@/lib/utils'
+import { sendTokenEmail } from '@/lib/email'
 
 async function buscarStatusPagamentoMP(externalReference: string) {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
@@ -111,6 +113,65 @@ export async function PATCH(
           status: 'CANCELADO',
           paymentStatus: 'REJECTED',
         }
+      })
+    } else if (action === 'generate_exchange_token') {
+      // Só permite gerar token para pedido pago
+      if (order.status !== 'PAGO') {
+        return NextResponse.json(
+          { error: 'Pedido deve estar PAGO para gerar token de troca' },
+          { status: 400 }
+        )
+      }
+
+      if (!order.exchangeToken) {
+        const token = gerarTokenTroca()
+        await prisma.order.update({
+          where: { id: params.id },
+          data: { exchangeToken: token },
+        })
+      }
+    } else if (action === 'resend_token_email') {
+      // Reenviar email do token (sem regenerar)
+      if (order.status !== 'PAGO') {
+        return NextResponse.json(
+          { error: 'Pedido deve estar PAGO para reenviar o token' },
+          { status: 400 }
+        )
+      }
+
+      const orderWithCustomer = await prisma.order.findUnique({
+        where: { id: params.id },
+        include: { customer: true },
+      })
+
+      if (!orderWithCustomer) {
+        return NextResponse.json({ error: 'Pedido não encontrado' }, { status: 404 })
+      }
+
+      if (!orderWithCustomer.exchangeToken) {
+        // Se não tiver token ainda, gere e siga
+        const token = gerarTokenTroca()
+        await prisma.order.update({
+          where: { id: params.id },
+          data: { exchangeToken: token },
+        })
+        orderWithCustomer.exchangeToken = token
+      }
+
+      const email = orderWithCustomer.customer?.email
+      if (!email) {
+        return NextResponse.json(
+          { error: 'Cliente não possui e-mail cadastrado neste pedido' },
+          { status: 400 }
+        )
+      }
+
+      await sendTokenEmail({
+        to: email,
+        customerName: orderWithCustomer.customer.name,
+        token: orderWithCustomer.exchangeToken,
+        orderId: orderWithCustomer.id,
+        mpPaymentId: orderWithCustomer.mpPaymentId,
       })
     } else if (action === 'sync_mp') {
       const externalRef = order.externalReference || order.id
