@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import QRCode from 'qrcode'
 
 export default function PedidoActions({ order }: { order: any }) {
   const router = useRouter()
@@ -45,6 +46,72 @@ export default function PedidoActions({ order }: { order: any }) {
     return `${origin}/troca/${order.exchangeToken}`
   }
 
+  async function buildQrPngFile() {
+    const trocaUrl = getTrocaUrl()
+    if (!trocaUrl) throw new Error('Token não encontrado para gerar QR.')
+
+    const dataUrl = await QRCode.toDataURL(trocaUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 512,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    })
+
+    const blob = await fetch(dataUrl).then((r) => r.blob())
+    return new File([blob], `qrcode-${order.exchangeToken}.png`, { type: 'image/png' })
+  }
+
+  async function downloadQr() {
+    setError('')
+    setInfo('')
+    try {
+      const file = await buildQrPngFile()
+      const url = URL.createObjectURL(file)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      setInfo('QR baixado. Agora é só enviar no WhatsApp junto com o token.')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erro ao gerar QR'
+      setError(msg)
+    }
+  }
+
+  async function shareQrToWhatsApp() {
+    setError('')
+    setInfo('')
+    try {
+      const file = await buildQrPngFile()
+      const tokenText = `${order.exchangeToken}`
+
+      // Preferir compartilhar a IMAGEM + token (mobile)
+      const navAny: any = navigator as any
+      if (navAny?.share) {
+        const payload: any = { text: tokenText }
+        if (navAny.canShare?.({ files: [file] })) {
+          payload.files = [file]
+        }
+        await navAny.share(payload)
+        setInfo('Compartilhado.')
+        return
+      }
+
+      // Fallback: abrir WhatsApp Web com apenas o token (sem link)
+      window.open(`https://wa.me/?text=${encodeURIComponent(tokenText)}`, '_blank', 'noopener,noreferrer')
+      setInfo('Seu navegador não suporta compartilhar imagem automaticamente. Use "Baixar QR" para enviar a imagem.')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erro ao compartilhar'
+      setError(msg)
+    }
+  }
+
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text)
@@ -76,10 +143,6 @@ export default function PedidoActions({ order }: { order: any }) {
             <span className="font-semibold">Token:</span>{' '}
             <span className="font-mono break-all">{order.exchangeToken}</span>
           </p>
-          <p className="text-sm text-gray-700 mb-3">
-            <span className="font-semibold">Link:</span>{' '}
-            <span className="font-mono break-all">{getTrocaUrl()}</span>
-          </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -90,21 +153,18 @@ export default function PedidoActions({ order }: { order: any }) {
             </button>
             <button
               type="button"
-              onClick={() => copy(getTrocaUrl())}
+              onClick={shareQrToWhatsApp}
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold"
+            >
+              Compartilhar QR (WhatsApp)
+            </button>
+            <button
+              type="button"
+              onClick={downloadQr}
               className="px-4 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 font-semibold border border-gray-300"
             >
-              Copiar Link
+              Baixar QR (PNG)
             </button>
-            <a
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-semibold"
-              href={`https://wa.me/?text=${encodeURIComponent(
-                `Seu token de troca do Bloco Vou Ali:\n${order.exchangeToken}\n\nLink (QR Code): ${getTrocaUrl()}`
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Enviar por WhatsApp
-            </a>
             <a
               className="px-4 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 font-semibold border border-gray-300"
               href={getTrocaUrl()}
