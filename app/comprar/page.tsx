@@ -26,6 +26,8 @@ interface PromoCard {
   textColor: string | null
   linkEnabled: boolean
   linkUrl: string | null
+  placement: 'HOME' | 'COMPRAR' | 'BOTH'
+  comprarSlot: 'TOP' | 'BOTTOM' | null
 }
 
 export default function ComprarPage() {
@@ -67,7 +69,7 @@ export default function ComprarPage() {
 
         // Buscar cards de divulgação
         try {
-          const cardsRes = await fetch('/api/promo-cards')
+          const cardsRes = await fetch('/api/promo-cards?placement=COMPRAR')
           if (cardsRes.ok) {
             const cards = await cardsRes.json()
             setPromoCards(cards)
@@ -233,37 +235,41 @@ export default function ComprarPage() {
   }
 
   const total = calcularTotal()
+  const topPreferred = promoCards.filter((c) => c.comprarSlot === 'TOP')
+  const bottomPreferred = promoCards.filter((c) => c.comprarSlot === 'BOTTOM')
+  const unSlotted = promoCards.filter((c) => !c.comprarSlot)
+
+  const topCard = topPreferred[0] || unSlotted[0] || null
+  const bottomCandidate =
+    bottomPreferred[0] ||
+    (unSlotted.find((c) => c.id !== (topCard ? topCard.id : '')) || null)
+  const bottomCard = bottomCandidate && topCard && bottomCandidate.id === topCard.id ? null : bottomCandidate
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Cards de Divulgação - Acima (índices pares: 0, 2, 4...) */}
-        {promoCards.filter((_, index) => index % 2 === 0).length > 0 && (
-          <div className="mb-8 space-y-4">
-            {promoCards
-              .filter((_, index) => index % 2 === 0)
-              .map((card) => (
-                <div
-                  key={`top-${card.id}`}
-                  className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden"
-                  style={{
-                    backgroundColor: card.backgroundColor || '#f8f9fa',
-                    color: card.textColor || '#333333',
-                  }}
-                >
-                  {card.imageUrl && (
-                    <img
-                      src={card.imageUrl}
-                      alt={card.title}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-                    <p className="whitespace-pre-line">{card.content}</p>
-                  </div>
-                </div>
-              ))}
+        {/* Card de Divulgação - Acima do formulário */}
+        {topCard && (
+          <div className="mb-8">
+            <div
+              className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden"
+              style={{
+                backgroundColor: topCard.backgroundColor || '#f8f9fa',
+                color: topCard.textColor || '#333333',
+              }}
+            >
+              {topCard.imageUrl && (
+                <img
+                  src={topCard.imageUrl}
+                  alt={topCard.title}
+                  className="w-full h-48 object-cover"
+                />
+              )}
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">{topCard.title}</h3>
+                <p className="whitespace-pre-line">{topCard.content}</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -407,33 +413,28 @@ export default function ComprarPage() {
           </button>
         </form>
 
-        {/* Cards de Divulgação - Abaixo (índices ímpares: 1, 3, 5...) */}
-        {promoCards.filter((_, index) => index % 2 === 1).length > 0 && (
-          <div className="mt-8 space-y-4">
-            {promoCards
-              .filter((_, index) => index % 2 === 1)
-              .map((card) => (
-                <div
-                  key={`bottom-${card.id}`}
-                  className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden"
-                  style={{
-                    backgroundColor: card.backgroundColor || '#f8f9fa',
-                    color: card.textColor || '#333333',
-                  }}
-                >
-                  {card.imageUrl && (
-                    <img
-                      src={card.imageUrl}
-                      alt={card.title}
-                      className="w-full h-48 object-cover"
-                    />
-                  )}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-                    <p className="whitespace-pre-line">{card.content}</p>
-                  </div>
-                </div>
-              ))}
+        {/* Card de Divulgação - Embaixo do formulário */}
+        {bottomCard && (
+          <div className="mt-8">
+            <div
+              className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden"
+              style={{
+                backgroundColor: bottomCard.backgroundColor || '#f8f9fa',
+                color: bottomCard.textColor || '#333333',
+              }}
+            >
+              {bottomCard.imageUrl && (
+                <img
+                  src={bottomCard.imageUrl}
+                  alt={bottomCard.title}
+                  className="w-full h-48 object-cover"
+                />
+              )}
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2">{bottomCard.title}</h3>
+                <p className="whitespace-pre-line">{bottomCard.content}</p>
+              </div>
+            </div>
           </div>
         )}
       </div>

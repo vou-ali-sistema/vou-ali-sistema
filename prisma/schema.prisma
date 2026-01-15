@@ -38,6 +38,17 @@ enum CourtesyStatus {
   CANCELADA
 }
 
+enum PromoCardPlacement {
+  HOME
+  COMPRAR
+  BOTH
+}
+
+enum PromoCardComprarSlot {
+  TOP
+  BOTTOM
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -183,12 +194,15 @@ model PromoCard {
   slideInterval Int      @default(5000) // Intervalo em milissegundos (padrão 5 segundos)
   linkEnabled   Boolean  @default(true) // Se o card tem link clicável
   linkUrl       String?  // URL do link (se vazio, usa /comprar como padrão)
+  placement     PromoCardPlacement @default(BOTH) // Onde o card aparece
+  comprarSlot   PromoCardComprarSlot? // Se aparecer no /comprar, define se fica em cima ou embaixo do formulário
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   media PromoCardMedia[]
 
   @@index([active, displayOrder])
+  @@index([active, placement, displayOrder])
 }
 
 model PromoCardMedia {

@@ -30,6 +30,11 @@ const promoCardSchema = z.object({
     }
     return undefined
   }),
+  placement: z.enum(['HOME', 'COMPRAR', 'BOTH']).default('BOTH'),
+  comprarSlot: z.enum(['TOP', 'BOTTOM']).optional().nullable().transform(val => {
+    if (!val) return undefined
+    return val
+  }),
 })
 
 // GET - Buscar card específico
@@ -99,6 +104,8 @@ export async function PUT(
         slideInterval: data.slideInterval,
         linkEnabled: data.linkEnabled,
         linkUrl: data.linkUrl ?? null,
+        placement: data.placement,
+        comprarSlot: data.comprarSlot ?? null,
       },
       include: {
         media: {

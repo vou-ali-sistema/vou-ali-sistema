@@ -24,6 +24,8 @@ interface PromoCard {
   slideInterval: number
   linkEnabled: boolean
   linkUrl: string | null
+  placement: 'HOME' | 'COMPRAR' | 'BOTH'
+  comprarSlot: 'TOP' | 'BOTTOM' | null
   media?: PromoCardMedia[]
   createdAt: string
   updatedAt: string
@@ -49,6 +51,8 @@ export default function PromoCardsPage() {
     slideInterval: 5000,
     linkEnabled: true,
     linkUrl: '',
+    placement: 'BOTH' as 'HOME' | 'COMPRAR' | 'BOTH',
+    comprarSlot: '' as '' | 'TOP' | 'BOTTOM',
   })
   const [uploading, setUploading] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
@@ -95,6 +99,8 @@ export default function PromoCardsPage() {
         slideInterval: card.slideInterval ?? 5000,
         linkEnabled: card.linkEnabled ?? true,
         linkUrl: card.linkUrl || '',
+        placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH',
+        comprarSlot: (card.comprarSlot || '') as '' | 'TOP' | 'BOTTOM',
       })
       setPreviewImage(card.imageUrl || null)
       
@@ -125,6 +131,8 @@ export default function PromoCardsPage() {
         slideInterval: 5000,
         linkEnabled: true,
         linkUrl: '',
+        placement: 'BOTH',
+        comprarSlot: '',
       })
       setPreviewImage(null)
       setCardMedia([])
@@ -273,6 +281,8 @@ export default function PromoCardsPage() {
         slideInterval: formData.slideInterval ?? 5000,
         linkEnabled: formData.linkEnabled ?? true,
         linkUrl: formData.linkUrl || '',
+        placement: formData.placement,
+        comprarSlot: formData.comprarSlot || '',
       }
 
       const res = await fetch(url, {
@@ -332,6 +342,8 @@ export default function PromoCardsPage() {
           slideInterval: card.slideInterval ?? 5000,
           linkEnabled: card.linkEnabled ?? true,
           linkUrl: card.linkUrl || '',
+          placement: card.placement || 'BOTH',
+          comprarSlot: card.comprarSlot || '',
         }),
       })
 
@@ -498,18 +510,18 @@ export default function PromoCardsPage() {
                 </label>
                 
                 {/* Informações sobre tamanho ideal */}
-                <div className="mb-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                  <p className="text-sm font-semibold text-blue-900 mb-1">
+                <div className="mb-3 p-3 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-800 mb-1">
                     📐 Tamanho Ideal da Imagem:
                   </p>
-                  <ul className="text-xs text-blue-800 space-y-1 ml-4 list-disc">
+                  <ul className="text-xs text-gray-700 space-y-1 ml-4 list-disc">
                     <li><strong>Largura:</strong> 800px a 1200px (recomendado: 1000px)</li>
                     <li><strong>Altura:</strong> 400px a 600px (recomendado: 500px)</li>
                     <li><strong>Proporção:</strong> 2:1 (largura é o dobro da altura)</li>
                     <li><strong>Formato:</strong> JPG, PNG, GIF ou WEBP</li>
                     <li><strong>Tamanho máximo:</strong> 5MB</li>
                   </ul>
-                  <p className="text-xs text-blue-700 mt-2 italic">
+                  <p className="text-xs text-gray-600 mt-2 italic">
                     💡 Dica: Imagens muito grandes ou muito pequenas podem não ficar com boa aparência. Use o tamanho recomendado para melhor resultado!
                   </p>
                 </div>
@@ -607,6 +619,57 @@ export default function PromoCardsPage() {
                       Card Ativo
                     </span>
                   </label>
+                </div>
+              </div>
+
+              {/* Onde aparece */}
+              <div className="border-t-2 border-gray-200 pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">📍 Onde o card aparece</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Página
+                    </label>
+                    <select
+                      value={formData.placement}
+                      onChange={(e) => {
+                        const placement = e.target.value as 'HOME' | 'COMPRAR' | 'BOTH'
+                        setFormData(prev => ({
+                          ...prev,
+                          placement,
+                          comprarSlot: placement === 'HOME' ? '' : prev.comprarSlot,
+                        }))
+                      }}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="BOTH">Inicial + Comprar</option>
+                      <option value="HOME">Somente Inicial</option>
+                      <option value="COMPRAR">Somente Comprar</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Controle se o card aparece na home, na página de compra, ou nas duas.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Posição no /comprar
+                    </label>
+                    <select
+                      value={formData.comprarSlot}
+                      onChange={(e) => setFormData({ ...formData, comprarSlot: e.target.value as any })}
+                      disabled={!(formData.placement === 'COMPRAR' || formData.placement === 'BOTH')}
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                    >
+                      <option value="">Automático</option>
+                      <option value="TOP">Em cima do formulário</option>
+                      <option value="BOTTOM">Embaixo do formulário</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Se deixar “Automático”, o sistema preenche o espaço que estiver faltando.
+                    </p>
+                  </div>
                 </div>
               </div>
 

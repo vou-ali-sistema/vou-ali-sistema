@@ -30,6 +30,11 @@ const promoCardSchema = z.object({
     }
     return undefined
   }),
+  placement: z.enum(['HOME', 'COMPRAR', 'BOTH']).default('BOTH'),
+  comprarSlot: z.enum(['TOP', 'BOTTOM']).optional().nullable().transform(val => {
+    if (!val) return undefined
+    return val
+  }),
 })
 
 // GET - Listar todos os cards
@@ -66,6 +71,8 @@ export async function GET(request: NextRequest) {
       slideInterval: card.slideInterval ?? 5000,
       linkEnabled: card.linkEnabled ?? true,
       linkUrl: card.linkUrl ?? null,
+      placement: card.placement ?? 'BOTH',
+      comprarSlot: card.comprarSlot ?? null,
     }))
 
     return NextResponse.json(cardsWithDefaults)
@@ -103,6 +110,8 @@ export async function POST(request: NextRequest) {
         slideInterval: data.slideInterval,
         linkEnabled: data.linkEnabled,
         linkUrl: data.linkUrl ?? null,
+        placement: data.placement,
+        comprarSlot: data.comprarSlot ?? null,
       },
       include: {
         media: {

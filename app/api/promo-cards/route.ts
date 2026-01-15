@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET público - Listar apenas cards ativos
 export async function GET(request: NextRequest) {
   try {
+    const placement = request.nextUrl.searchParams.get('placement') // HOME | COMPRAR
+
+    const wherePlacement =
+      placement === 'HOME'
+        ? { in: ['HOME', 'BOTH'] as any }
+        : placement === 'COMPRAR'
+        ? { in: ['COMPRAR', 'BOTH'] as any }
+        : undefined
+
     const cards = await prisma.promoCard.findMany({
-      where: { active: true },
+      where: {
+        active: true,
+        ...(wherePlacement ? { placement: wherePlacement } : {}),
+      },
       include: {
         media: {
           orderBy: { displayOrder: 'asc' },
@@ -22,6 +37,8 @@ export async function GET(request: NextRequest) {
       ...card,
       linkEnabled: card.linkEnabled ?? true,
       linkUrl: card.linkUrl ?? null,
+      placement: card.placement ?? 'BOTH',
+      comprarSlot: card.comprarSlot ?? null,
     }))
 
     return NextResponse.json(cardsWithDefaults)
