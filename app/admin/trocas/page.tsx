@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import QrReaderClient from '@/app/components/QrReaderClient'
+import dynamic from 'next/dynamic'
+
+const QrReaderClient = dynamic(() => import('@/app/components/QrReaderClient'), {
+  ssr: false,
+})
 
 interface ExchangeData {
   type: 'order' | 'courtesy'
