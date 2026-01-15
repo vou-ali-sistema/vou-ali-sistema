@@ -54,6 +54,31 @@ export default function LotesPage() {
     }
   }
 
+  async function handleDelete(lot: Lot) {
+    if (lot.active) {
+      alert('Não é possível excluir um lote ativo. Ative outro lote primeiro.')
+      return
+    }
+
+    const ok = window.confirm(`Tem certeza que deseja excluir o lote "${lot.name}"?`)
+    if (!ok) return
+
+    try {
+      const res = await fetch(`/api/admin/lots/${lot.id}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        alert(data.error || 'Erro ao excluir lote')
+        return
+      }
+
+      await fetchLotes()
+      alert('Lote excluído com sucesso!')
+    } catch (error) {
+      alert('Erro ao excluir lote')
+    }
+  }
+
   if (loading) {
     return <div className="px-4 py-6">Carregando...</div>
   }
@@ -144,6 +169,14 @@ export default function LotesPage() {
                   >
                     Editar
                   </button>
+                  {!lote.active && (
+                    <button
+                      onClick={() => handleDelete(lote)}
+                      className="text-red-600 hover:text-red-900 font-semibold"
+                    >
+                      Excluir
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
