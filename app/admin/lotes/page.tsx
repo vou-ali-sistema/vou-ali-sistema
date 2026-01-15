@@ -25,7 +25,7 @@ export default function LotesPage() {
 
   async function fetchLotes() {
     try {
-      const res = await fetch('/api/admin/lots')
+      const res = await fetch('/api/admin/lots', { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         setLotes(data)
@@ -44,7 +44,7 @@ export default function LotesPage() {
       })
 
       if (res.ok) {
-        fetchLotes()
+        await fetchLotes()
         alert('Lote ativado com sucesso!')
       } else {
         alert('Erro ao ativar lote')
