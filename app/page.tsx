@@ -184,7 +184,7 @@ export default function HomePage() {
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">
             Destaques
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr items-stretch">
             {highlightCards.map((card) => {
               const cardLink = card.linkEnabled 
                 ? (card.linkUrl || '/comprar')
@@ -192,37 +192,42 @@ export default function HomePage() {
               
               const CardContent = (
                 <div
-                  className="bg-white rounded-2xl shadow-xl border-2 border-white/30 overflow-hidden transition-all hover:shadow-2xl"
+                  className="bg-white rounded-2xl shadow-xl border-2 border-white/30 overflow-hidden transition-all hover:shadow-2xl h-full flex flex-col"
                   style={{
                     backgroundColor: card.backgroundColor || '#ffffff',
                     color: card.textColor || '#333333',
                     cursor: cardLink ? 'pointer' : 'default',
                   }}
                 >
-                  {Array.isArray(card.media) && card.media.length > 0 ? (
+                  {(Array.isArray(card.media) && card.media.length > 0) || card.imageUrl ? (
                     <div className="p-4 pb-0">
-                      <PromoMediaCarousel
-                        media={card.media}
-                        autoPlay={card.autoPlay ?? true}
-                        intervalMs={card.slideInterval ?? 5000}
-                        altBase={card.title}
-                      />
-                    </div>
-                  ) : card.imageUrl ? (
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={card.imageUrl}
-                        alt={card.title}
-                        className="w-full h-56 object-cover"
-                        loading="lazy"
-                      />
+                      {Array.isArray(card.media) && card.media.length > 0 ? (
+                        <PromoMediaCarousel
+                          media={card.media}
+                          autoPlay={card.autoPlay ?? true}
+                          intervalMs={card.slideInterval ?? 5000}
+                          altBase={card.title}
+                        />
+                      ) : (
+                        <div className="relative w-full overflow-hidden rounded-xl border border-[#dee2e6] bg-white">
+                          <div className="aspect-[16/9] w-full bg-[#f8f9fa]">
+                            <img
+                              src={card.imageUrl as string}
+                              alt={card.title}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : null}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-                    <p className="text-sm mb-4 line-clamp-3">{card.content}</p>
+
+                  <div className="p-6 flex flex-col flex-1">
+                    <h3 className="text-xl font-bold mb-2 line-clamp-2">{card.title}</h3>
+                    <p className="text-sm mb-4 line-clamp-4">{card.content}</p>
                     {cardLink && (
-                      <div className="flex items-center text-sm font-semibold text-[#1f9d55]">
+                      <div className="mt-auto flex items-center text-sm font-semibold text-[#1f9d55]">
                         <span>Ver / Comprar</span>
                         <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -238,7 +243,7 @@ export default function HomePage() {
                   <Link
                     key={card.id}
                     href={cardLink}
-                    className="block group"
+                    className="block group h-full"
                   >
                     {CardContent}
                   </Link>
@@ -246,7 +251,7 @@ export default function HomePage() {
               }
 
               return (
-                <div key={card.id} className="block group">
+                <div key={card.id} className="block group h-full">
                   {CardContent}
                 </div>
               )
