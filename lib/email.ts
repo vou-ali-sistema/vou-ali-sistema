@@ -15,6 +15,10 @@ export async function sendTokenEmail({ to, customerName, token, orderId, mpPayme
   const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
   const trocaUrl = `${baseUrl}/troca/${token}`
 
+  if (!emailPassword) {
+    return { success: false, errorMessage: 'EMAIL_PASSWORD não configurado no servidor.' }
+  }
+
   // Configurar transporter para Gmail
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -118,6 +122,7 @@ Bloco Vou Ali - Sistema de Vendas
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('Erro ao enviar email:', error)
-    return { success: false, error }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return { success: false, errorMessage }
   }
 }

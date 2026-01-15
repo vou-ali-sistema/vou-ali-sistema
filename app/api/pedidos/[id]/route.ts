@@ -166,13 +166,20 @@ export async function PATCH(
         )
       }
 
-      await sendTokenEmail({
+      const result = await sendTokenEmail({
         to: email,
         customerName: orderWithCustomer.customer.name,
         token: orderWithCustomer.exchangeToken,
         orderId: orderWithCustomer.id,
         mpPaymentId: orderWithCustomer.mpPaymentId,
       })
+
+      if (!result || (result as any).success !== true) {
+        const msg =
+          (result as any)?.errorMessage ||
+          'Falha ao enviar email. Verifique EMAIL_FROM/EMAIL_PASSWORD e a caixa de spam.'
+        return NextResponse.json({ error: msg }, { status: 500 })
+      }
     } else if (action === 'sync_mp') {
       const externalRef = order.externalReference || order.id
       const payment = await buscarStatusPagamentoMP(externalRef)
