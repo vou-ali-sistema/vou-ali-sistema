@@ -47,7 +47,8 @@ export default function LotesPage() {
         await fetchLotes()
         alert('Lote ativado com sucesso!')
       } else {
-        alert('Erro ao ativar lote')
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || 'Erro ao ativar lote')
       }
     } catch (error) {
       alert('Erro ao ativar lote')
@@ -55,12 +56,11 @@ export default function LotesPage() {
   }
 
   async function handleDelete(lot: Lot) {
-    if (lot.active) {
-      alert('Não é possível excluir um lote ativo. Ative outro lote primeiro.')
-      return
-    }
-
-    const ok = window.confirm(`Tem certeza que deseja excluir o lote "${lot.name}"?`)
+    const ok = window.confirm(
+      lot.active
+        ? `O lote "${lot.name}" está ATIVO. Deseja excluir mesmo assim?\n\nIsso vai desativar e excluir o lote (se não houver pedidos vinculados).`
+        : `Tem certeza que deseja excluir o lote "${lot.name}"?`
+    )
     if (!ok) return
 
     try {
@@ -169,14 +169,12 @@ export default function LotesPage() {
                   >
                     Editar
                   </button>
-                  {!lote.active && (
-                    <button
-                      onClick={() => handleDelete(lote)}
-                      className="text-red-600 hover:text-red-900 font-semibold"
-                    >
-                      Excluir
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDelete(lote)}
+                    className="text-red-600 hover:text-red-900 font-semibold"
+                  >
+                    Excluir
+                  </button>
                 </td>
               </tr>
             ))}

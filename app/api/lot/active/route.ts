@@ -23,7 +23,9 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json(activeLot)
+    return NextResponse.json(activeLot, {
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
+    })
   } catch (error) {
     console.error('Erro ao buscar lote ativo:', error)
     return NextResponse.json(

@@ -17,7 +17,7 @@ export async function POST(
     }
 
     // Usar transação para garantir que só um lote fique ativo
-    const lot = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Desativar todos os lotes
       await tx.lot.updateMany({
         where: { active: true },
@@ -30,10 +30,13 @@ export async function POST(
         data: { active: true },
       })
 
-      return activatedLot
+      const activeCount = await tx.lot.count({ where: { active: true } })
+      return { activatedLot, activeCount }
     })
 
-    return NextResponse.json(lot)
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
+    })
   } catch (error) {
     console.error('Erro ao ativar lote:', error)
     return NextResponse.json(

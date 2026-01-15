@@ -58,3 +58,52 @@ export async function PUT(
   }
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    const lot = await prisma.lot.findUnique({
+      where: { id: params.id },
+      select: { id: true, active: true },
+    })
+
+    if (!lot) {
+      return NextResponse.json({ error: 'Lote não encontrado' }, { status: 404 })
+    }
+
+    const ordersCount = await prisma.order.count({ where: { lotId: params.id } })
+    if (ordersCount > 0) {
+      return NextResponse.json(
+        { error: 'Não é possível excluir este lote porque já existem pedidos vinculados a ele.' },
+        { status: 409 }
+      )
+    }
+
+    // Se estiver ativo, primeiro desativar e depois excluir (tudo em transação)
+    await prisma.$transaction(async (tx) => {
+      if (lot.active) {
+        await tx.lot.update({
+          where: { id: params.id },
+          data: { active: false },
+        })
+      }
+
+      await tx.lot.delete({ where: { id: params.id } })
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Erro ao excluir lote:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return NextResponse.json(
+      { error: 'Erro ao excluir lote', details: errorMessage },
+      { status: 500 }
+    )
+  }
+}
