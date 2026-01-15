@@ -24,6 +24,8 @@ export default function CortesiasPage() {
   const [cortesias, setCortesias] = useState<Courtesy[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [purging, setPurging] = useState(false)
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     fetchCortesias()
@@ -43,6 +45,29 @@ export default function CortesiasPage() {
     }
   }
 
+  async function handlePurge() {
+    const ok = confirm(
+      'ATENÇÃO: isso vai excluir TODAS as cortesias (e itens) permanentemente.\n\nDeseja continuar?'
+    )
+    if (!ok) return
+
+    setPurging(true)
+    setMessage('')
+    try {
+      const res = await fetch('/api/admin/courtesies/purge', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Erro ao limpar cortesias')
+      setMessage(
+        `Cortesias limpas: ${data.courtesiesDeleted ?? 0} (itens: ${data.itemsDeleted ?? 0}).`
+      )
+      await fetchCortesias()
+    } catch (err: any) {
+      setMessage(err.message || 'Erro ao limpar cortesias')
+    } finally {
+      setPurging(false)
+    }
+  }
+
   if (loading) {
     return <div className="px-4 py-6">Carregando...</div>
   }
@@ -51,13 +76,28 @@ export default function CortesiasPage() {
     <div className="px-4 py-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-blue-900">Cortesias</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg hover:from-green-700 hover:to-blue-950 font-semibold shadow-lg transition-all"
-        >
-          Nova Cortesia
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handlePurge}
+            disabled={purging}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold shadow-lg transition-all disabled:opacity-50"
+          >
+            {purging ? 'Limpando...' : 'Limpar Cortesias'}
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg hover:from-green-700 hover:to-blue-950 font-semibold shadow-lg transition-all"
+          >
+            Nova Cortesia
+          </button>
+        </div>
       </div>
+
+      {message && (
+        <div className="mb-4 bg-gray-50 border-2 border-gray-200 text-gray-900 px-4 py-3 rounded-lg">
+          {message}
+        </div>
+      )}
 
       {showModal && (
         <CriarCortesiaModal
