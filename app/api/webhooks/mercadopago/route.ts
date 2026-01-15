@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
             customerName: orderWithCustomer.customer.name,
             token: exchangeToken,
             orderId: externalReference,
+            mpPaymentId: paymentId,
           })
           console.log(`Email enviado para ${orderWithCustomer.customer.email}`)
         } catch (emailError) {

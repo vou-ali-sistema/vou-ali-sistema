@@ -6,9 +6,10 @@ interface SendTokenEmailParams {
   customerName: string
   token: string
   orderId: string
+  mpPaymentId?: string | null
 }
 
-export async function sendTokenEmail({ to, customerName, token, orderId }: SendTokenEmailParams) {
+export async function sendTokenEmail({ to, customerName, token, orderId, mpPaymentId }: SendTokenEmailParams) {
   const emailFrom = process.env.EMAIL_FROM || 'blocovouali@gmail.com'
   const emailPassword = process.env.EMAIL_PASSWORD || ''
   const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
@@ -74,6 +75,7 @@ export async function sendTokenEmail({ to, customerName, token, orderId }: SendT
         
         <p style="margin-top: 30px; font-size: 12px; color: #999; text-align: center;">
           Pedido: ${orderId}<br>
+          ${mpPaymentId ? `Pagamento (Mercado Pago): ${mpPaymentId}<br>` : ''}
           Bloco Vou Ali - Sistema de Vendas
         </p>
       </div>
@@ -99,6 +101,7 @@ Ou copie e cole o link acima no seu navegador.
 IMPORTANTE: Guarde este email com segurança. Você precisará do token para retirar seus itens.
 
 Pedido: ${orderId}
+${mpPaymentId ? `Pagamento (Mercado Pago): ${mpPaymentId}\n` : ''}
 Bloco Vou Ali - Sistema de Vendas
   `
 

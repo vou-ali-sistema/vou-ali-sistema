@@ -62,6 +62,32 @@ export default async function PedidoDetailPage({
           </span>
         </div>
 
+        <div className="mb-6 p-4 rounded-lg border-2 border-gray-200 bg-gray-50">
+          <h3 className="font-semibold mb-3 text-blue-900">Identificação</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-gray-600">Código do Pedido (completo)</p>
+              <p className="font-mono text-gray-900 break-all">{order.id}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Status do Pagamento</p>
+              <p className="font-semibold text-gray-900">{order.paymentStatus}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">ID do Pagamento (Mercado Pago)</p>
+              <p className="font-mono text-gray-900 break-all">{order.mpPaymentId || '-'}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Preference ID (Mercado Pago)</p>
+              <p className="font-mono text-gray-900 break-all">{order.mpPreferenceId || '-'}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">External Reference</p>
+              <p className="font-mono text-gray-900 break-all">{order.externalReference || '-'}</p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <h3 className="font-semibold mb-2 text-blue-900">Cliente</h3>
