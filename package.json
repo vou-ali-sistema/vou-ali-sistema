@@ -22,7 +22,7 @@
     "bcryptjs": "^2.4.3",
     "html5-qrcode": "^2.3.8",
     "mercadopago": "^2.1.7",
-    "next": "14.0.4",
+    "next": "^16.1.2",
     "next-auth": "^4.24.5",
     "nodemailer": "^7.0.12",
     "qrcode": "^1.5.3",
