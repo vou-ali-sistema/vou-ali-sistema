@@ -71,14 +71,12 @@ export default function HomePage() {
     : promoCards
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-white">
+    <div className="min-h-screen relative overflow-hidden bg-[#071a3a]">
       {/* Fundo estilo abadá (faixas diagonais bem suaves) */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 -left-40 h-[520px] w-[520px] rounded-full bg-[#1f9d55] opacity-[0.08]" />
-        <div className="absolute -top-52 -right-56 h-[620px] w-[620px] rounded-full bg-[#1e3a8a] opacity-[0.07]" />
-        <div className="absolute -bottom-60 left-1/2 h-[680px] w-[680px] -translate-x-1/2 rounded-full bg-[#f6c700] opacity-[0.10]" />
-
-        <div className="absolute inset-0 opacity-[0.12] bg-[linear-gradient(135deg,transparent_0%,transparent_42%,#1f9d55_42%,#1f9d55_50%,#f6c700_50%,#f6c700_58%,#1e3a8a_58%,#1e3a8a_66%,transparent_66%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(31,157,85,0.35),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(246,199,0,0.30),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(30,58,138,0.35),transparent_55%)]" />
+        <div className="absolute inset-0 opacity-[0.26] bg-[linear-gradient(135deg,transparent_0%,transparent_35%,#1f9d55_35%,#1f9d55_46%,#f6c700_46%,#f6c700_56%,#1e3a8a_56%,#1e3a8a_68%,transparent_68%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,26,58,0.55)_0%,rgba(7,26,58,0.25)_35%,rgba(7,26,58,0.65)_100%)]" />
       </div>
 
       {/* Faixa Brasil */}
@@ -86,7 +84,7 @@ export default function HomePage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-white/90 backdrop-blur border border-[#dee2e6] rounded-3xl p-6 sm:p-10 shadow-sm">
+        <div className="relative overflow-hidden bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-10 shadow-2xl border-2 border-[#f6c700]">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <div className="inline-flex flex-wrap gap-2 mb-4">
@@ -115,13 +113,13 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/comprar"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-[#1f9d55] text-white rounded-xl hover:bg-[#188a49] font-bold text-lg shadow transition-all border border-[#0f6b35]"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-[#1f9d55] text-white rounded-xl hover:bg-[#188a49] font-bold text-lg shadow-xl transition-all border-2 border-[#0f6b35]"
                 >
                   Comprar Agora
                 </Link>
                 <a
                   href="#percurso"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-white text-gray-900 rounded-xl hover:bg-gray-50 font-bold text-lg shadow-sm border border-[#dee2e6]"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-[#1e3a8a] text-white rounded-xl hover:bg-[#17306f] font-bold text-lg shadow-xl border-2 border-[#12285e]"
                 >
                   Ver Percurso
                 </a>
@@ -166,7 +164,7 @@ export default function HomePage() {
       {/* Cards Promocionais */}
       {!loading && highlightCards.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">
             Destaques
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -177,7 +175,7 @@ export default function HomePage() {
               
               const CardContent = (
                 <div
-                  className="bg-white rounded-2xl shadow-sm border border-[#dee2e6] overflow-hidden transition-all hover:shadow-md"
+                  className="bg-white rounded-2xl shadow-xl border-2 border-white/30 overflow-hidden transition-all hover:shadow-2xl"
                   style={{
                     backgroundColor: card.backgroundColor || '#ffffff',
                     color: card.textColor || '#333333',
@@ -243,7 +241,7 @@ export default function HomePage() {
       {/* Galeria (a partir das mídias dos cards HOME) */}
       {!loading && highlightCards.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">
             Galeria do Evento
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -276,7 +274,7 @@ export default function HomePage() {
 
       {/* Percurso do Bloco */}
       <div id="percurso" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 scroll-mt-24">
-        <div className="bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10">
+        <div className="bg-white/95 backdrop-blur border-2 border-[#1f9d55] rounded-3xl p-6 sm:p-10 shadow-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
@@ -354,8 +352,8 @@ export default function HomePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-        <div className="bg-white border border-[#dee2e6] rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#1f9d55_0%,#f6c700_45%,#1e3a8a_100%)] opacity-[0.07]" />
+        <div className="bg-white/95 backdrop-blur border-2 border-[#1e3a8a] rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden shadow-2xl">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#1f9d55_0%,#f6c700_45%,#1e3a8a_100%)] opacity-[0.16]" />
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
             Não perca essa oportunidade!
           </h2>
@@ -364,7 +362,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/comprar"
-            className="inline-block px-8 py-4 bg-[#1e3a8a] text-white rounded-xl hover:bg-[#17306f] font-bold text-lg shadow transition-all border border-[#12285e]"
+            className="inline-block px-8 py-4 bg-[#f6c700] text-gray-900 rounded-xl hover:bg-[#eab800] font-bold text-lg shadow-xl transition-all border-2 border-[#d2ab00]"
           >
             Comprar Meu Abadá Agora
           </Link>
