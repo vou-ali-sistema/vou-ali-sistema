@@ -24,6 +24,7 @@ interface PromoCard {
 export default function HomePage() {
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
+  const [galleryIndex, setGalleryIndex] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -92,6 +93,13 @@ export default function HomePage() {
 
   const glassBorderBg =
     'linear-gradient(90deg, rgba(34,197,94,0.55), rgba(56,189,248,0.35), rgba(59,130,246,0.50))'
+
+  const galleryThumbs = (() => {
+    const list = galleryMedia || []
+    if (list.length <= 8) return list
+    const start = ((galleryIndex % list.length) + list.length) % list.length
+    return Array.from({ length: 8 }, (_, i) => list[(start + i) % list.length])
+  })()
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#030817] text-[#EAF2FF]">
@@ -306,6 +314,7 @@ export default function HomePage() {
                     autoPlay={true}
                     intervalMs={galeriaCard?.slideInterval ?? 3500}
                     altBase={galeriaCard?.title || 'Galeria'}
+                    onIndexChange={setGalleryIndex}
                   />
                 </div>
                 <div className="px-6 pb-6">
@@ -333,6 +342,7 @@ export default function HomePage() {
                     autoPlay={true}
                     intervalMs={galeriaCard?.slideInterval ?? 3500}
                     altBase={galeriaCard?.title || 'Galeria'}
+                    onIndexChange={setGalleryIndex}
                   />
                 </div>
                 <div className="px-6 pb-6">
@@ -348,12 +358,15 @@ export default function HomePage() {
 
             {/* Miniaturas */}
             <div className="grid grid-cols-2 gap-4">
-              {galleryMedia.slice(0, 8).map((m, idx) => (
+              {galleryThumbs.map((m, idx) => (
                 galleryLink ? (
                   <Link
                     key={`${m.mediaUrl}-${idx}`}
                     href={galleryLink}
-                    className="block rounded-2xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px] hover:shadow-[0_14px_40px_rgba(0,0,0,0.45)] transition-shadow"
+                    className={[
+                      'block rounded-2xl overflow-hidden bg-white/5 backdrop-blur-[12px] hover:shadow-[0_14px_40px_rgba(0,0,0,0.45)] transition-shadow',
+                      idx === 0 ? 'border border-emerald-300/35 shadow-[0_0_0_1px_rgba(34,197,94,0.18)]' : 'border border-white/10',
+                    ].join(' ')}
                   >
                     <div className="aspect-square bg-white/5">
                       <img
@@ -367,7 +380,10 @@ export default function HomePage() {
                 ) : (
                   <div
                     key={`${m.mediaUrl}-${idx}`}
-                    className="block rounded-2xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px]"
+                    className={[
+                      'block rounded-2xl overflow-hidden bg-white/5 backdrop-blur-[12px]',
+                      idx === 0 ? 'border border-emerald-300/35 shadow-[0_0_0_1px_rgba(34,197,94,0.18)]' : 'border border-white/10',
+                    ].join(' ')}
                   >
                     <div className="aspect-square bg-white/5">
                       <img

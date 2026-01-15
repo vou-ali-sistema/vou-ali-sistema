@@ -22,12 +22,14 @@ export default function PromoMediaCarousel({
   intervalMs,
   altBase,
   className,
+  onIndexChange,
 }: {
   media: PromoCardMedia[]
   autoPlay?: boolean
   intervalMs?: number
   altBase?: string
   className?: string
+  onIndexChange?: (index: number) => void
 }) {
   const items = useMemo(() => normalizeMedia(media), [media])
   const [index, setIndex] = useState(0)
@@ -45,6 +47,10 @@ export default function PromoMediaCarousel({
     }, ms)
     return () => clearInterval(t)
   }, [autoPlay, intervalMs, items.length])
+
+  useEffect(() => {
+    onIndexChange?.(index)
+  }, [index, onIndexChange])
 
   if (!items.length) return null
   const active = items[Math.min(index, items.length - 1)]
