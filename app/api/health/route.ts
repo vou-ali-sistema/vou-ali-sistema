@@ -19,6 +19,8 @@ export async function GET() {
     APP_BASE_URL: process.env.APP_BASE_URL || null,
     hasNEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
     hasDATABASE_URL: !!process.env.DATABASE_URL,
+    VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA || null,
+    VERCEL_DEPLOYMENT_ID: process.env.VERCEL_DEPLOYMENT_ID || null,
   }
 
   const checks = await Promise.all([
