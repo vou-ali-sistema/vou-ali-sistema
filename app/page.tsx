@@ -90,31 +90,42 @@ export default function HomePage() {
     ? (galeriaCard.linkEnabled ? (galeriaCard.linkUrl || '/comprar') : null)
     : '/comprar'
 
+  const glassBorderBg =
+    'linear-gradient(90deg, rgba(34,197,94,0.55), rgba(56,189,248,0.35), rgba(59,130,246,0.50))'
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#071a3a]">
-      {/* Fundo estilo abadá (faixas diagonais bem suaves) */}
+    <div className="min-h-screen relative overflow-hidden bg-[#030817] text-[#EAF2FF]">
+      {/* Fundo Premium Brazil-Core High-Tech (Copa 2026) */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(31,157,85,0.35),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(246,199,0,0.30),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(30,58,138,0.35),transparent_55%)]" />
-        <div className="absolute inset-0 opacity-[0.26] bg-[linear-gradient(135deg,transparent_0%,transparent_35%,#1f9d55_35%,#1f9d55_46%,#f6c700_46%,#f6c700_56%,#1e3a8a_56%,#1e3a8a_68%,transparent_68%,transparent_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,26,58,0.55)_0%,rgba(7,26,58,0.25)_35%,rgba(7,26,58,0.65)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(34,197,94,0.22),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.18),transparent_40%),radial-gradient(circle_at_55%_92%,rgba(250,204,21,0.14),transparent_50%)]" />
+        <div className="absolute inset-0 opacity-[0.20] bg-[linear-gradient(135deg,transparent_0%,transparent_34%,rgba(34,197,94,0.35)_34%,rgba(34,197,94,0.35)_45%,rgba(250,204,21,0.26)_45%,rgba(250,204,21,0.26)_55%,rgba(56,189,248,0.28)_55%,rgba(56,189,248,0.28)_70%,transparent_70%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,8,23,0.80)_0%,rgba(3,8,23,0.40)_35%,rgba(3,8,23,0.88)_100%)]" />
       </div>
 
-      {/* Faixa Brasil */}
-      <div className="relative h-2 w-full bg-[linear-gradient(90deg,#1f9d55_0%,#1f9d55_33%,#f6c700_33%,#f6c700_66%,#1e3a8a_66%,#1e3a8a_100%)]" />
+      {/* Linha superior Brasil (detalhe) */}
+      <div className="relative h-1.5 w-full bg-[linear-gradient(90deg,#22c55e_0%,#22c55e_30%,#facc15_30%,#facc15_62%,#38bdf8_62%,#3b82f6_100%)]" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-10 shadow-2xl border-2 border-[#f6c700]">
+        <div
+          className="relative overflow-hidden rounded-3xl p-6 sm:p-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-[12px]"
+          style={{
+            border: '1px solid transparent',
+            background:
+              'linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08)) padding-box, ' +
+              `${glassBorderBg} border-box`,
+          }}
+        >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <div className="inline-flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1f9d55] text-white border border-[#0f6b35]">
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-[#EAF2FF] border border-emerald-400/35 backdrop-blur-[12px]">
                   Brasil
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#f6c700] text-gray-900 border border-[#d2ab00]">
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-yellow-400/20 text-[#EAF2FF] border border-yellow-300/30 backdrop-blur-[12px]">
                   Ano XI
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#1e3a8a] text-white border border-[#12285e]">
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-sky-400/15 text-[#EAF2FF] border border-sky-300/30 backdrop-blur-[12px]">
                   Desde 2016
                 </span>
               </div>
@@ -123,23 +134,29 @@ export default function HomePage() {
                 <Logo size="large" />
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#F4FAFF] mb-3">
                 Esse é o último!
               </h1>
-              <p className="text-base sm:text-lg text-gray-700 mb-6 max-w-xl">
-                Ano de Copa, clima de Brasil: garanta seu <span className="font-semibold">Abadá</span> e venha com a gente nessa festa.
+              <p className="text-base sm:text-lg text-white/80 mb-6 max-w-xl">
+                Ano de Copa, clima de Brasil: garanta seu <span className="font-semibold text-[#F4FAFF]">Abadá</span> e venha com a gente nessa festa.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/comprar"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-[#1f9d55] text-white rounded-xl hover:bg-[#188a49] font-bold text-lg shadow-xl transition-all border-2 border-[#0f6b35]"
+                  className="relative inline-flex items-center justify-center px-8 py-4 rounded-xl font-black text-lg tracking-wide text-[#061019] shadow-[0_16px_45px_rgba(34,197,94,0.25)] transition-all border border-emerald-300/30 overflow-hidden"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, rgba(34,197,94,1) 0%, rgba(250,204,21,1) 55%, rgba(56,189,248,1) 100%)',
+                  }}
                 >
-                  Comprar Agora
+                  <span className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.9),transparent_55%)]" />
+                  <span className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity bg-[linear-gradient(90deg,rgba(255,255,255,0.15),transparent,rgba(255,255,255,0.15))]" />
+                  <span className="relative">Comprar Agora</span>
                 </Link>
                 <a
                   href="#percurso"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-[#1e3a8a] text-white rounded-xl hover:bg-[#17306f] font-bold text-lg shadow-xl border-2 border-[#12285e]"
+                  className="inline-flex items-center justify-center px-8 py-4 rounded-xl font-black text-lg tracking-wide text-[#EAF2FF] shadow-[0_16px_45px_rgba(56,189,248,0.18)] border border-sky-300/25 bg-white/10 backdrop-blur-[12px] hover:bg-white/14 transition-colors"
                 >
                   Ver Percurso
                 </a>
@@ -153,10 +170,11 @@ export default function HomePage() {
                   autoPlay={true}
                   intervalMs={abadaCard.slideInterval ?? 5000}
                   altBase={abadaCard.title || 'Abadá'}
+                  className="shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
                 />
               ) : abadaCard?.imageUrl ? (
-                <div className="rounded-xl border border-[#dee2e6] overflow-hidden bg-white">
-                  <div className="aspect-[16/9] bg-[#f8f9fa]">
+                <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+                  <div className="aspect-[16/9] bg-white/5">
                     <img
                       src={abadaCard.imageUrl}
                       alt={abadaCard.title || 'Abadá'}
@@ -166,8 +184,8 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-[#dee2e6] bg-[#f8f9fa] p-6 text-sm text-gray-700">
-                  <p className="font-semibold text-gray-900 mb-2">Coloque a imagem do abadá aqui</p>
+                <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-[12px] p-6 text-sm text-white/75">
+                  <p className="font-semibold text-[#F4FAFF] mb-2">Coloque a imagem do abadá aqui</p>
                   <p>
                     No admin, crie um card com título contendo <span className="font-mono">Abadá</span> e envie a foto como mídia.
                   </p>
@@ -181,7 +199,7 @@ export default function HomePage() {
       {/* Cards Promocionais */}
       {!loading && highlightCards.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-5 tracking-tight">
             Destaques
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr items-stretch">
@@ -192,10 +210,13 @@ export default function HomePage() {
               
               const CardContent = (
                 <div
-                  className="bg-white rounded-2xl shadow-xl border-2 border-white/30 overflow-hidden transition-all hover:shadow-2xl h-full flex flex-col"
+                  className="rounded-2xl overflow-hidden transition-all h-full flex flex-col backdrop-blur-[12px] shadow-[0_18px_55px_rgba(0,0,0,0.35)] hover:shadow-[0_28px_70px_rgba(0,0,0,0.55)]"
                   style={{
-                    backgroundColor: card.backgroundColor || '#ffffff',
-                    color: card.textColor || '#333333',
+                    border: '1px solid transparent',
+                    background:
+                      `linear-gradient(${card.backgroundColor || 'rgba(255,255,255,0.07)'}, ${card.backgroundColor || 'rgba(255,255,255,0.07)'}) padding-box, ` +
+                      `${glassBorderBg} border-box`,
+                    color: card.textColor || '#EAF2FF',
                     cursor: cardLink ? 'pointer' : 'default',
                   }}
                 >
@@ -224,10 +245,10 @@ export default function HomePage() {
                   ) : null}
 
                   <div className="p-6 flex flex-col flex-1">
-                    <h3 className="text-xl font-bold mb-2 line-clamp-2">{card.title}</h3>
-                    <p className="text-sm mb-4 line-clamp-4">{card.content}</p>
+                    <h3 className="text-xl font-black mb-2 line-clamp-2 tracking-tight">{card.title}</h3>
+                    <p className="text-sm mb-4 line-clamp-4 text-white/80">{card.content}</p>
                     {cardLink && (
-                      <div className="mt-auto flex items-center text-sm font-semibold text-[#1f9d55]">
+                      <div className="mt-auto flex items-center text-sm font-black text-emerald-300">
                         <span>Ver / Comprar</span>
                         <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -263,7 +284,7 @@ export default function HomePage() {
       {/* Galeria (a partir das mídias dos cards HOME) */}
       {!loading && galleryMedia.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-5 tracking-tight">
             Galeria do Evento
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -271,7 +292,13 @@ export default function HomePage() {
             {galleryLink ? (
               <Link
                 href={galleryLink}
-                className="lg:col-span-2 block rounded-3xl overflow-hidden bg-white/95 backdrop-blur shadow-2xl border-2 border-[#f6c700] hover:shadow-[0_30px_70px_rgba(0,0,0,0.35)] transition-shadow"
+                className="lg:col-span-2 block rounded-3xl overflow-hidden backdrop-blur-[12px] shadow-[0_30px_80px_rgba(0,0,0,0.55)] hover:shadow-[0_38px_100px_rgba(0,0,0,0.70)] transition-shadow"
+                style={{
+                  border: '1px solid transparent',
+                  background:
+                    'linear-gradient(rgba(255,255,255,0.07), rgba(255,255,255,0.07)) padding-box, ' +
+                    `${glassBorderBg} border-box`,
+                }}
               >
                 <div className="p-4 sm:p-6">
                   <PromoMediaCarousel
@@ -282,16 +309,24 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="px-6 pb-6">
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                  <h3 className="text-xl sm:text-2xl font-black text-[#F4FAFF] tracking-tight">
                     Momentos de outros anos
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-700 mt-2">
+                  <p className="text-sm sm:text-base text-white/80 mt-2">
                     Uma prévia do clima do Bloco. Clique para garantir seu abadá.
                   </p>
                 </div>
               </Link>
             ) : (
-              <div className="lg:col-span-2 rounded-3xl overflow-hidden bg-white/95 backdrop-blur shadow-2xl border-2 border-[#f6c700]">
+              <div
+                className="lg:col-span-2 rounded-3xl overflow-hidden backdrop-blur-[12px] shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+                style={{
+                  border: '1px solid transparent',
+                  background:
+                    'linear-gradient(rgba(255,255,255,0.07), rgba(255,255,255,0.07)) padding-box, ' +
+                    `${glassBorderBg} border-box`,
+                }}
+              >
                 <div className="p-4 sm:p-6">
                   <PromoMediaCarousel
                     media={galleryMedia}
@@ -301,10 +336,10 @@ export default function HomePage() {
                   />
                 </div>
                 <div className="px-6 pb-6">
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                  <h3 className="text-xl sm:text-2xl font-black text-[#F4FAFF] tracking-tight">
                     Momentos de outros anos
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-700 mt-2">
+                  <p className="text-sm sm:text-base text-white/80 mt-2">
                     Uma prévia do clima do Bloco.
                   </p>
                 </div>
@@ -318,9 +353,9 @@ export default function HomePage() {
                   <Link
                     key={`${m.mediaUrl}-${idx}`}
                     href={galleryLink}
-                    className="block rounded-2xl border border-[#dee2e6] overflow-hidden bg-white hover:shadow-md transition-shadow"
+                    className="block rounded-2xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px] hover:shadow-[0_14px_40px_rgba(0,0,0,0.45)] transition-shadow"
                   >
-                    <div className="aspect-square bg-[#f8f9fa]">
+                    <div className="aspect-square bg-white/5">
                       <img
                         src={m.mediaUrl}
                         alt="Galeria"
@@ -332,9 +367,9 @@ export default function HomePage() {
                 ) : (
                   <div
                     key={`${m.mediaUrl}-${idx}`}
-                    className="block rounded-2xl border border-[#dee2e6] overflow-hidden bg-white"
+                    className="block rounded-2xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px]"
                   >
-                    <div className="aspect-square bg-[#f8f9fa]">
+                    <div className="aspect-square bg-white/5">
                       <img
                         src={m.mediaUrl}
                         alt="Galeria"
@@ -352,17 +387,25 @@ export default function HomePage() {
 
       {/* Percurso do Bloco */}
       <div id="percurso" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 scroll-mt-24">
-        <div className="bg-white/95 backdrop-blur border-2 border-[#1f9d55] rounded-3xl p-6 sm:p-10 shadow-2xl">
+        <div
+          className="backdrop-blur-[12px] rounded-3xl p-6 sm:p-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          style={{
+            border: '1px solid transparent',
+            background:
+              'linear-gradient(rgba(255,255,255,0.07), rgba(255,255,255,0.07)) padding-box, ' +
+              `${glassBorderBg} border-box`,
+          }}
+        >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-4 tracking-tight">
                 Percurso do bloco
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Saída</h3>
-                  <ul className="list-disc ml-5 space-y-1 text-sm text-gray-700">
+                  <h3 className="text-sm font-black text-white/90 mb-2">Saída</h3>
+                  <ul className="list-disc ml-5 space-y-1 text-sm text-white/80">
                     <li>Confraria do Rei</li>
                     <li>Prof. Sandoval Arroxelas</li>
                     <li>José Júlio Sawer</li>
@@ -372,14 +415,14 @@ export default function HomePage() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Chegada</h3>
-                  <ul className="list-disc ml-5 space-y-1 text-sm text-gray-700">
+                  <h3 className="text-sm font-black text-white/90 mb-2">Chegada</h3>
+                  <ul className="list-disc ml-5 space-y-1 text-sm text-white/80">
                     <li>Av. Eng. Paulo Brandão Nogueira</li>
                   </ul>
 
                   <div className="mt-4">
                     <a
-                      className="inline-flex items-center gap-2 text-sm font-semibold text-gray-900 underline underline-offset-4 hover:text-gray-700"
+                      className="inline-flex items-center gap-2 text-sm font-black text-emerald-300 underline underline-offset-4 hover:text-emerald-200"
                       href="https://www.google.com/maps/search/?api=1&query=Av.%20Eng.%20Paulo%20Brand%C3%A3o%20Nogueira"
                       target="_blank"
                       rel="noreferrer"
@@ -391,7 +434,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500 mt-5">
+              <p className="text-xs text-white/60 mt-5">
                 Observação: percurso sujeito a ajustes pela organização.
               </p>
             </div>
@@ -406,8 +449,8 @@ export default function HomePage() {
                   altBase={percursoCard.title}
                 />
               ) : percursoCard?.imageUrl ? (
-                <div className="rounded-xl border border-[#dee2e6] overflow-hidden bg-white">
-                  <div className="aspect-[3/4] bg-[#f8f9fa]">
+                <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+                  <div className="aspect-[3/4] bg-white/5">
                     <img
                       src={percursoCard.imageUrl}
                       alt={percursoCard.title}
@@ -417,8 +460,8 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-[#dee2e6] bg-[#f8f9fa] p-6 text-sm text-gray-700">
-                  <p className="font-semibold text-gray-900 mb-2">Quer colocar a imagem do percurso aqui?</p>
+                <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-[12px] p-6 text-sm text-white/75">
+                  <p className="font-semibold text-[#F4FAFF] mb-2">Quer colocar a imagem do percurso aqui?</p>
                   <p>
                     No admin, crie um card com título contendo <span className="font-mono">Percurso</span> e envie essa foto como mídia.
                   </p>
@@ -430,19 +473,32 @@ export default function HomePage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-        <div className="bg-white/95 backdrop-blur border-2 border-[#1e3a8a] rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden shadow-2xl">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#1f9d55_0%,#f6c700_45%,#1e3a8a_100%)] opacity-[0.16]" />
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+        <div
+          className="backdrop-blur-[12px] rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          style={{
+            border: '1px solid transparent',
+            background:
+              'linear-gradient(rgba(255,255,255,0.07), rgba(255,255,255,0.07)) padding-box, ' +
+              `${glassBorderBg} border-box`,
+          }}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(34,197,94,0.22),transparent_60%),radial-gradient(circle_at_75%_30%,rgba(56,189,248,0.18),transparent_60%),radial-gradient(circle_at_50%_90%,rgba(250,204,21,0.12),transparent_55%)]" />
+          <h2 className="text-2xl sm:text-3xl font-black text-[#F4FAFF] mb-3 tracking-tight">
             Não perca essa oportunidade!
           </h2>
-          <p className="text-base sm:text-lg text-gray-700 mb-6">
+          <p className="text-base sm:text-lg text-white/80 mb-6">
             Garanta seu Abadá do Bloco Vou Ali e faça parte dessa festa incrível
           </p>
           <Link
             href="/comprar"
-            className="inline-block px-8 py-4 bg-[#f6c700] text-gray-900 rounded-xl hover:bg-[#eab800] font-bold text-lg shadow-xl transition-all border-2 border-[#d2ab00]"
+            className="relative inline-block px-8 py-4 rounded-xl font-black text-lg tracking-wide text-[#061019] shadow-[0_16px_45px_rgba(250,204,21,0.20)] transition-all border border-yellow-300/25 overflow-hidden"
+            style={{
+              background:
+                'linear-gradient(90deg, rgba(250,204,21,1) 0%, rgba(34,197,94,1) 55%, rgba(56,189,248,1) 100%)',
+            }}
           >
-            Comprar Meu Abadá Agora
+            <span className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.9),transparent_55%)]" />
+            <span className="relative">Comprar Meu Abadá Agora</span>
           </Link>
         </div>
       </div>
