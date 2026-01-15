@@ -8,7 +8,8 @@ type Props = {
 };
 
 export default function QrReaderClient({ onResult, elementId = "qr-reader" }: Props) {
-  const scannerRef = useRef<any>(null);
+  const qrRef = useRef<any>(null);
+  const startedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -17,26 +18,53 @@ export default function QrReaderClient({ onResult, elementId = "qr-reader" }: Pr
     async function start() {
       try {
         const mod = await import("html5-qrcode");
-        const { Html5QrcodeScanner } = mod as any;
+        const { Html5Qrcode } = mod as any;
 
         if (!isMounted) return;
 
-        // Evita criar duas vezes em hot-reload / navegação
-        if (scannerRef.current) return;
+        // Evita criar/iniciar duas vezes (hot-reload / re-render)
+        if (qrRef.current || startedRef.current) return;
 
-        const scanner = new Html5QrcodeScanner(elementId, { fps: 10, qrbox: 250 }, false);
-        scannerRef.current = scanner;
+        const qr = new Html5Qrcode(elementId);
+        qrRef.current = qr;
+        startedRef.current = true;
 
-        scanner.render(
-          (decodedText: string) => {
-            onResult(decodedText);
-          },
-          (_scanError: any) => {
-            // erros de leitura são comuns; não precisa spammar
-          }
-        );
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        try {
+          // Tenta abrir a câmera traseira (melhor para QR)
+          await qr.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText: string) => {
+              onResult(decodedText);
+            },
+            () => {
+              // erros de leitura são comuns; não precisa spammar
+            }
+          );
+        } catch {
+          // Fallback: câmera frontal (ou qualquer disponível)
+          await qr.start(
+            { facingMode: "user" },
+            config,
+            (decodedText: string) => {
+              onResult(decodedText);
+            },
+            () => {}
+          );
+        }
       } catch (e: any) {
-        setError(e?.message ?? "Falha ao iniciar leitor de QR");
+        const msg = String(e?.message ?? e ?? "");
+        if (msg.includes("NotAllowedError") || msg.toLowerCase().includes("permission")) {
+          setError("Permissão da câmera negada. Autorize a câmera no navegador e tente novamente.");
+        } else if (msg.includes("NotFoundError") || msg.toLowerCase().includes("no camera")) {
+          setError("Nenhuma câmera foi encontrada neste dispositivo.");
+        } else if (msg.toLowerCase().includes("secure") || msg.toLowerCase().includes("https")) {
+          setError("O leitor de câmera exige HTTPS. Acesse o sistema por https:// para abrir a câmera.");
+        } else {
+          setError(e?.message ?? "Falha ao iniciar leitor de QR");
+        }
       }
     }
 
@@ -47,10 +75,22 @@ export default function QrReaderClient({ onResult, elementId = "qr-reader" }: Pr
       // limpar scanner quando sair da página
       (async () => {
         try {
-          if (scannerRef.current) {
-            await scannerRef.current.clear();
-            scannerRef.current = null;
+          const qr = qrRef.current;
+          if (qr) {
+            // stop() libera a câmera; clear() limpa o DOM do leitor
+            try {
+              await qr.stop();
+            } catch {
+              // ignore
+            }
+            try {
+              await qr.clear();
+            } catch {
+              // ignore
+            }
+            qrRef.current = null;
           }
+          startedRef.current = false;
         } catch {
           // ignore
         }
