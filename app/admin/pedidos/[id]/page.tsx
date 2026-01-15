@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import PedidoActions from './PedidoActions'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 async function getOrder(id: string) {
   const order = await prisma.order.findUnique({
     where: { id },
@@ -22,10 +25,21 @@ export default async function PedidoDetailPage({
 }: {
   params: { id: string }
 }) {
-  const order = await getOrder(params.id)
+  let order: Awaited<ReturnType<typeof getOrder>> | null = null
+  try {
+    order = await getOrder(params.id)
+  } catch (err) {
+    console.error('Erro ao carregar pedido:', { id: params.id, err })
+    throw new Error('Falha ao carregar pedido.')
+  }
 
   if (!order) {
     notFound()
+  }
+
+  if (!order.customer) {
+    console.error('Pedido sem customer relacionado:', { id: order.id })
+    throw new Error('Pedido inválido: cliente não encontrado.')
   }
 
   const total = order.totalValueCents / 100
