@@ -28,7 +28,12 @@ export default function PedidoActions({ order }: { order: any }) {
       }
 
       if (action === 'resend_token_email') {
-        setInfo('Email enviado (verifique a caixa de entrada e o spam).')
+        setInfo('Token enviado por email (verifique a caixa de entrada e o spam).')
+        // Pequeno delay para o usuário ver a mensagem antes do refresh
+        setTimeout(() => {
+          router.refresh()
+        }, 1200)
+        return
       }
 
       router.refresh()
