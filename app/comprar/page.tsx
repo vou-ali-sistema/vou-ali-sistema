@@ -39,6 +39,7 @@ export default function ComprarPage() {
   const [lot, setLot] = useState<Lot | null>(null)
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
+  const [purchaseEnabled, setPurchaseEnabled] = useState<boolean | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   
@@ -56,6 +57,22 @@ export default function ComprarPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Verificar se a página de compra está habilitada
+        const statusRes = await fetch('/api/public/purchase-status', { cache: 'no-store' })
+        if (statusRes.ok) {
+          const status = await statusRes.json()
+          const enabled = status?.purchaseEnabled !== false
+          setPurchaseEnabled(enabled)
+          if (!enabled) {
+            setError('As compras estão temporariamente indisponíveis. Aguarde ou entre em contato com a organização.')
+            setLoading(false)
+            return
+          }
+        } else {
+          // se falhar o status, não travar (fallback)
+          setPurchaseEnabled(true)
+        }
+
         // Buscar lote ativo
         const lotRes = await fetch('/api/lot/active')
         if (!lotRes.ok) {
@@ -216,6 +233,21 @@ export default function ComprarPage() {
         <div className="text-center bg-white rounded-2xl shadow-2xl p-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
           <p className="text-gray-700">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (purchaseEnabled === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400">
+        <div className="text-center bg-white rounded-2xl shadow-2xl p-12 max-w-md mx-4">
+          <div className="mb-6">
+            <Logo size="large" showSubtitle={false} />
+          </div>
+          <div className="bg-gray-50 border-2 border-gray-200 text-gray-900 px-4 py-3 rounded-lg">
+            {error || 'As compras estão temporariamente indisponíveis.'}
+          </div>
         </div>
       </div>
     )

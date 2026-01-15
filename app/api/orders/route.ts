@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { criarPreferenciaPedido } from '@/lib/mercado-pago'
 import { z } from 'zod'
+import { isPurchaseEnabled } from '@/lib/settings'
 
 const criarOrderSchema = z.object({
   customer: z.object({
@@ -18,6 +19,14 @@ const criarOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const purchaseEnabled = await isPurchaseEnabled()
+    if (!purchaseEnabled) {
+      return NextResponse.json(
+        { error: 'Compras temporariamente indisponíveis. Aguarde ou entre em contato com a organização.' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const data = criarOrderSchema.parse(body)
 

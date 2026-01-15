@@ -7,6 +7,13 @@ async function main() {
   const email = "admin@vouali.com";
   const pass = "admin123";
 
+  // Configurações padrão do sistema
+  await prisma.appSetting.upsert({
+    where: { key: "purchase_enabled" },
+    update: {},
+    create: { key: "purchase_enabled", valueBool: true },
+  });
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (!existing) {
     const passwordHash = await bcrypt.hash(pass, 10);

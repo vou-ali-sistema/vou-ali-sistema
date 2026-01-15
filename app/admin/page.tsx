@@ -4,12 +4,16 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import FinanceiroWidget from './FinanceiroWidget'
+import CompraToggle from './CompraToggle'
+import { isPurchaseEnabled } from '@/lib/settings'
 
 async function getStats() {
   try {
     const whereActiveOrders = { archivedAt: null as any }
     const courtesyWhereAtivasOuRetiradas = { courtesy: { status: { in: ['ATIVA', 'RETIRADA'] } } } as any
     const wherePaidOrDeliveredOrders = { ...whereActiveOrders, status: { in: ['PAGO', 'RETIRADO'] } } as any
+    const purchaseEnabled = await isPurchaseEnabled()
+
     const [
       totalOrders,
       ordersPendentes,
@@ -129,6 +133,7 @@ async function getStats() {
         retirados: ordersRetirados,
         cancelados: ordersCancelados,
       },
+      purchaseEnabled,
       courtesies: {
         total: totalCourtesies,
         ativas: courtesiesAtivas,
@@ -193,14 +198,24 @@ export default async function DashboardPage() {
           <Link
             href="/comprar"
             target="_blank"
-            className="px-6 py-3 bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg hover:from-green-700 hover:to-blue-950 font-semibold shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+            aria-disabled={!stats.purchaseEnabled}
+            className={[
+              'px-6 py-3 rounded-lg font-semibold shadow-lg transition-all flex items-center gap-2',
+              stats.purchaseEnabled
+                ? 'bg-gradient-to-r from-green-600 to-blue-900 text-white hover:from-green-700 hover:to-blue-950 transform hover:scale-105'
+                : 'bg-gray-200 text-gray-700 border border-gray-300 cursor-not-allowed pointer-events-none',
+            ].join(' ')}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Página de Compra
+            {stats.purchaseEnabled ? 'Página de Compra' : 'Página de Compra (bloqueada)'}
           </Link>
         </div>
+      </div>
+
+      <div className="mb-8">
+        <CompraToggle initialEnabled={stats.purchaseEnabled} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
