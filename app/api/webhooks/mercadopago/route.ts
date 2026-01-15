@@ -3,6 +3,27 @@ import { prisma } from '@/lib/prisma'
 import { gerarTokenTroca } from '@/lib/utils'
 import { sendTokenEmail } from '@/lib/email'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+function extractPaymentId(raw: unknown): string | null {
+  if (!raw) return null
+  const s = String(raw).trim()
+  if (!s) return null
+
+  // Se vier uma URL do tipo .../payments/123 ou .../payments/123?x=y
+  const m = s.match(/\/payments\/(\d+)(?:\b|\/|\?|#)/i)
+  if (m?.[1]) return m[1]
+
+  // Se vier apenas o número
+  const onlyDigits = s.match(/^\d+$/)
+  if (onlyDigits) return s
+
+  // Alguns payloads podem vir como "/v1/payments/123"
+  const tailDigits = s.match(/(\d+)\s*$/)
+  return tailDigits?.[1] || null
+}
+
 async function consultarPagamentoMP(paymentId: string) {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
   if (!accessToken) {
@@ -18,7 +39,8 @@ async function consultarPagamentoMP(paymentId: string) {
   })
 
   if (!response.ok) {
-    throw new Error(`Erro ao consultar pagamento: ${response.statusText}`)
+    const text = await response.text().catch(() => '')
+    throw new Error(`Erro ao consultar pagamento: ${response.status} ${response.statusText} ${text}`)
   }
 
   return response.json()
@@ -32,11 +54,11 @@ export async function POST(request: NextRequest) {
     let paymentId: string | null = null
     
     if (body.data?.id) {
-      paymentId = body.data.id
+      paymentId = extractPaymentId(body.data.id)
     } else if (body.resource) {
-      paymentId = body.resource
+      paymentId = extractPaymentId(body.resource)
     } else if (body.id) {
-      paymentId = body.id
+      paymentId = extractPaymentId(body.id)
     }
 
     if (!paymentId) {
