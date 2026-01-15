@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Logo from '@/app/components/Logo'
+import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
 interface Item {
   itemType: 'ABADA' | 'PULSEIRA_EXTRA'
@@ -24,10 +25,13 @@ interface PromoCard {
   imageUrl: string | null
   backgroundColor: string | null
   textColor: string | null
+  autoPlay?: boolean
+  slideInterval?: number
   linkEnabled: boolean
   linkUrl: string | null
   placement: 'HOME' | 'COMPRAR' | 'BOTH'
   comprarSlot: 'TOP' | 'BOTTOM' | null
+  media?: PromoCardMedia[]
 }
 
 export default function ComprarPage() {
@@ -258,13 +262,23 @@ export default function ComprarPage() {
                 color: topCard.textColor || '#333333',
               }}
             >
-              {topCard.imageUrl && (
+              {Array.isArray(topCard.media) && topCard.media.length > 0 ? (
+                <div className="p-4 pb-0">
+                  <PromoMediaCarousel
+                    media={topCard.media}
+                    autoPlay={topCard.autoPlay ?? true}
+                    intervalMs={topCard.slideInterval ?? 5000}
+                    altBase={topCard.title}
+                  />
+                </div>
+              ) : topCard.imageUrl ? (
                 <img
                   src={topCard.imageUrl}
                   alt={topCard.title}
                   className="w-full h-48 object-cover"
+                  loading="lazy"
                 />
-              )}
+              ) : null}
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">{topCard.title}</h3>
                 <p className="whitespace-pre-line">{topCard.content}</p>
@@ -423,13 +437,23 @@ export default function ComprarPage() {
                 color: bottomCard.textColor || '#333333',
               }}
             >
-              {bottomCard.imageUrl && (
+              {Array.isArray(bottomCard.media) && bottomCard.media.length > 0 ? (
+                <div className="p-4 pb-0">
+                  <PromoMediaCarousel
+                    media={bottomCard.media}
+                    autoPlay={bottomCard.autoPlay ?? true}
+                    intervalMs={bottomCard.slideInterval ?? 5000}
+                    altBase={bottomCard.title}
+                  />
+                </div>
+              ) : bottomCard.imageUrl ? (
                 <img
                   src={bottomCard.imageUrl}
                   alt={bottomCard.title}
                   className="w-full h-48 object-cover"
+                  loading="lazy"
                 />
-              )}
+              ) : null}
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">{bottomCard.title}</h3>
                 <p className="whitespace-pre-line">{bottomCard.content}</p>

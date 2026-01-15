@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
+import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
 interface PromoCard {
   id: string
@@ -11,10 +12,13 @@ interface PromoCard {
   imageUrl: string | null
   backgroundColor: string | null
   textColor: string | null
+  autoPlay?: boolean
+  slideInterval?: number
   linkEnabled: boolean
   linkUrl: string | null
   placement: 'HOME' | 'COMPRAR' | 'BOTH'
   comprarSlot: 'TOP' | 'BOTTOM' | null
+  media?: PromoCardMedia[]
 }
 
 export default function HomePage() {
@@ -101,15 +105,25 @@ export default function HomePage() {
                     cursor: cardLink ? 'pointer' : 'default',
                   }}
                 >
-                  {card.imageUrl && (
+                  {Array.isArray(card.media) && card.media.length > 0 ? (
+                    <div className="p-4 pb-0">
+                      <PromoMediaCarousel
+                        media={card.media}
+                        autoPlay={card.autoPlay ?? true}
+                        intervalMs={card.slideInterval ?? 5000}
+                        altBase={card.title}
+                      />
+                    </div>
+                  ) : card.imageUrl ? (
                     <div className="relative overflow-hidden">
                       <img
                         src={card.imageUrl}
                         alt={card.title}
                         className="w-full h-56 object-cover"
+                        loading="lazy"
                       />
                     </div>
-                  )}
+                  ) : null}
                   <div className="p-6">
                     <h3 className="text-xl font-bold mb-2">{card.title}</h3>
                     <p className="text-sm mb-4 line-clamp-3">{card.content}</p>
@@ -144,6 +158,40 @@ export default function HomePage() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Galeria (a partir das mídias dos cards HOME) */}
+      {!loading && promoCards.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-5">
+            Galeria do Evento
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {promoCards
+              .flatMap((c) => (Array.isArray(c.media) ? c.media : []))
+              .filter((m) => m.mediaType === 'image')
+              .slice(0, 8)
+              .map((m, idx) => (
+                <Link
+                  key={`${m.mediaUrl}-${idx}`}
+                  href="/comprar"
+                  className="block rounded-2xl border border-[#dee2e6] overflow-hidden bg-white hover:shadow-md transition-shadow"
+                >
+                  <div className="aspect-square bg-[#f8f9fa]">
+                    <img
+                      src={m.mediaUrl}
+                      alt="Galeria"
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                </Link>
+              ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-3">
+            Dica: envie as artes (percurso, mockup do abadá, logo 2026) como mídias de um card marcado para “Somente Inicial”.
+          </p>
         </div>
       )}
 
