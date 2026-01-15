@@ -79,6 +79,13 @@ export default function HomePage() {
     : highlightCards.flatMap((c) => (Array.isArray(c.media) ? c.media : []))
   ).filter((m) => m.mediaType === 'image')
 
+  // Link da galeria:
+  // - Se houver um card "galeria", respeitar linkEnabled/linkUrl dele.
+  // - Se não houver, manter comportamento antigo (clicar leva ao /comprar).
+  const galleryLink = galeriaCard
+    ? (galeriaCard.linkEnabled ? (galeriaCard.linkUrl || '/comprar') : null)
+    : '/comprar'
+
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#071a3a]">
       {/* Fundo estilo abadá (faixas diagonais bem suaves) */}
@@ -252,45 +259,82 @@ export default function HomePage() {
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Card com carrossel automático */}
-            <Link
-              href="/comprar"
-              className="lg:col-span-2 block rounded-3xl overflow-hidden bg-white/95 backdrop-blur shadow-2xl border-2 border-[#f6c700] hover:shadow-[0_30px_70px_rgba(0,0,0,0.35)] transition-shadow"
-            >
-              <div className="p-4 sm:p-6">
-                <PromoMediaCarousel
-                  media={galleryMedia}
-                  autoPlay={true}
-                  intervalMs={galeriaCard?.slideInterval ?? 3500}
-                  altBase={galeriaCard?.title || 'Galeria'}
-                />
+            {galleryLink ? (
+              <Link
+                href={galleryLink}
+                className="lg:col-span-2 block rounded-3xl overflow-hidden bg-white/95 backdrop-blur shadow-2xl border-2 border-[#f6c700] hover:shadow-[0_30px_70px_rgba(0,0,0,0.35)] transition-shadow"
+              >
+                <div className="p-4 sm:p-6">
+                  <PromoMediaCarousel
+                    media={galleryMedia}
+                    autoPlay={true}
+                    intervalMs={galeriaCard?.slideInterval ?? 3500}
+                    altBase={galeriaCard?.title || 'Galeria'}
+                  />
+                </div>
+                <div className="px-6 pb-6">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                    Momentos de outros anos
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-700 mt-2">
+                    Uma prévia do clima do Bloco — fotos passando automaticamente. Clique para garantir seu abadá.
+                  </p>
+                </div>
+              </Link>
+            ) : (
+              <div className="lg:col-span-2 rounded-3xl overflow-hidden bg-white/95 backdrop-blur shadow-2xl border-2 border-[#f6c700]">
+                <div className="p-4 sm:p-6">
+                  <PromoMediaCarousel
+                    media={galleryMedia}
+                    autoPlay={true}
+                    intervalMs={galeriaCard?.slideInterval ?? 3500}
+                    altBase={galeriaCard?.title || 'Galeria'}
+                  />
+                </div>
+                <div className="px-6 pb-6">
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                    Momentos de outros anos
+                  </h3>
+                  <p className="text-sm sm:text-base text-gray-700 mt-2">
+                    Uma prévia do clima do Bloco — fotos passando automaticamente.
+                  </p>
+                </div>
               </div>
-              <div className="px-6 pb-6">
-                <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">
-                  Momentos de outros anos
-                </h3>
-                <p className="text-sm sm:text-base text-gray-700 mt-2">
-                  Uma prévia do clima do Bloco — fotos passando automaticamente. Clique para garantir seu abadá.
-                </p>
-              </div>
-            </Link>
+            )}
 
             {/* Miniaturas */}
             <div className="grid grid-cols-2 gap-4">
               {galleryMedia.slice(0, 8).map((m, idx) => (
-                <Link
-                  key={`${m.mediaUrl}-${idx}`}
-                  href="/comprar"
-                  className="block rounded-2xl border border-[#dee2e6] overflow-hidden bg-white hover:shadow-md transition-shadow"
-                >
-                  <div className="aspect-square bg-[#f8f9fa]">
-                    <img
-                      src={m.mediaUrl}
-                      alt="Galeria"
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
+                galleryLink ? (
+                  <Link
+                    key={`${m.mediaUrl}-${idx}`}
+                    href={galleryLink}
+                    className="block rounded-2xl border border-[#dee2e6] overflow-hidden bg-white hover:shadow-md transition-shadow"
+                  >
+                    <div className="aspect-square bg-[#f8f9fa]">
+                      <img
+                        src={m.mediaUrl}
+                        alt="Galeria"
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  </Link>
+                ) : (
+                  <div
+                    key={`${m.mediaUrl}-${idx}`}
+                    className="block rounded-2xl border border-[#dee2e6] overflow-hidden bg-white"
+                  >
+                    <div className="aspect-square bg-[#f8f9fa]">
+                      <img
+                        src={m.mediaUrl}
+                        alt="Galeria"
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
                   </div>
-                </Link>
+                )
               ))}
             </div>
           </div>
