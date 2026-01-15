@@ -120,7 +120,13 @@ export default function TrocasPage() {
     return () => {
       if (scannerRef.current) {
         scannerRef.current.stop().catch(() => {})
-        scannerRef.current.clear().catch(() => {})
+        // `clear()` é tipado como `void` em algumas versões do `html5-qrcode`
+        // então não podemos encadear `.catch()` aqui.
+        try {
+          scannerRef.current.clear()
+        } catch {
+          // ignorar
+        }
       }
     }
   }, [])

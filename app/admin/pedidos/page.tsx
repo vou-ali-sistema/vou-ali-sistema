@@ -1,18 +1,21 @@
 import Link from 'next/link'
+import { prisma } from '@/lib/prisma'
 
 async function getOrders() {
-  const res = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/orders`, {
-    cache: 'no-store',
-    headers: {
-      'Cookie': '', // Será preenchido pelo servidor
-    }
-  })
-  
-  if (!res.ok) {
-    return { orders: [], pagination: null }
+  try {
+    const orders = await prisma.order.findMany({
+      include: {
+        items: true,
+        customer: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    })
+
+    return { orders }
+  } catch {
+    return { orders: [] as any[] }
   }
-  
-  return res.json()
 }
 
 export default async function PedidosPage() {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Logo from './components/Logo'
+import Logo from '@/app/components/Logo'
 
 interface PromoCard {
   id: string

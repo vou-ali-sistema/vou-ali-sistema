@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import QRCodeDisplay from './QRCodeDisplay'
-import Logo from '../../components/Logo'
+import Logo from '@/app/components/Logo'
 
 async function getDataByToken(token: string) {
   // Buscar Order por exchangeToken

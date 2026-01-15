@@ -48,6 +48,18 @@ export async function POST(request: NextRequest) {
       return sum + (item.unitPriceCents * item.quantity)
     }, 0)
 
+    // Buscar lote ativo (Order.lotId é obrigatório no schema)
+    const activeLot = await prisma.lot.findFirst({
+      where: { active: true }
+    })
+
+    if (!activeLot) {
+      return NextResponse.json(
+        { error: 'Nenhum lote ativo encontrado. Configure um lote ativo no painel admin.' },
+        { status: 500 }
+      )
+    }
+
     // Criar ou buscar cliente
     const customer = await prisma.customer.upsert({
       where: { 
@@ -68,6 +80,7 @@ export async function POST(request: NextRequest) {
     const order = await prisma.order.create({
       data: {
         customerId: customer.id,
+        lotId: activeLot.id,
         status: 'PENDENTE',
         totalValueCents,
         externalReference: undefined, // será atualizado após criar

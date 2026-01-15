@@ -1,4 +1,4 @@
-import Logo from '../components/Logo'
+import Logo from '@/app/components/Logo'
 
 export default function TrocaPendentePage() {
   return (
