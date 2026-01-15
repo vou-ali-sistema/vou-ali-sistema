@@ -41,6 +41,38 @@ export default function PedidosToolbar({
     }
   }
 
+  async function purge(scope: 'ARCHIVED' | 'ALL') {
+    const warning =
+      scope === 'ALL'
+        ? 'ATENÇÃO: Isso vai APAGAR TODOS OS PEDIDOS (inclusive não arquivados) e seus itens.\n\nIsso é irreversível.'
+        : 'Isso vai APAGAR TODOS OS PEDIDOS ARQUIVADOS e seus itens.\n\nIsso é irreversível.'
+
+    const ok = window.confirm(warning)
+    if (!ok) return
+
+    const phrase = scope === 'ALL' ? 'ZERAR' : 'EXCLUIR'
+    const typed = window.prompt(`Digite ${phrase} para confirmar:`) || ''
+    if (typed.trim().toUpperCase() !== phrase) return
+
+    setBusy(true)
+    try {
+      const res = await fetch('/api/admin/orders/purge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(data.error || 'Erro ao limpar pedidos')
+        return
+      }
+      alert(`OK.\nPedidos apagados: ${data.deletedOrders || 0}\nItens apagados: ${data.deletedItems || 0}`)
+      router.refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 mb-6 border-2 border-gray-200">
       <form method="get" className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -101,6 +133,26 @@ export default function PedidosToolbar({
               Arquivar concluídos
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={() => purge('ARCHIVED')}
+            disabled={busy}
+            className="px-6 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-semibold border border-red-200 disabled:opacity-50"
+            title="Apaga pedidos arquivados (irreversível)"
+          >
+            Excluir arquivados
+          </button>
+
+          <button
+            type="button"
+            onClick={() => purge('ALL')}
+            disabled={busy}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold disabled:opacity-50"
+            title="Apaga TODOS os pedidos (irreversível)"
+          >
+            Zerar pedidos (tudo)
+          </button>
         </div>
       </form>
     </div>
