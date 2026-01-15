@@ -20,6 +20,8 @@ async function getStats() {
       courtesiesAtivas,
       courtesiesRetiradas,
       receitaTotalCents,
+      financeIncomeAgg,
+      financeExpenseAgg,
       courtesyItemsByType,
       orderItemsAbadaAgg,
       orderItemsPulseiraAgg,
@@ -41,6 +43,14 @@ async function getStats() {
         _sum: {
           totalValueCents: true,
         }
+      }),
+      prisma.financeEntry.aggregate({
+        where: { type: 'INCOME' as any },
+        _sum: { amountCents: true },
+      }),
+      prisma.financeEntry.aggregate({
+        where: { type: 'EXPENSE' as any },
+        _sum: { amountCents: true },
       }),
       prisma.courtesyItem.groupBy({
         by: ['itemType'],
@@ -69,7 +79,13 @@ async function getStats() {
       }),
     ])
 
-    const receitaTotal = (receitaTotalCents._sum.totalValueCents || 0) / 100
+    const receitaVendasCents = receitaTotalCents._sum.totalValueCents || 0
+    const entradasLancadasCents = financeIncomeAgg._sum.amountCents || 0
+    const saidasLancadasCents = financeExpenseAgg._sum.amountCents || 0
+    const receitaEmPosseCents = receitaVendasCents + entradasLancadasCents - saidasLancadasCents
+
+    const receitaVendas = receitaVendasCents / 100
+    const receitaEmPosse = receitaEmPosseCents / 100
     const courtesyByType = {
       ABADA: 0,
       PULSEIRA_EXTRA: 0,
@@ -140,8 +156,12 @@ async function getStats() {
           pulseiras: remainingPulseiras,
         },
       },
-      receitaTotal,
-      receitaTotalCents: receitaTotalCents._sum.totalValueCents || 0,
+      receitaVendas,
+      receitaVendasCents,
+      entradasLancadasCents,
+      saidasLancadasCents,
+      receitaEmPosse,
+      receitaEmPosseCents,
     }
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error)
@@ -200,10 +220,24 @@ export default async function DashboardPage() {
         </div>
 
         <div className="bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400 rounded-xl shadow-lg p-6 text-white border-2 border-white">
-          <h3 className="text-sm font-medium mb-2 opacity-90">Receita Total</h3>
+          <h3 className="text-sm font-medium mb-2 opacity-90">Receita (em posse)</h3>
           <p className="text-3xl font-bold">
-            R$ {stats.receitaTotal.toFixed(2).replace('.', ',')}
+            R$ {stats.receitaEmPosse.toFixed(2).replace('.', ',')}
           </p>
+          <div className="mt-3 text-xs opacity-95 space-y-1">
+            <div className="flex justify-between gap-3">
+              <span>Vendas:</span>
+              <span className="font-semibold">R$ {stats.receitaVendas.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span>Entradas:</span>
+              <span className="font-semibold">R$ {(stats.entradasLancadasCents / 100).toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span>Saídas:</span>
+              <span className="font-semibold">R$ {(stats.saidasLancadasCents / 100).toFixed(2).replace('.', ',')}</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -298,7 +332,9 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <FinanceiroWidget receitaVendasCents={stats.receitaTotalCents} />
+        <div className="md:col-span-2 lg:col-span-3">
+          <FinanceiroWidget receitaVendasCents={stats.receitaVendasCents} />
+        </div>
       </div>
     </div>
   )

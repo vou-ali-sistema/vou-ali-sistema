@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
       courtesiesAtivas,
       courtesiesRetiradas,
       receitaTotalCents,
+      financeIncomeAgg,
+      financeExpenseAgg,
       courtesyItemsByType,
       orderItemsAbadaAgg,
       orderItemsPulseiraAgg,
@@ -51,6 +53,14 @@ export async function GET(request: NextRequest) {
         _sum: {
           totalValueCents: true,
         }
+      }),
+      prisma.financeEntry.aggregate({
+        where: { type: 'INCOME' as any },
+        _sum: { amountCents: true },
+      }),
+      prisma.financeEntry.aggregate({
+        where: { type: 'EXPENSE' as any },
+        _sum: { amountCents: true },
       }),
       prisma.courtesyItem.groupBy({
         by: ['itemType'],
@@ -79,7 +89,13 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    const receitaTotal = (receitaTotalCents._sum.totalValueCents || 0) / 100
+    const receitaVendasCents = receitaTotalCents._sum.totalValueCents || 0
+    const entradasLancadasCents = financeIncomeAgg._sum.amountCents || 0
+    const saidasLancadasCents = financeExpenseAgg._sum.amountCents || 0
+    const receitaEmPosseCents = receitaVendasCents + entradasLancadasCents - saidasLancadasCents
+
+    const receitaVendas = receitaVendasCents / 100
+    const receitaEmPosse = receitaEmPosseCents / 100
     const courtesyByType = {
       ABADA: 0,
       PULSEIRA_EXTRA: 0,
@@ -150,7 +166,12 @@ export async function GET(request: NextRequest) {
           pulseiras: remainingPulseiras,
         },
       },
-      receitaTotal,
+      receitaVendas,
+      receitaVendasCents,
+      entradasLancadasCents,
+      saidasLancadasCents,
+      receitaEmPosse,
+      receitaEmPosseCents,
     })
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error)
