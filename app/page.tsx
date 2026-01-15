@@ -66,9 +66,18 @@ export default function HomePage() {
     const t = (c.title || '').toLowerCase()
     return t.includes('abad') || t.includes('camisa') || t.includes('uniforme')
   })
+  const galeriaCard = promoCards.find((c) => {
+    const t = (c.title || '').toLowerCase()
+    return t.includes('galeria') || t.includes('fotos') || t.includes('outros anos') || t.includes('anos anteriores')
+  })
   const highlightCards = percursoCard
     ? promoCards.filter((c) => c.id !== percursoCard.id)
     : promoCards
+
+  const galleryMedia: PromoCardMedia[] = (Array.isArray(galeriaCard?.media) && galeriaCard!.media!.length > 0
+    ? galeriaCard!.media!
+    : highlightCards.flatMap((c) => (Array.isArray(c.media) ? c.media : []))
+  ).filter((m) => m.mediaType === 'image')
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#071a3a]">
@@ -236,17 +245,38 @@ export default function HomePage() {
       )}
 
       {/* Galeria (a partir das mídias dos cards HOME) */}
-      {!loading && highlightCards.length > 0 && (
+      {!loading && galleryMedia.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           <h2 className="text-xl sm:text-2xl font-bold text-white mb-5">
             Galeria do Evento
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {highlightCards
-              .flatMap((c) => (Array.isArray(c.media) ? c.media : []))
-              .filter((m) => m.mediaType === 'image')
-              .slice(0, 8)
-              .map((m, idx) => (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Card com carrossel automático */}
+            <Link
+              href="/comprar"
+              className="lg:col-span-2 block rounded-3xl overflow-hidden bg-white/95 backdrop-blur shadow-2xl border-2 border-[#f6c700] hover:shadow-[0_30px_70px_rgba(0,0,0,0.35)] transition-shadow"
+            >
+              <div className="p-4 sm:p-6">
+                <PromoMediaCarousel
+                  media={galleryMedia}
+                  autoPlay={true}
+                  intervalMs={galeriaCard?.slideInterval ?? 3500}
+                  altBase={galeriaCard?.title || 'Galeria'}
+                />
+              </div>
+              <div className="px-6 pb-6">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">
+                  Momentos de outros anos
+                </h3>
+                <p className="text-sm sm:text-base text-gray-700 mt-2">
+                  Uma prévia do clima do Bloco — fotos passando automaticamente. Clique para garantir seu abadá.
+                </p>
+              </div>
+            </Link>
+
+            {/* Miniaturas */}
+            <div className="grid grid-cols-2 gap-4">
+              {galleryMedia.slice(0, 8).map((m, idx) => (
                 <Link
                   key={`${m.mediaUrl}-${idx}`}
                   href="/comprar"
@@ -262,6 +292,7 @@ export default function HomePage() {
                   </div>
                 </Link>
               ))}
+            </div>
           </div>
         </div>
       )}
