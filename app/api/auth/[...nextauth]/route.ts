@@ -24,10 +24,13 @@ function normalizeNextAuthUrl(req: Request) {
   }
 }
 
-async function wrapped(req: Request) {
+type RouteCtx = { params?: { nextauth?: string[] } }
+
+async function wrapped(req: Request, ctx: RouteCtx) {
   normalizeNextAuthUrl(req)
   try {
-    return await handler(req)
+    // Importante: repassar o `ctx` com `params.nextauth` para o NextAuth
+    return await handler(req, ctx as any)
   } catch (err) {
     // Garantir JSON (evita "Unexpected end of JSON input" no client)
     console.error('NextAuth fatal error:', err)
