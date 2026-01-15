@@ -32,9 +32,10 @@ export default function TrocasPage() {
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const scannerId = 'qr-reader'
 
-  async function handleLookup(e?: React.FormEvent) {
+  async function handleLookup(e?: React.FormEvent, tokenOverride?: string) {
     if (e) e.preventDefault()
-    if (!searchToken.trim()) return
+    const tokenToSearch = (tokenOverride ?? searchToken).trim()
+    if (!tokenToSearch) return
 
     setLoading(true)
     setError('')
@@ -44,7 +45,7 @@ export default function TrocasPage() {
       const res = await fetch('/api/exchange/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: searchToken }),
+        body: JSON.stringify({ token: tokenToSearch }),
       })
 
       if (res.ok) {
@@ -69,37 +70,6 @@ export default function TrocasPage() {
     setShowQRScanner(true)
     setScanning(true)
     setError('')
-
-    try {
-      const html5QrCode = new Html5Qrcode(scannerId)
-      scannerRef.current = html5QrCode
-
-      await html5QrCode.start(
-        { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        (decodedText) => {
-          // QR code detectado!
-          const token = decodedText.trim()
-          // Extrair token da URL se for uma URL completa
-          const urlMatch = token.match(/\/troca\/([a-zA-Z0-9]+)/)
-          const extractedToken = urlMatch ? urlMatch[1] : token
-          
-          setSearchToken(extractedToken)
-          handleLookup()
-        },
-        (errorMessage) => {
-          // Ignorar erros de leitura (normal durante a varredura)
-        }
-      )
-    } catch (err: any) {
-      console.error('Erro ao iniciar scanner:', err)
-      setError('Erro ao acessar a câmera. Verifique as permissões.')
-      setScanning(false)
-      setShowQRScanner(false)
-    }
   }
 
   async function stopScanner() {
@@ -115,6 +85,66 @@ export default function TrocasPage() {
     setShowQRScanner(false)
     setScanning(false)
   }
+
+  useEffect(() => {
+    if (!showQRScanner) return
+    if (!scanning) return
+    if (scannerRef.current) return
+
+    let cancelled = false
+
+    async function init() {
+      try {
+        // Esperar o container renderizar
+        let el: HTMLElement | null = null
+        for (let i = 0; i < 20; i++) {
+          el = document.getElementById(scannerId)
+          if (el) break
+          await new Promise((r) => setTimeout(r, 50))
+        }
+
+        if (!el) {
+          throw new Error(`HTML Element with id=${scannerId} not found`)
+        }
+
+        const html5QrCode = new Html5Qrcode(scannerId)
+        scannerRef.current = html5QrCode
+
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText) => {
+            if (cancelled) return
+            const raw = decodedText.trim()
+            const urlMatch = raw.match(/\/troca\/([a-zA-Z0-9]+)/)
+            const extractedToken = urlMatch ? urlMatch[1] : raw
+
+            setSearchToken(extractedToken)
+            handleLookup(undefined, extractedToken)
+          },
+          () => {
+            // Ignorar erros de leitura (normal durante a varredura)
+          }
+        )
+      } catch (err) {
+        console.error('Erro ao iniciar scanner:', err)
+        if (!cancelled) {
+          setError('Erro ao iniciar scanner. Verifique a permissão de câmera e tente novamente.')
+          setScanning(false)
+          setShowQRScanner(false)
+        }
+      }
+    }
+
+    init()
+
+    return () => {
+      cancelled = true
+    }
+  }, [showQRScanner, scanning])
 
   useEffect(() => {
     return () => {
