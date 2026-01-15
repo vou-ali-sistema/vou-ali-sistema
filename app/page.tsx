@@ -136,6 +136,24 @@ export default function HomePage() {
                 <span className="px-3 py-1 rounded-full text-xs font-black bg-sky-400/15 text-[#EAF2FF] border border-sky-300/30 backdrop-blur-[12px]">
                   Desde 2016
                 </span>
+                <a
+                  href="https://www.instagram.com/vouali_bloco/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/10 text-[#EAF2FF] border border-white/15 backdrop-blur-[12px] hover:bg-white/14 transition-colors"
+                  aria-label="Abrir Instagram do Bloco Vou Ali"
+                  title="Instagram @vouali_bloco"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="currentColor"
+                  >
+                    <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9A5.5 5.5 0 0 1 16.5 22h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2Zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9Zm10.2 1.8a1 1 0 1 1 0 2a1 1 0 0 1 0-2ZM12 7a5 5 0 1 1 0 10a5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6Z" />
+                  </svg>
+                  <span>@vouali_bloco</span>
+                </a>
               </div>
 
               <div className="mb-4">
