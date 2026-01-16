@@ -7,7 +7,9 @@ interface LogoProps {
 export default function Logo({ size = 'medium', showSubtitle = true, className = '' }: LogoProps) {
   // Preferir imagem oficial (substitui o "logo antigo" em todo o sistema)
   // Coloque o arquivo em: public/brand/logo-oficial.jpg
-  const logoImageSrc = '/brand/logo-oficial.jpg'
+  // IMPORTANTE: sempre que trocar a imagem, incremente a versão abaixo para furar cache do navegador/CDN.
+  const logoVersion = '2026-01-16-1'
+  const logoImageSrc = `/brand/logo-oficial.jpg?v=${logoVersion}`
 
   const sizeClasses = {
     small: {
