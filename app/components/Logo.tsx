@@ -6,9 +6,8 @@ interface LogoProps {
 
 export default function Logo({ size = 'medium', showSubtitle = true, className = '' }: LogoProps) {
   // Preferir imagem oficial (substitui o "logo antigo" em todo o sistema)
-  // Coloque o arquivo em: public/brand/WhatsApp Image 2026-01-15 at 12.36.51.jpg
-  // (Na URL precisa estar encoded por causa de espaços.)
-  const logoImageSrc = '/brand/WhatsApp%20Image%202026-01-15%20at%2012.36.51.jpg'
+  // Coloque o arquivo em: public/brand/logo-oficial.jpg
+  const logoImageSrc = '/brand/logo-oficial.jpg'
 
   const sizeClasses = {
     small: {
