@@ -386,11 +386,11 @@ export default function HomePage() {
                       idx === 0 ? 'border border-emerald-300/35 shadow-[0_0_0_1px_rgba(34,197,94,0.18)]' : 'border border-white/10',
                     ].join(' ')}
                   >
-                    <div className="aspect-square bg-white/5">
+                    <div className="aspect-square bg-white/5 p-2">
                       <img
                         src={m.mediaUrl}
                         alt="Galeria"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                         loading="lazy"
                       />
                     </div>
@@ -403,11 +403,11 @@ export default function HomePage() {
                       idx === 0 ? 'border border-emerald-300/35 shadow-[0_0_0_1px_rgba(34,197,94,0.18)]' : 'border border-white/10',
                     ].join(' ')}
                   >
-                    <div className="aspect-square bg-white/5">
+                    <div className="aspect-square bg-white/5 p-2">
                       <img
                         src={m.mediaUrl}
                         alt="Galeria"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain"
                         loading="lazy"
                       />
                     </div>
