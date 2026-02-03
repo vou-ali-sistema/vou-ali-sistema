@@ -23,6 +23,12 @@ interface PromoCard {
   media?: PromoCardMedia[]
 }
 
+// Cards fixos de apoios (edite aqui para incluir logos/links dos apoiadores)
+const APOIOS: { imageUrl: string; title: string; linkUrl?: string }[] = [
+  // Exemplo:
+  // { imageUrl: '/apoios/logo1.png', title: 'Apoiador 1', linkUrl: 'https://...' },
+]
+
 export default function HomePage() {
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -552,6 +558,58 @@ export default function HomePage() {
             <span className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.9),transparent_55%)]" />
             <span className="relative">Comprar Meu Abadá Agora</span>
           </Link>
+        </div>
+      </div>
+
+      {/* Apoios – cards fixos pequenos para logos/apoiadores */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+        <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-2 tracking-tight">
+          Nossos Apoios
+        </h2>
+        <p className="text-sm text-white/60 mb-6">Quem apoia o Bloco Vou Ali</p>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-[12px] p-6 sm:p-8">
+          {APOIOS.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              {APOIOS.map((apoio, idx) => {
+                const card = (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.06] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all duration-300 aspect-square max-w-[140px] mx-auto"
+                  >
+                    <div className="w-full h-full flex items-center justify-center p-2">
+                      <img
+                        src={apoio.imageUrl}
+                        alt={apoio.title}
+                        className="max-h-full max-w-full w-auto h-auto object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                    <span className="text-xs font-semibold text-white/80 mt-2 line-clamp-2 text-center">
+                      {apoio.title}
+                    </span>
+                  </div>
+                )
+                if (apoio.linkUrl) {
+                  return (
+                    <a
+                      key={idx}
+                      href={apoio.linkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030817] rounded-xl"
+                    >
+                      {card}
+                    </a>
+                  )
+                }
+                return <div key={idx}>{card}</div>
+              })}
+            </div>
+          ) : (
+            <p className="text-center text-sm text-white/50 py-8">
+              Em breve, nossos apoios em destaque aqui.
+            </p>
+          )}
         </div>
       </div>
     </div>
