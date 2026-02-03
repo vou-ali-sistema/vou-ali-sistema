@@ -512,12 +512,42 @@ export default function PromoCardsPage() {
           <h1 className="text-3xl font-bold text-blue-900 mb-2">Cards de Divulgação</h1>
           <p className="text-gray-600">Gerencie os cards exibidos na página de compra</p>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-lg transition-all"
-        >
-          + Novo Card
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => openModal()}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-lg transition-all"
+          >
+            + Novo Card
+          </button>
+          <button
+            onClick={() => {
+              setEditingCard(null)
+              setFormData({
+                title: '',
+                content: '—',
+                imageUrl: '',
+                active: true,
+                displayOrder: 0,
+                backgroundColor: '#f8f9fa',
+                textColor: '#333333',
+                autoPlay: true,
+                slideInterval: 3000,
+                linkEnabled: false,
+                linkUrl: '',
+                placement: 'APOIO',
+                comprarSlot: '',
+              })
+              setPreviewImage(null)
+              setCardMedia([])
+              setShowModal(true)
+              setError('')
+              setInfo('')
+            }}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg transition-all"
+          >
+            + Adicionar Apoio
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -647,10 +677,20 @@ export default function PromoCardsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Imagem (opcional)
+                  Imagem {formData.placement === 'APOIO' ? '(obrigatório para apoios)' : '(opcional)'}
                 </label>
                 
+                {formData.placement === 'APOIO' && (
+                  <div className="mb-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-900 mb-1">🏷️ Logo do apoio</p>
+                    <p className="text-xs text-blue-800">
+                      Envie o logo em <strong>PNG, JPG ou PDF</strong> (máx. 5MB). Para apoios, use o campo &quot;Imagem&quot; aqui ou as &quot;Fotos do carrossel&quot; depois de salvar.
+                    </p>
+                  </div>
+                )}
+                
                 {/* Informações sobre tamanho ideal */}
+                {formData.placement !== 'APOIO' && (
                 <div className="mb-3 p-3 bg-gray-50 border-2 border-gray-200 rounded-lg">
                   <p className="text-sm font-semibold text-gray-800 mb-1">
                     📐 Tamanho Ideal da Imagem:
@@ -666,6 +706,7 @@ export default function PromoCardsPage() {
                     💡 Dica: Imagens muito grandes ou muito pequenas podem não ficar com boa aparência. Use o tamanho recomendado para melhor resultado!
                   </p>
                 </div>
+                )}
                 
                 {/* Preview da imagem */}
                 {previewImage && (
@@ -701,7 +742,7 @@ export default function PromoCardsPage() {
                     <p className="text-sm text-blue-600 mt-1">Fazendo upload...</p>
                   )}
                   <p className="text-xs text-gray-500 mt-1">
-                    Formatos aceitos: JPG, PNG, GIF, WEBP. Tamanho máximo: 5MB
+                    Formatos aceitos: JPG, PNG, GIF, WEBP, PDF. Tamanho máximo: 5MB
                   </p>
                 </div>
               </div>
