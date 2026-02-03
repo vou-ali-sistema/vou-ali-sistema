@@ -332,6 +332,8 @@ export default function HomePage() {
                     autoPlay={true}
                     intervalMs={galeriaCard?.slideInterval ?? 3500}
                     altBase={galeriaCard?.title || 'Galeria'}
+                    frameClassName="w-full bg-[#f8f9fa] flex items-center justify-center p-2"
+                    mediaClassName="w-full h-auto max-h-[520px] !object-contain"
                     onIndexChange={setGalleryIndex}
                   />
                 </div>
@@ -360,6 +362,8 @@ export default function HomePage() {
                     autoPlay={true}
                     intervalMs={galeriaCard?.slideInterval ?? 3500}
                     altBase={galeriaCard?.title || 'Galeria'}
+                    frameClassName="w-full bg-[#f8f9fa] flex items-center justify-center p-2"
+                    mediaClassName="w-full h-auto max-h-[520px] !object-contain"
                     onIndexChange={setGalleryIndex}
                   />
                 </div>

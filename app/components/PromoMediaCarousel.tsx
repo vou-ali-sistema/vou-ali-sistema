@@ -22,6 +22,8 @@ export default function PromoMediaCarousel({
   intervalMs,
   altBase,
   className,
+  frameClassName,
+  mediaClassName,
   onIndexChange,
 }: {
   media: PromoCardMedia[]
@@ -29,6 +31,8 @@ export default function PromoMediaCarousel({
   intervalMs?: number
   altBase?: string
   className?: string
+  frameClassName?: string
+  mediaClassName?: string
   onIndexChange?: (index: number) => void
 }) {
   const items = useMemo(() => normalizeMedia(media), [media])
@@ -58,11 +62,18 @@ export default function PromoMediaCarousel({
   return (
     <div className={className}>
       <div className="relative w-full overflow-hidden rounded-xl border border-[#dee2e6] bg-white">
-        <div className="aspect-[16/9] w-full bg-[#f8f9fa] flex items-center justify-center p-2">
+        <div
+          className={[
+            'w-full bg-[#f8f9fa] flex items-center justify-center p-2',
+            frameClassName ?? 'aspect-[16/9]',
+          ].join(' ')}
+        >
           {active.mediaType === 'video' ? (
             <video
               src={active.mediaUrl}
-              className="h-full w-full !object-contain"
+              className={['h-full w-full !object-contain', mediaClassName]
+                .filter(Boolean)
+                .join(' ')}
               controls
               playsInline
               preload="metadata"
@@ -71,7 +82,9 @@ export default function PromoMediaCarousel({
             <img
               src={active.mediaUrl}
               alt={altBase ? `${altBase} (${index + 1}/${items.length})` : 'Mídia'}
-              className="h-full w-full !object-contain"
+              className={['h-full w-full !object-contain', mediaClassName]
+                .filter(Boolean)
+                .join(' ')}
               loading="lazy"
             />
           )}
