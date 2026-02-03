@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
+import Countdown from '@/app/components/Countdown'
+import Seal11Anos from '@/app/components/Seal11Anos'
+import ConfettiStreamers from '@/app/components/ConfettiStreamers'
 
 interface PromoCard {
   id: string
@@ -113,7 +116,15 @@ export default function HomePage() {
       {/* Linha superior Brasil (detalhe) */}
       <div className="relative h-1.5 w-full bg-[linear-gradient(90deg,#22c55e_0%,#22c55e_30%,#facc15_30%,#facc15_62%,#38bdf8_62%,#3b82f6_100%)]" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      {/* Confetes e serpentinas nas bordas */}
+      <ConfettiStreamers />
+
+      {/* Countdown para o desfile 2026 */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <Countdown />
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Hero Section */}
         <div
           className="relative overflow-hidden rounded-3xl p-6 sm:p-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-[12px]"
@@ -124,8 +135,12 @@ export default function HomePage() {
               `${glassBorderBg} border-box`,
           }}
         >
+          <Seal11Anos />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
+              <p className="text-sm sm:text-base font-bold text-amber-200/90 mb-3 tracking-wide">
+                Vou Ali 2026 – 11 anos de história
+              </p>
               <div className="inline-flex flex-wrap gap-2 mb-4">
                 <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-[#EAF2FF] border border-emerald-400/35 backdrop-blur-[12px]">
                   Brasil
@@ -227,9 +242,10 @@ export default function HomePage() {
       {/* Cards Promocionais */}
       {!loading && highlightCards.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
-          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-6 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-1 tracking-tight">
             Destaques
           </h2>
+          <p className="text-sm text-amber-200/80 mb-6">Vou Ali 2026 – 11 anos de história</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr items-stretch">
             {highlightCards.map((card) => {
               const cardLink = card.linkEnabled 
