@@ -42,6 +42,7 @@ enum PromoCardPlacement {
   HOME
   COMPRAR
   BOTH
+  APOIO  // Cards da seção "Nossos Apoios" (logos/apoiadores)
 }
 
 enum PromoCardComprarSlot {

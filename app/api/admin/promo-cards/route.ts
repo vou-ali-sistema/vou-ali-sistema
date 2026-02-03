@@ -30,7 +30,7 @@ const promoCardSchema = z.object({
     }
     return undefined
   }),
-  placement: z.enum(['HOME', 'COMPRAR', 'BOTH']).default('BOTH'),
+  placement: z.enum(['HOME', 'COMPRAR', 'BOTH', 'APOIO']).default('BOTH'),
   // UI envia '' quando não selecionado; aceitar e normalizar para undefined.
   comprarSlot: z
     .enum(['TOP', 'BOTTOM'])

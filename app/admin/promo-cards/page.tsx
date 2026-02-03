@@ -24,7 +24,7 @@ interface PromoCard {
   slideInterval: number
   linkEnabled: boolean
   linkUrl: string | null
-  placement: 'HOME' | 'COMPRAR' | 'BOTH'
+  placement: 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO'
   comprarSlot: 'TOP' | 'BOTTOM' | null
   media?: PromoCardMedia[]
   createdAt: string
@@ -52,13 +52,15 @@ export default function PromoCardsPage() {
     slideInterval: 3000,
     linkEnabled: true,
     linkUrl: '',
-    placement: 'BOTH' as 'HOME' | 'COMPRAR' | 'BOTH',
+    placement: 'BOTH' as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
     comprarSlot: '' as '' | 'TOP' | 'BOTTOM',
   })
   const [uploading, setUploading] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [cardMedia, setCardMedia] = useState<PromoCardMedia[]>([])
   const [uploadingMedia, setUploadingMedia] = useState(false)
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']
+  const maxUploadSize = 5 * 1024 * 1024
 
   async function getUploadError(res: Response) {
     const text = await res.text().catch(() => '')
@@ -70,6 +72,42 @@ export default function PromoCardsPage() {
     } catch {
       return text || `HTTP ${res.status}`
     }
+  }
+
+  async function convertPdfToPng(file: File) {
+    const pdfjs = await import('pdfjs-dist/build/pdf')
+    // Worker via CDN para evitar bundling pesado no client
+    pdfjs.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+
+    const buffer = await file.arrayBuffer()
+    const pdf = await pdfjs.getDocument({ data: buffer }).promise
+    const page = await pdf.getPage(1)
+    const viewport = page.getViewport({ scale: 2 })
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('Canvas não suportado para converter PDF')
+
+    canvas.width = viewport.width
+    canvas.height = viewport.height
+    await page.render({ canvasContext: ctx, viewport }).promise
+
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (!b) return reject(new Error('Falha ao converter PDF em imagem'))
+        resolve(b)
+      }, 'image/png', 0.92)
+    })
+
+    const pngName = file.name.replace(/\.pdf$/i, '.png')
+    return new File([blob], pngName, { type: 'image/png' })
+  }
+
+  async function normalizeToImage(file: File) {
+    if (file.type === 'application/pdf') {
+      return await convertPdfToPng(file)
+    }
+    return file
   }
 
   useEffect(() => {
@@ -113,7 +151,7 @@ export default function PromoCardsPage() {
         slideInterval: card.slideInterval ?? 5000,
         linkEnabled: card.linkEnabled ?? true,
         linkUrl: card.linkUrl || '',
-        placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH',
+        placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
         comprarSlot: (card.comprarSlot || '') as '' | 'TOP' | 'BOTTOM',
       })
       setPreviewImage(card.imageUrl || null)
@@ -175,14 +213,12 @@ export default function PromoCardsPage() {
     if (!list.length) return
 
     // Validar tipos e tamanho (compatível com /api/admin/upload)
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    const maxSize = 5 * 1024 * 1024
     for (const f of list) {
       if (!allowedTypes.includes(f.type)) {
-        setError('Tipo de arquivo não permitido. Use JPG, PNG, GIF ou WEBP')
+        setError('Tipo de arquivo não permitido. Use JPG, PNG, GIF, WEBP ou PDF')
         return
       }
-      if (f.size > maxSize) {
+      if (f.size > maxUploadSize) {
         setError('Arquivo muito grande. Tamanho máximo: 5MB')
         return
       }
@@ -193,7 +229,8 @@ export default function PromoCardsPage() {
     setInfo('')
 
     try {
-      for (const file of list) {
+      for (const rawFile of list) {
+        const file = await normalizeToImage(rawFile)
         const fd = new FormData()
         fd.append('file', file)
 
@@ -245,8 +282,9 @@ export default function PromoCardsPage() {
     setError('')
 
     try {
+      const uploadFile = mediaType === 'image' ? await normalizeToImage(file) : file
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', uploadFile)
 
       const uploadRes = await fetch('/api/admin/upload', {
         method: 'POST',
@@ -305,14 +343,13 @@ export default function PromoCardsPage() {
     if (!file) return
 
     // Validar tipo
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      setError('Tipo de arquivo não permitido. Use JPG, PNG, GIF ou WEBP')
+      setError('Tipo de arquivo não permitido. Use JPG, PNG, GIF, WEBP ou PDF')
       return
     }
 
     // Validar tamanho (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > maxUploadSize) {
       setError('Arquivo muito grande. Tamanho máximo: 5MB')
       return
     }
@@ -321,8 +358,9 @@ export default function PromoCardsPage() {
     setError('')
 
     try {
+      const normalized = await normalizeToImage(file)
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', normalized)
 
       const res = await fetch('/api/admin/upload', {
         method: 'POST',
@@ -440,7 +478,7 @@ export default function PromoCardsPage() {
           slideInterval: card.slideInterval ?? 5000,
           linkEnabled: card.linkEnabled ?? true,
           linkUrl: card.linkUrl || '',
-          placement: card.placement || 'BOTH',
+          placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
           comprarSlot: card.comprarSlot || '',
         }),
       })
@@ -654,7 +692,7 @@ export default function PromoCardsPage() {
                 <div>
                   <input
                     type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
                     onChange={handleFileUpload}
                     disabled={uploading}
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
@@ -678,7 +716,7 @@ export default function PromoCardsPage() {
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf"
                   disabled={!editingCard || uploadingMedia}
                   onChange={async (e) => {
                     const files = e.target.files
@@ -833,11 +871,11 @@ export default function PromoCardsPage() {
                     <select
                       value={formData.placement}
                       onChange={(e) => {
-                        const placement = e.target.value as 'HOME' | 'COMPRAR' | 'BOTH'
+                        const placement = e.target.value as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO'
                         setFormData(prev => ({
                           ...prev,
                           placement,
-                          comprarSlot: placement === 'HOME' ? '' : prev.comprarSlot,
+                          comprarSlot: (placement === 'HOME' || placement === 'APOIO') ? '' : prev.comprarSlot,
                         }))
                       }}
                       className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -845,9 +883,10 @@ export default function PromoCardsPage() {
                       <option value="BOTH">Inicial + Comprar</option>
                       <option value="HOME">Somente Inicial</option>
                       <option value="COMPRAR">Somente Comprar</option>
+                      <option value="APOIO">Apoios (Nossos Apoios)</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">
-                      Controle se o card aparece na home, na página de compra, ou nas duas.
+                      Controle onde o card aparece. &quot;Apoios&quot; = seção de logos na home.
                     </p>
                   </div>
 
@@ -859,6 +898,7 @@ export default function PromoCardsPage() {
                       value={formData.comprarSlot}
                       onChange={(e) => setFormData({ ...formData, comprarSlot: e.target.value as any })}
                       disabled={!(formData.placement === 'COMPRAR' || formData.placement === 'BOTH')}
+                      title={formData.placement === 'APOIO' ? 'Não se aplica a Apoios' : undefined}
                       className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
                     >
                       <option value="">Automático</option>

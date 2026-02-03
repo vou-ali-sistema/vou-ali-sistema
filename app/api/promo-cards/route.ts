@@ -7,13 +7,15 @@ export const runtime = 'nodejs'
 // GET público - Listar apenas cards ativos
 export async function GET(request: NextRequest) {
   try {
-    const placement = request.nextUrl.searchParams.get('placement') // HOME | COMPRAR
+    const placement = request.nextUrl.searchParams.get('placement') // HOME | COMPRAR | APOIO
 
     const wherePlacement =
       placement === 'HOME'
         ? { in: ['HOME', 'BOTH'] as any }
         : placement === 'COMPRAR'
         ? { in: ['COMPRAR', 'BOTH'] as any }
+        : placement === 'APOIO'
+        ? { equals: 'APOIO' as any }
         : undefined
 
     const cards = await prisma.promoCard.findMany({

@@ -23,17 +23,12 @@ interface PromoCard {
   media?: PromoCardMedia[]
 }
 
-// Cards fixos de apoios: coloque as imagens em public/apoios/ e liste aqui (imageUrl, title, linkUrl opcional)
-const APOIOS: { imageUrl: string; title: string; linkUrl?: string }[] = [
-  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 1' },
-  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 2' },
-  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 3' },
-  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 4' },
-  // Troque pelos seus logos: { imageUrl: '/apoios/logo.png', title: 'Nome', linkUrl: 'https://...' },
-]
+// Fallback de apoios quando não houver nenhum cadastrado no admin
+const APOIOS_FALLBACK: { imageUrl: string; title: string; linkUrl?: string }[] = []
 
 export default function HomePage() {
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
+  const [apoios, setApoios] = useState<{ imageUrl: string; title: string; linkUrl?: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [galleryIndex, setGalleryIndex] = useState(0)
 
@@ -42,33 +37,40 @@ export default function HomePage() {
     
     async function fetchCards() {
       try {
-        const res = await fetch('/api/promo-cards?placement=HOME')
+        const [homeRes, apoiosRes] = await Promise.all([
+          fetch('/api/promo-cards?placement=HOME'),
+          fetch('/api/promo-cards?placement=APOIO'),
+        ])
         if (cancelled) return
         
-        if (res.ok) {
-          const cards = await res.json()
-          if (!cancelled) {
-            setPromoCards(cards || [])
+        if (homeRes.ok) {
+          const cards = await homeRes.json()
+          if (!cancelled) setPromoCards(cards || [])
+        }
+        if (apoiosRes.ok) {
+          const apoiosCards = await apoiosRes.json()
+          if (!cancelled && Array.isArray(apoiosCards)) {
+            const list = apoiosCards.map((c: PromoCard) => {
+              const imageUrl = c.imageUrl || (Array.isArray(c.media) && c.media.length > 0 ? c.media.find((m: { mediaType: string }) => m.mediaType === 'image')?.mediaUrl : undefined) || ''
+              return {
+                imageUrl,
+                title: c.title || '',
+                linkUrl: c.linkEnabled && c.linkUrl ? c.linkUrl : undefined,
+              }
+            }).filter((a: { imageUrl: string }) => a.imageUrl)
+            setApoios(list.length > 0 ? list : APOIOS_FALLBACK)
           }
-        } else {
-          console.error('Erro ao carregar cards:', res.status)
         }
       } catch (err) {
-        if (!cancelled) {
-          console.error('Erro ao carregar cards:', err)
-        }
+        if (!cancelled) console.error('Erro ao carregar cards:', err)
       } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+        if (!cancelled) setLoading(false)
       }
     }
     
     fetchCards()
     
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [])
 
   const percursoCard = promoCards.find((c) =>
@@ -256,6 +258,11 @@ export default function HomePage() {
               const cardLink = card.linkEnabled 
                 ? (card.linkUrl || '/comprar')
                 : null
+              const linkLabel = card.linkEnabled
+                ? (!card.linkUrl || card.linkUrl === '/comprar'
+                    ? 'Ver / Comprar'
+                    : (card.linkUrl.includes('instagram.com') ? 'Ver Instagram' : 'Abrir link'))
+                : ''
               
               const CardContent = (
                 <div
@@ -296,7 +303,7 @@ export default function HomePage() {
                     <p className="text-sm mb-4 line-clamp-4 text-white/70 leading-relaxed">{card.content}</p>
                     {cardLink && (
                       <div className="mt-auto flex items-center text-sm font-semibold text-emerald-400/90 group-hover:text-emerald-300 transition-colors">
-                        <span>Ver / Comprar</span>
+                        <span>{linkLabel}</span>
                         <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
@@ -571,9 +578,9 @@ export default function HomePage() {
         </h2>
         <p className="text-sm text-white/60 mb-6">Quem apoia o Bloco Vou Ali</p>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-[12px] p-6 sm:p-8">
-          {APOIOS.length > 0 ? (
+          {apoios.length > 0 ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
-              {APOIOS.map((apoio, idx) => {
+              {apoios.map((apoio, idx) => {
                 const card = (
                   <div
                     key={idx}
@@ -610,7 +617,7 @@ export default function HomePage() {
             </div>
           ) : (
             <p className="text-center text-sm text-white/50 py-8">
-              Em breve, nossos apoios em destaque aqui.
+              Nenhum apoio cadastrado. No admin, crie cards e escolha a página &quot;Apoios (Nossos Apoios)&quot;.
             </p>
           )}
         </div>
