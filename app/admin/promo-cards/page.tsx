@@ -510,7 +510,7 @@ export default function PromoCardsPage() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-blue-900 mb-2">Cards de Divulgação</h1>
-          <p className="text-gray-600">Gerencie os cards exibidos na página de compra</p>
+          <p className="text-gray-600">Cards na home, compra e seção Nossos Apoios. Use &quot;Adicionar Apoio&quot; para logos.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -559,12 +559,42 @@ export default function PromoCardsPage() {
       {cards.length === 0 ? (
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <p className="text-gray-600 mb-4">Nenhum card cadastrado ainda.</p>
-          <button
-            onClick={() => openModal()}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
-          >
-            Criar Primeiro Card
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => openModal()}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+            >
+              Criar Primeiro Card
+            </button>
+            <button
+              onClick={() => {
+                setEditingCard(null)
+                setFormData({
+                  title: '',
+                  content: '—',
+                  imageUrl: '',
+                  active: true,
+                  displayOrder: 0,
+                  backgroundColor: '#f8f9fa',
+                  textColor: '#333333',
+                  autoPlay: true,
+                  slideInterval: 3000,
+                  linkEnabled: false,
+                  linkUrl: '',
+                  placement: 'APOIO',
+                  comprarSlot: '',
+                })
+                setPreviewImage(null)
+                setCardMedia([])
+                setShowModal(true)
+                setError('')
+                setInfo('')
+              }}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            >
+              + Adicionar Apoio
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
