@@ -197,10 +197,12 @@ export default function HomePage() {
                   intervalMs={abadaCard.slideInterval ?? 5000}
                   altBase={abadaCard.title || 'Abadá'}
                   className="shadow-[0_12px_40px_rgba(0,0,0,0.35)]"
+                  frameClassName="w-full min-h-[220px] bg-[#f8f9fa] flex items-center justify-center p-2 rounded-xl"
+                  mediaClassName="w-full h-auto max-h-[420px] !object-contain"
                 />
               ) : abadaCard?.imageUrl ? (
                 <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
-                  <div className="aspect-[16/9] bg-white/5">
+                  <div className="aspect-[16/9] bg-white/5 flex items-center justify-center p-2">
                     <img
                       src={abadaCard.imageUrl}
                       alt={abadaCard.title || 'Abadá'}
@@ -224,11 +226,11 @@ export default function HomePage() {
 
       {/* Cards Promocionais */}
       {!loading && highlightCards.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-5 tracking-tight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-6 tracking-tight">
             Destaques
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr items-stretch">
             {highlightCards.map((card) => {
               const cardLink = card.linkEnabled 
                 ? (card.linkUrl || '/comprar')
@@ -236,7 +238,7 @@ export default function HomePage() {
               
               const CardContent = (
                 <div
-                  className="rounded-2xl overflow-hidden transition-all h-full flex flex-col backdrop-blur-[12px] shadow-[0_18px_55px_rgba(0,0,0,0.35)] hover:shadow-[0_28px_70px_rgba(0,0,0,0.55)]"
+                  className="rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col backdrop-blur-[12px] shadow-[0_18px_55px_rgba(0,0,0,0.35)] hover:shadow-[0_24px_60px_rgba(34,197,94,0.15),0_28px_70px_rgba(0,0,0,0.5)] hover:border-emerald-400/20 border border-transparent"
                   style={{
                     border: '1px solid transparent',
                     background:
@@ -254,14 +256,16 @@ export default function HomePage() {
                           autoPlay={card.autoPlay ?? true}
                           intervalMs={card.slideInterval ?? 5000}
                           altBase={card.title}
+                          frameClassName="w-full min-h-[200px] bg-[#f8f9fa] flex items-center justify-center p-2 rounded-xl"
+                          mediaClassName="w-full h-auto max-h-[280px] !object-contain"
                         />
                       ) : (
-                        <div className="relative w-full overflow-hidden rounded-xl border border-[#dee2e6] bg-white">
-                          <div className="aspect-[16/9] w-full bg-[#f8f9fa]">
+                        <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                          <div className="aspect-[16/9] w-full bg-[#f8f9fa] flex items-center justify-center p-2">
                             <img
                               src={card.imageUrl as string}
                               alt={card.title}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain"
                               loading="lazy"
                             />
                           </div>
@@ -270,11 +274,11 @@ export default function HomePage() {
                     </div>
                   ) : null}
 
-                  <div className="p-6 flex flex-col flex-1">
-                    <h3 className="text-xl font-black mb-2 line-clamp-2 tracking-tight">{card.title}</h3>
-                    <p className="text-sm mb-4 line-clamp-4 text-white/80">{card.content}</p>
+                  <div className="p-5 sm:p-6 flex flex-col flex-1">
+                    <h3 className="text-lg sm:text-xl font-black mb-2 line-clamp-2 tracking-tight text-[#F4FAFF]">{card.title}</h3>
+                    <p className="text-sm mb-4 line-clamp-4 text-white/75 leading-relaxed">{card.content}</p>
                     {cardLink && (
-                      <div className="mt-auto flex items-center text-sm font-black text-emerald-300">
+                      <div className="mt-auto flex items-center text-sm font-black text-emerald-300 group-hover:text-emerald-200 transition-colors">
                         <span>Ver / Comprar</span>
                         <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -290,7 +294,7 @@ export default function HomePage() {
                   <Link
                     key={card.id}
                     href={cardLink}
-                    className="block group h-full"
+                    className="block group h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#030817] rounded-2xl"
                   >
                     {CardContent}
                   </Link>
@@ -309,8 +313,8 @@ export default function HomePage() {
 
       {/* Galeria (a partir das mídias dos cards HOME) */}
       {!loading && galleryMedia.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-5 tracking-tight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-6 tracking-tight">
             Galeria do Evento
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -424,7 +428,7 @@ export default function HomePage() {
       )}
 
       {/* Percurso do Bloco */}
-      <div id="percurso" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 scroll-mt-24">
+      <div id="percurso" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 scroll-mt-24">
         <div
           className="backdrop-blur-[12px] rounded-3xl p-6 sm:p-10 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
           style={{
@@ -485,6 +489,8 @@ export default function HomePage() {
                   autoPlay={false}
                   intervalMs={percursoCard.slideInterval ?? 5000}
                   altBase={percursoCard.title}
+                  frameClassName="w-full min-h-[200px] bg-[#f8f9fa] flex items-center justify-center p-2 rounded-xl"
+                  mediaClassName="w-full h-auto max-h-[380px] !object-contain"
                 />
               ) : percursoCard?.imageUrl ? (
                 <div className="rounded-xl border border-white/10 overflow-hidden bg-white/5 backdrop-blur-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
