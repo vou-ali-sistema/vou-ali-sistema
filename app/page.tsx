@@ -258,10 +258,10 @@ export default function HomePage() {
               const cardLink = card.linkEnabled 
                 ? (card.linkUrl || '/comprar')
                 : null
-              const linkLabel = card.linkEnabled
-                ? (!card.linkUrl || card.linkUrl === '/comprar'
+              const linkLabel = cardLink
+                ? (cardLink === '/comprar'
                     ? 'Ver / Comprar'
-                    : (card.linkUrl.includes('instagram.com') ? 'Ver Instagram' : 'Abrir link'))
+                    : (cardLink.includes('instagram.com') ? 'Ver Instagram' : 'Abrir link'))
                 : ''
               
               const CardContent = (
