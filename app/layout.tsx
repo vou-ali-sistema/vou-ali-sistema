@@ -10,8 +10,21 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Bloco Vou Ali - Sistema de Vendas',
-  description: 'Sistema de vendas do Bloco Vou Ali',
+  title: 'Bloco Vou Ali',
+  description: 'Bloco Vou Ali – 11 anos de história e energia de Carnaval.',
+  openGraph: {
+    title: 'Bloco Vou Ali',
+    description: 'Bloco Vou Ali – 11 anos de história, alegria e Carnaval.',
+    url: 'https://www.blocovouali.com/',
+    siteName: 'Bloco Vou Ali',
+    type: 'website',
+    locale: 'pt_BR',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Bloco Vou Ali',
+    description: 'Bloco Vou Ali – 11 anos de história, alegria e Carnaval.',
+  },
 }
 
 export default function RootLayout({

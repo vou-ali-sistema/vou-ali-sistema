@@ -54,8 +54,12 @@ export default function Countdown() {
   ] as const
 
   return (
-    <div className="inline-flex items-center gap-1 sm:gap-2 rounded-2xl bg-white/[0.06] border border-white/10 backdrop-blur-sm px-4 py-3 sm:px-5 sm:py-3.5 animate-countdown-motion">
-      {units.map(({ value, label }, i) => (
+    <div className="inline-flex flex-col items-center gap-2 rounded-2xl bg-white/[0.06] border border-white/10 backdrop-blur-sm px-4 py-3 sm:px-5 sm:py-4 animate-countdown-motion">
+      <span className="text-[10px] sm:text-xs font-semibold text-white/70 uppercase tracking-widest">
+        Ativa a contagem que o Vou Ali tá chegando.
+      </span>
+      <div className="flex items-center gap-1 sm:gap-2">
+        {units.map(({ value, label }, i) => (
         <span key={label} className="inline-flex items-baseline gap-0.5 sm:gap-1">
           {i > 0 && (
             <span className="tabular-nums text-lg sm:text-xl font-light text-white/40 select-none" aria-hidden>
@@ -74,7 +78,8 @@ export default function Countdown() {
             </span>
           </span>
         </span>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
