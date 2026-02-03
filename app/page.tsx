@@ -23,10 +23,13 @@ interface PromoCard {
   media?: PromoCardMedia[]
 }
 
-// Cards fixos de apoios (edite aqui para incluir logos/links dos apoiadores)
+// Cards fixos de apoios: coloque as imagens em public/apoios/ e liste aqui (imageUrl, title, linkUrl opcional)
 const APOIOS: { imageUrl: string; title: string; linkUrl?: string }[] = [
-  // Exemplo:
-  // { imageUrl: '/apoios/logo1.png', title: 'Apoiador 1', linkUrl: 'https://...' },
+  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 1' },
+  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 2' },
+  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 3' },
+  { imageUrl: '/apoios/placeholder.svg', title: 'Apoiador 4' },
+  // Troque pelos seus logos: { imageUrl: '/apoios/logo.png', title: 'Nome', linkUrl: 'https://...' },
 ]
 
 export default function HomePage() {
@@ -569,14 +572,14 @@ export default function HomePage() {
         <p className="text-sm text-white/60 mb-6">Quem apoia o Bloco Vou Ali</p>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-[12px] p-6 sm:p-8">
           {APOIOS.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
               {APOIOS.map((apoio, idx) => {
                 const card = (
                   <div
                     key={idx}
-                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.06] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all duration-300 aspect-square max-w-[140px] mx-auto"
+                    className="flex flex-col items-center justify-center p-3 rounded-lg bg-white/[0.06] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 transition-all duration-300 aspect-square max-w-[100px] sm:max-w-[110px] mx-auto"
                   >
-                    <div className="w-full h-full flex items-center justify-center p-2">
+                    <div className="w-full h-full flex items-center justify-center p-1.5 min-h-0 flex-1">
                       <img
                         src={apoio.imageUrl}
                         alt={apoio.title}
@@ -584,7 +587,7 @@ export default function HomePage() {
                         loading="lazy"
                       />
                     </div>
-                    <span className="text-xs font-semibold text-white/80 mt-2 line-clamp-2 text-center">
+                    <span className="text-[10px] sm:text-xs font-medium text-white/70 mt-1.5 line-clamp-2 text-center leading-tight">
                       {apoio.title}
                     </span>
                   </div>

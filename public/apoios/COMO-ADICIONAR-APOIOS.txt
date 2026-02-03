@@ -1,0 +1,26 @@
+COMO COLOCAR AS FOTOS DOS APOIOS
+================================
+
+1. Coloque as imagens dos logos aqui nesta pasta:
+   public/apoios/
+
+   Exemplos: logo-empresa1.png, logo-empresa2.jpg, etc.
+   Use imagens pequenas (ex: 200x200px) para ficarem organizadas.
+
+2. Abra o arquivo da página inicial:
+   app/page.tsx
+
+3. No início do arquivo, procure a lista APOIOS e adicione cada apoio assim:
+
+   const APOIOS = [
+     { imageUrl: '/apoios/logo-empresa1.png', title: 'Nome do Apoiador', linkUrl: 'https://site.com' },
+     { imageUrl: '/apoios/logo-empresa2.jpg', title: 'Outro Apoiador' },
+   ]
+
+   - imageUrl: caminho da imagem (sempre começando com /apoios/...)
+   - title: nome que aparece embaixo do logo
+   - linkUrl: (opcional) se quiser que o card seja clicável e abra o site
+
+4. Salve o arquivo e atualize a página no navegador.
+
+Os cards aparecem pequenos e organizados em grid na seção "Nossos Apoios".

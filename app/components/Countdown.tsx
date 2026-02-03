@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 
-// Data do desfile Vou Ali 2026 (sábado de Carnaval - ajuste se necessário)
 const DESFILE_DATE = new Date('2026-02-21T14:00:00')
 
 function pad(n: number) {
@@ -29,61 +28,53 @@ export default function Countdown() {
         return
       }
       const totalSeconds = Math.floor(diff / 1000)
-      const d = Math.floor(totalSeconds / (24 * 60 * 60))
-      const h = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60))
-      const m = Math.floor((totalSeconds % (60 * 60)) / 60)
-      const s = totalSeconds % 60
-      setDays(d)
-      setHours(h)
-      setMinutes(m)
-      setSeconds(s)
+      setDays(Math.floor(totalSeconds / (24 * 60 * 60)))
+      setHours(Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60)))
+      setMinutes(Math.floor((totalSeconds % (60 * 60)) / 60))
+      setSeconds(totalSeconds % 60)
     }
     tick()
-    const id = setInterval(tick, 1000) // atualiza a cada segundo
+    const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [])
 
   if (!mounted) {
     return (
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-        <span className="text-sm text-white/70">Carregando...</span>
+      <div className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-5 py-3">
+        <span className="text-sm text-white/60">—</span>
       </div>
     )
   }
 
-  const blocks = [
-    { value: days, label: 'Dias', key: 'd' },
-    { value: hours, label: 'Horas', key: 'h' },
-    { value: minutes, label: 'Min', key: 'm' },
-    { value: seconds, label: 'Seg', key: 's' },
-  ]
+  const units = [
+    { value: days, label: 'd' },
+    { value: hours, label: 'h' },
+    { value: minutes, label: 'm' },
+    { value: seconds, label: 's' },
+  ] as const
 
   return (
-    <div className="flex flex-col items-center gap-3 py-4 px-5 rounded-2xl bg-white/[0.06] border border-white/10 backdrop-blur-sm animate-countdown-motion">
-      <p className="text-xs sm:text-sm font-semibold text-white/70 tracking-wide text-center">
-        Contagem para o grande dia
-      </p>
-      <p className="text-[10px] sm:text-xs text-white/50 -mt-1 text-center">
-        Vou Ali · Carnaval 2026
-      </p>
-      <div className="flex flex-wrap items-stretch justify-center gap-2 sm:gap-3">
-        {blocks.map(({ value, label, key }) => (
-          <div
-            key={key}
-            className="flex flex-col items-center min-w-[3.5rem] sm:min-w-[4rem] rounded-xl bg-white/[0.08] border border-white/10 px-2 py-2 sm:px-3 sm:py-2.5"
-          >
+    <div className="inline-flex items-center gap-1 sm:gap-2 rounded-2xl bg-white/[0.06] border border-white/10 backdrop-blur-sm px-4 py-3 sm:px-5 sm:py-3.5 animate-countdown-motion">
+      {units.map(({ value, label }, i) => (
+        <span key={label} className="inline-flex items-baseline gap-0.5 sm:gap-1">
+          {i > 0 && (
+            <span className="tabular-nums text-lg sm:text-xl font-light text-white/40 select-none" aria-hidden>
+              :
+            </span>
+          )}
+          <span className="flex flex-col items-center">
             <span
-              key={`${key}-${pad(value)}`}
-              className="tabular-nums text-2xl sm:text-3xl font-black text-white text-center block animate-countdown-pulse"
+              key={`${label}-${pad(value)}`}
+              className="tabular-nums text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight animate-countdown-pulse"
             >
               {pad(value)}
             </span>
-            <span className="text-[10px] sm:text-xs font-semibold text-white/60 uppercase tracking-wider mt-1">
+            <span className="text-[9px] sm:text-[10px] font-medium text-white/50 uppercase tracking-widest mt-0.5">
               {label}
             </span>
-          </div>
-        ))}
-      </div>
+          </span>
+        </span>
+      ))}
     </div>
   )
 }
