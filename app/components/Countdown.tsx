@@ -40,8 +40,8 @@ export default function Countdown() {
 
   if (!mounted) {
     return (
-      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-400/15 via-pink-500/15 to-amber-400/15 border border-amber-300/25 border-pink-400/25 backdrop-blur-sm">
-        <span className="text-sm sm:text-base font-bold text-amber-200/90">Carregando...</span>
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+        <span className="text-sm sm:text-base font-bold text-white/80">Carregando...</span>
       </div>
     )
   }
@@ -53,20 +53,19 @@ export default function Countdown() {
   ]
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-400/15 via-pink-500/15 to-amber-400/15 border border-amber-300/25 border-pink-400/25 backdrop-blur-sm shadow-[0_4px_20px_rgba(251,191,36,0.12),0_4px_20px_rgba(236,72,153,0.12)]">
-      <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-200/95 mr-1">
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+      <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white/90 mr-1">
         Desfile 2026
       </span>
       {blocks.map(({ value, label, key }) => (
         <div key={key} className="flex flex-col items-center">
           <span
             key={`${key}-${pad(value)}`}
-            className="tabular-nums text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-300 to-amber-300 min-w-[2.5rem] sm:min-w-[3rem] text-center animate-countdown-pulse"
-            style={{ textShadow: '0 0 20px rgba(251,191,36,0.3), 0 0 20px rgba(236,72,153,0.2)' }}
+            className="tabular-nums text-2xl sm:text-3xl font-black text-white min-w-[2.5rem] sm:min-w-[3rem] text-center animate-countdown-pulse"
           >
             {pad(value)}
           </span>
-          <span className="text-[10px] sm:text-xs font-bold text-amber-200/80 uppercase tracking-wider">
+          <span className="text-[10px] sm:text-xs font-bold text-white/70 uppercase tracking-wider">
             {label}
           </span>
         </div>
