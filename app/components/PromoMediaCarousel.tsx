@@ -62,7 +62,7 @@ export default function PromoMediaCarousel({
           {active.mediaType === 'video' ? (
             <video
               src={active.mediaUrl}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               controls
               playsInline
               preload="metadata"
@@ -71,7 +71,7 @@ export default function PromoMediaCarousel({
             <img
               src={active.mediaUrl}
               alt={altBase ? `${altBase} (${index + 1}/${items.length})` : 'Mídia'}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               loading="lazy"
             />
           )}
