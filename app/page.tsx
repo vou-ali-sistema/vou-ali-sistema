@@ -6,7 +6,6 @@ import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 import Countdown from '@/app/components/Countdown'
 import Seal11Anos from '@/app/components/Seal11Anos'
-import ConfettiStreamers from '@/app/components/ConfettiStreamers'
 
 interface PromoCard {
   id: string
@@ -115,9 +114,6 @@ export default function HomePage() {
 
       {/* Linha superior Brasil (detalhe) */}
       <div className="relative h-1.5 w-full bg-[linear-gradient(90deg,#22c55e_0%,#22c55e_30%,#facc15_30%,#facc15_62%,#38bdf8_62%,#3b82f6_100%)]" />
-
-      {/* Confetes e serpentinas nas bordas */}
-      <ConfettiStreamers />
 
       {/* Countdown para o desfile 2026 */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
