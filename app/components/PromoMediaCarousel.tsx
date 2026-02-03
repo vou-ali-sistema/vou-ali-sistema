@@ -58,11 +58,11 @@ export default function PromoMediaCarousel({
   return (
     <div className={className}>
       <div className="relative w-full overflow-hidden rounded-xl border border-[#dee2e6] bg-white">
-        <div className="aspect-[16/9] w-full bg-[#f8f9fa]">
+        <div className="aspect-[16/9] w-full bg-[#f8f9fa] flex items-center justify-center p-2">
           {active.mediaType === 'video' ? (
             <video
               src={active.mediaUrl}
-              className="h-full w-full object-contain"
+              className="h-full w-full !object-contain"
               controls
               playsInline
               preload="metadata"
@@ -71,7 +71,7 @@ export default function PromoMediaCarousel({
             <img
               src={active.mediaUrl}
               alt={altBase ? `${altBase} (${index + 1}/${items.length})` : 'Mídia'}
-              className="h-full w-full object-contain"
+              className="h-full w-full !object-contain"
               loading="lazy"
             />
           )}
