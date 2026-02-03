@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface PromoCardMedia {
   id: string
@@ -34,6 +34,7 @@ interface PromoCard {
 export default function PromoCardsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [cards, setCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -121,6 +122,34 @@ export default function PromoCardsPage() {
       fetchCards()
     }
   }, [status])
+
+  useEffect(() => {
+    if (status !== 'authenticated' || loading) return
+    if (searchParams.get('new') === 'apoio') {
+      setEditingCard(null)
+      setFormData({
+        title: '',
+        content: '—',
+        imageUrl: '',
+        active: true,
+        displayOrder: 0,
+        backgroundColor: '#f8f9fa',
+        textColor: '#333333',
+        autoPlay: true,
+        slideInterval: 3000,
+        linkEnabled: false,
+        linkUrl: '',
+        placement: 'APOIO',
+        comprarSlot: '',
+      })
+      setPreviewImage(null)
+      setCardMedia([])
+      setShowModal(true)
+      setError('')
+      setInfo('')
+      router.replace('/admin/promo-cards')
+    }
+  }, [status, loading, searchParams, router])
 
   async function fetchCards() {
     try {
