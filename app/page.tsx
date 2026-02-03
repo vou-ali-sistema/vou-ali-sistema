@@ -241,8 +241,8 @@ export default function HomePage() {
           <h2 className="text-xl sm:text-2xl font-black text-[#F4FAFF] mb-1 tracking-tight">
             Destaques
           </h2>
-          <p className="text-sm text-amber-200/80 mb-6">Vou Ali 2026 – 11 anos de história</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr items-stretch">
+          <p className="text-sm text-white/60 mb-6">Vou Ali 2026 – 11 anos de história</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 auto-rows-fr items-stretch">
             {highlightCards.map((card) => {
               const cardLink = card.linkEnabled 
                 ? (card.linkUrl || '/comprar')
@@ -250,12 +250,8 @@ export default function HomePage() {
               
               const CardContent = (
                 <div
-                  className="rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col backdrop-blur-[12px] shadow-[0_18px_55px_rgba(0,0,0,0.35)] hover:shadow-[0_24px_60px_rgba(34,197,94,0.15),0_28px_70px_rgba(0,0,0,0.5)] hover:border-emerald-400/20 border border-transparent"
+                  className="rounded-2xl overflow-hidden transition-all duration-300 h-full flex flex-col bg-white/[0.06] border border-white/10 backdrop-blur-[12px] shadow-[0_12px_40px_rgba(0,0,0,0.25)] hover:bg-white/[0.08] hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)] hover:border-white/20"
                   style={{
-                    border: '1px solid transparent',
-                    background:
-                      `linear-gradient(${card.backgroundColor || 'rgba(255,255,255,0.07)'}, ${card.backgroundColor || 'rgba(255,255,255,0.07)'}) padding-box, ` +
-                      `${glassBorderBg} border-box`,
                     color: card.textColor || '#EAF2FF',
                     cursor: cardLink ? 'pointer' : 'default',
                   }}
@@ -268,12 +264,12 @@ export default function HomePage() {
                           autoPlay={card.autoPlay ?? true}
                           intervalMs={card.slideInterval ?? 5000}
                           altBase={card.title}
-                          frameClassName="w-full min-h-[200px] bg-[#f8f9fa] flex items-center justify-center p-2 rounded-xl"
+                          frameClassName="w-full min-h-[200px] bg-white/[0.04] flex items-center justify-center p-3 rounded-xl border border-white/5"
                           mediaClassName="w-full h-auto max-h-[280px] !object-contain"
                         />
                       ) : (
-                        <div className="relative w-full overflow-hidden rounded-xl border border-white/10 bg-white/5">
-                          <div className="aspect-[16/9] w-full bg-[#f8f9fa] flex items-center justify-center p-2">
+                        <div className="relative w-full overflow-hidden rounded-xl border border-white/5 bg-white/[0.04]">
+                          <div className="aspect-[16/9] w-full flex items-center justify-center p-3">
                             <img
                               src={card.imageUrl as string}
                               alt={card.title}
@@ -286,13 +282,13 @@ export default function HomePage() {
                     </div>
                   ) : null}
 
-                  <div className="p-5 sm:p-6 flex flex-col flex-1">
+                  <div className="p-5 sm:p-6 flex flex-col flex-1 border-t border-white/5">
                     <h3 className="text-lg sm:text-xl font-black mb-2 line-clamp-2 tracking-tight text-[#F4FAFF]">{card.title}</h3>
-                    <p className="text-sm mb-4 line-clamp-4 text-white/75 leading-relaxed">{card.content}</p>
+                    <p className="text-sm mb-4 line-clamp-4 text-white/70 leading-relaxed">{card.content}</p>
                     {cardLink && (
-                      <div className="mt-auto flex items-center text-sm font-black text-emerald-300 group-hover:text-emerald-200 transition-colors">
+                      <div className="mt-auto flex items-center text-sm font-semibold text-emerald-400/90 group-hover:text-emerald-300 transition-colors">
                         <span>Ver / Comprar</span>
-                        <svg className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </div>

@@ -53,7 +53,7 @@ export default function Countdown() {
   ]
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm animate-countdown-motion">
       <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-white/90 mr-1">
         Desfile 2026
       </span>
