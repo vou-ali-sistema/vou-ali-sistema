@@ -61,8 +61,7 @@ export async function GET(request: NextRequest) {
 
     const where = activeOnly ? { active: true } : {}
 
-    // Voltar ao método original que funcionava - incluir media mas será substituído por array vazio
-    // Isso garante compatibilidade total e evita erros de serialização
+    // Método original que funcionava - manter estrutura completa para evitar erros de serialização
     const cards = await prisma.promoCard.findMany({
       where,
       include: {
@@ -77,16 +76,24 @@ export async function GET(request: NextRequest) {
     })
 
     // Garantir que campos novos tenham valores padrão para compatibilidade
-    // Substituir media por array vazio para reduzir tamanho da resposta (mídias carregadas sob demanda)
     const cardsWithDefaults = cards.map(card => ({
-      ...card,
+      id: card.id,
+      title: card.title,
+      content: card.content,
+      imageUrl: card.imageUrl,
+      active: card.active,
+      displayOrder: card.displayOrder,
+      backgroundColor: card.backgroundColor,
+      textColor: card.textColor,
       autoPlay: card.autoPlay ?? true,
       slideInterval: card.slideInterval ?? 5000,
       linkEnabled: card.linkEnabled ?? true,
       linkUrl: card.linkUrl ?? null,
       placement: card.placement ?? 'BOTH',
       comprarSlot: card.comprarSlot ?? null,
-      media: [], // Array vazio - mídias são carregadas sob demanda via /api/admin/promo-cards/[id]/media para melhor performance
+      createdAt: card.createdAt,
+      updatedAt: card.updatedAt,
+      media: card.media || [], // Manter mídias - não substituir para evitar problemas de serialização
     }))
 
     return NextResponse.json(cardsWithDefaults)
