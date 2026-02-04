@@ -82,23 +82,30 @@ function toPlainCard(card: {
 }
 
 export async function GET(request: NextRequest) {
-  let session: { user?: { email?: string } } | null = null
   try {
-    const { getServerSession } = await import('next-auth')
-    const { authOptions } = await import('@/lib/auth')
-    session = await getServerSession(authOptions)
-  } catch (authErr) {
-    console.error('promo-cards GET: auth error', authErr)
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+    let session: { user?: { email?: string } } | null = null
+    try {
+      const { getServerSession } = await import('next-auth')
+      const { authOptions } = await import('@/lib/auth')
+      session = await getServerSession(authOptions)
+    } catch (authErr) {
+      console.error('promo-cards GET: auth error', authErr)
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
 
-  if (!session) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-  }
+    if (!session) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
 
-  try {
+    let activeOnly = false
+    try {
+      const url = typeof request.url === 'string' ? request.url : ''
+      if (url) activeOnly = new URL(url).searchParams.get('activeOnly') === 'true'
+    } catch (_) {
+      // mantém activeOnly false
+    }
+
     const { prisma } = await import('@/lib/prisma')
-    const activeOnly = new URL(request.url).searchParams.get('activeOnly') === 'true'
     const where = activeOnly ? { active: true } : {}
 
     const cards = await prisma.promoCard.findMany({
@@ -117,8 +124,8 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json(payload)
   } catch (err) {
-    console.error('promo-cards GET:', err)
-    return NextResponse.json([])
+    console.error('promo-cards GET (fallback):', err)
+    return NextResponse.json([], { status: 200 })
   }
 }
 
