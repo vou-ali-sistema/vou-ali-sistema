@@ -62,18 +62,25 @@ export async function GET(request: NextRequest) {
     const where = activeOnly ? { active: true } : {}
 
     // Buscar cards com mídias - método original que funcionava
-    const cards = await prisma.promoCard.findMany({
-      where,
-      include: {
-        media: {
-          orderBy: { displayOrder: 'asc' },
+    // Adicionar try-catch na query para capturar erros do Prisma
+    let cards
+    try {
+      cards = await prisma.promoCard.findMany({
+        where,
+        include: {
+          media: {
+            orderBy: { displayOrder: 'asc' },
+          },
         },
-      },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    })
+        orderBy: [
+          { displayOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      })
+    } catch (prismaError) {
+      console.error('Erro na query do Prisma:', prismaError)
+      throw new Error(`Erro ao buscar cards do banco: ${prismaError instanceof Error ? prismaError.message : String(prismaError)}`)
+    }
 
     // Garantir que campos novos tenham valores padrão para compatibilidade
     // Serializar explicitamente para evitar problemas
@@ -96,13 +103,26 @@ export async function GET(request: NextRequest) {
           comprarSlot: card.comprarSlot ? (card.comprarSlot as 'TOP' | 'BOTTOM') : null,
           createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : String(card.createdAt),
           updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : String(card.updatedAt),
-          media: Array.isArray(card.media) ? card.media.map(m => ({
-            id: String(m.id),
-            mediaUrl: String(m.mediaUrl),
-            mediaType: String(m.mediaType),
-            displayOrder: Number(m.displayOrder) || 0,
-            createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : String(m.createdAt),
-          })) : [],
+          media: Array.isArray(card.media) ? card.media.map(m => {
+            try {
+              return {
+                id: String(m.id || ''),
+                mediaUrl: String(m.mediaUrl || ''),
+                mediaType: String(m.mediaType || 'image'),
+                displayOrder: Number(m.displayOrder) || 0,
+                createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : (m.createdAt ? String(m.createdAt) : new Date().toISOString()),
+              }
+            } catch (mediaError) {
+              console.error('Erro ao serializar media:', m.id, mediaError)
+              return {
+                id: String(m.id || ''),
+                mediaUrl: String(m.mediaUrl || ''),
+                mediaType: 'image',
+                displayOrder: 0,
+                createdAt: new Date().toISOString(),
+              }
+            }
+          }) : [],
         }
       } catch (cardError) {
         console.error('Erro ao serializar card:', card.id, cardError)

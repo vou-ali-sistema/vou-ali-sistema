@@ -137,11 +137,23 @@ export default function PromoCardsPage() {
   async function fetchCards() {
     try {
       const res = await fetch('/api/admin/promo-cards')
-      if (!res.ok) throw new Error('Erro ao carregar cards')
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => '')
+        let errorMsg = `Erro ${res.status} ao carregar cards`
+        try {
+          const errorJson = JSON.parse(errorText)
+          errorMsg = errorJson.error || errorJson.details || errorMsg
+        } catch {
+          errorMsg = errorText || errorMsg
+        }
+        throw new Error(errorMsg)
+      }
       const data = await res.json()
-      setCards(data)
+      setCards(Array.isArray(data) ? data : [])
     } catch (err: any) {
-      setError(err.message)
+      console.error('Erro ao buscar cards:', err)
+      setError(err.message || 'Erro ao carregar cards. Tente recarregar a página.')
+      setCards([]) // Garantir que cards seja array vazio para a página renderizar
     } finally {
       setLoading(false)
     }
