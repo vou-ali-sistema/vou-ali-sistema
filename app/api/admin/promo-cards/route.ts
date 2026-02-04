@@ -61,8 +61,7 @@ export async function GET(request: NextRequest) {
 
     const where = activeOnly ? { active: true } : {}
 
-    // Buscar cards com mídias - método original que funcionava
-    // Adicionar try-catch na query para capturar erros do Prisma
+    // Buscar cards - versão simplificada e robusta
     let cards
     try {
       cards = await prisma.promoCard.findMany({
@@ -77,76 +76,53 @@ export async function GET(request: NextRequest) {
           { createdAt: 'desc' },
         ],
       })
-    } catch (prismaError) {
-      console.error('Erro na query do Prisma:', prismaError)
-      throw new Error(`Erro ao buscar cards do banco: ${prismaError instanceof Error ? prismaError.message : String(prismaError)}`)
+    } catch (prismaError: any) {
+      console.error('Erro na query do Prisma:', {
+        message: prismaError?.message,
+        code: prismaError?.code,
+        meta: prismaError?.meta,
+      })
+      // Retornar array vazio em caso de erro do Prisma para não quebrar a página
+      return NextResponse.json([])
+    }
+
+    // Se não houver cards, retornar array vazio
+    if (!Array.isArray(cards) || cards.length === 0) {
+      return NextResponse.json([])
     }
 
     // Garantir que campos novos tenham valores padrão para compatibilidade
-    // Serializar explicitamente para evitar problemas
+    // Versão simplificada - usar spread e apenas ajustar campos necessários
     const cardsWithDefaults = cards.map(card => {
-      try {
-        return {
-          id: String(card.id),
-          title: String(card.title || ''),
-          content: String(card.content || ''),
-          imageUrl: card.imageUrl ? String(card.imageUrl) : null,
-          active: Boolean(card.active),
-          displayOrder: Number(card.displayOrder) || 0,
-          backgroundColor: card.backgroundColor ? String(card.backgroundColor) : null,
-          textColor: card.textColor ? String(card.textColor) : null,
-          autoPlay: card.autoPlay ?? true,
-          slideInterval: Number(card.slideInterval) || 5000,
-          linkEnabled: card.linkEnabled ?? true,
-          linkUrl: card.linkUrl ? String(card.linkUrl) : null,
-          placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
-          comprarSlot: card.comprarSlot ? (card.comprarSlot as 'TOP' | 'BOTTOM') : null,
-          createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : String(card.createdAt),
-          updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : String(card.updatedAt),
-          media: Array.isArray(card.media) ? card.media.map(m => {
-            try {
-              return {
-                id: String(m.id || ''),
-                mediaUrl: String(m.mediaUrl || ''),
-                mediaType: String(m.mediaType || 'image'),
-                displayOrder: Number(m.displayOrder) || 0,
-                createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : (m.createdAt ? String(m.createdAt) : new Date().toISOString()),
-              }
-            } catch (mediaError) {
-              console.error('Erro ao serializar media:', m.id, mediaError)
-              return {
-                id: String(m.id || ''),
-                mediaUrl: String(m.mediaUrl || ''),
-                mediaType: 'image',
-                displayOrder: 0,
-                createdAt: new Date().toISOString(),
-              }
-            }
-          }) : [],
-        }
-      } catch (cardError) {
-        console.error('Erro ao serializar card:', card.id, cardError)
-        // Retornar card básico em caso de erro
-        return {
-          id: String(card.id),
-          title: String(card.title || ''),
-          content: String(card.content || ''),
-          imageUrl: null,
-          active: Boolean(card.active),
-          displayOrder: 0,
-          backgroundColor: null,
-          textColor: null,
-          autoPlay: true,
-          slideInterval: 5000,
-          linkEnabled: true,
-          linkUrl: null,
-          placement: 'BOTH' as const,
-          comprarSlot: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          media: [],
-        }
+      // Usar spread operator e apenas ajustar campos que podem ser null/undefined
+      const result: any = {
+        ...card,
+        autoPlay: card.autoPlay ?? true,
+        slideInterval: card.slideInterval ?? 5000,
+        linkEnabled: card.linkEnabled ?? true,
+        linkUrl: card.linkUrl ?? null,
+        placement: card.placement ?? 'BOTH',
+        comprarSlot: card.comprarSlot ?? null,
+        media: Array.isArray(card.media) ? card.media : [],
       }
+      
+      // Garantir serialização de datas
+      if (result.createdAt instanceof Date) {
+        result.createdAt = result.createdAt.toISOString()
+      }
+      if (result.updatedAt instanceof Date) {
+        result.updatedAt = result.updatedAt.toISOString()
+      }
+      
+      // Serializar mídias se necessário
+      if (Array.isArray(result.media) && result.media.length > 0) {
+        result.media = result.media.map((m: any) => ({
+          ...m,
+          createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
+        }))
+      }
+      
+      return result
     })
 
     return NextResponse.json(cardsWithDefaults)
@@ -154,14 +130,15 @@ export async function GET(request: NextRequest) {
     console.error('Erro ao buscar cards:', error)
     const errorMessage = error instanceof Error ? error.message : String(error)
     const errorStack = error instanceof Error ? error.stack : undefined
-    return NextResponse.json(
-      { 
-        error: 'Erro ao buscar cards', 
-        details: errorMessage,
-        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
-      },
-      { status: 500 }
-    )
+    
+    // Em caso de erro, retornar array vazio para não quebrar a página
+    // Logs detalhados apenas em desenvolvimento
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Stack trace:', errorStack)
+    }
+    
+    // Retornar array vazio em vez de erro 500 para permitir que a página carregue
+    return NextResponse.json([])
   }
 }
 

@@ -89,7 +89,7 @@ export default function PromoCardsPage() {
 
     canvas.width = viewport.width
     canvas.height = viewport.height
-    await page.render({ canvasContext: ctx, viewport }).promise
+    await page.render({ canvas: canvas, canvasContext: ctx, viewport }).promise
 
     const blob: Blob = await new Promise((resolve, reject) => {
       canvas.toBlob((b) => {
