@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     const where = activeOnly ? { active: true } : {}
 
-    // Método original que funcionava - manter estrutura completa para evitar erros de serialização
+    // Buscar cards com mídias - método original que funcionava
     const cards = await prisma.promoCard.findMany({
       where,
       include: {
@@ -76,31 +76,70 @@ export async function GET(request: NextRequest) {
     })
 
     // Garantir que campos novos tenham valores padrão para compatibilidade
-    const cardsWithDefaults = cards.map(card => ({
-      id: card.id,
-      title: card.title,
-      content: card.content,
-      imageUrl: card.imageUrl,
-      active: card.active,
-      displayOrder: card.displayOrder,
-      backgroundColor: card.backgroundColor,
-      textColor: card.textColor,
-      autoPlay: card.autoPlay ?? true,
-      slideInterval: card.slideInterval ?? 5000,
-      linkEnabled: card.linkEnabled ?? true,
-      linkUrl: card.linkUrl ?? null,
-      placement: card.placement ?? 'BOTH',
-      comprarSlot: card.comprarSlot ?? null,
-      createdAt: card.createdAt,
-      updatedAt: card.updatedAt,
-      media: card.media || [], // Manter mídias - não substituir para evitar problemas de serialização
-    }))
+    // Serializar explicitamente para evitar problemas
+    const cardsWithDefaults = cards.map(card => {
+      try {
+        return {
+          id: String(card.id),
+          title: String(card.title || ''),
+          content: String(card.content || ''),
+          imageUrl: card.imageUrl ? String(card.imageUrl) : null,
+          active: Boolean(card.active),
+          displayOrder: Number(card.displayOrder) || 0,
+          backgroundColor: card.backgroundColor ? String(card.backgroundColor) : null,
+          textColor: card.textColor ? String(card.textColor) : null,
+          autoPlay: card.autoPlay ?? true,
+          slideInterval: Number(card.slideInterval) || 5000,
+          linkEnabled: card.linkEnabled ?? true,
+          linkUrl: card.linkUrl ? String(card.linkUrl) : null,
+          placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
+          comprarSlot: card.comprarSlot ? (card.comprarSlot as 'TOP' | 'BOTTOM') : null,
+          createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : String(card.createdAt),
+          updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : String(card.updatedAt),
+          media: Array.isArray(card.media) ? card.media.map(m => ({
+            id: String(m.id),
+            mediaUrl: String(m.mediaUrl),
+            mediaType: String(m.mediaType),
+            displayOrder: Number(m.displayOrder) || 0,
+            createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : String(m.createdAt),
+          })) : [],
+        }
+      } catch (cardError) {
+        console.error('Erro ao serializar card:', card.id, cardError)
+        // Retornar card básico em caso de erro
+        return {
+          id: String(card.id),
+          title: String(card.title || ''),
+          content: String(card.content || ''),
+          imageUrl: null,
+          active: Boolean(card.active),
+          displayOrder: 0,
+          backgroundColor: null,
+          textColor: null,
+          autoPlay: true,
+          slideInterval: 5000,
+          linkEnabled: true,
+          linkUrl: null,
+          placement: 'BOTH' as const,
+          comprarSlot: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          media: [],
+        }
+      }
+    })
 
     return NextResponse.json(cardsWithDefaults)
   } catch (error) {
     console.error('Erro ao buscar cards:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    const errorStack = error instanceof Error ? error.stack : undefined
     return NextResponse.json(
-      { error: 'Erro ao buscar cards', details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: 'Erro ao buscar cards', 
+        details: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? errorStack : undefined
+      },
       { status: 500 }
     )
   }
