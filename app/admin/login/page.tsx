@@ -1,39 +1,70 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import Logo from '@/app/components/Logo'
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isLocalhost, setIsLocalhost] = useState(false)
+  const [resetMsg, setResetMsg] = useState('')
+
+  useEffect(() => {
+    setIsLocalhost(typeof window !== 'undefined' && /localhost|127\.0\.0\.1/.test(window.location.hostname))
+    // Ler erro da URL (ex: ?error=CredentialsSignin)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('error') === 'CredentialsSignin') {
+        setError('Email ou senha inválidos')
+      }
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
       const result = await signIn('credentials', {
         email,
         senha,
         redirect: false,
+        callbackUrl: '/admin',
       })
-
       if (result?.error) {
         setError('Email ou senha inválidos')
-      } else {
-        // Usar window.location para garantir redirecionamento completo
-        window.location.href = '/admin'
+        return
       }
-    } catch (error) {
+      if (result?.ok) {
+        // Forçar navegação completa para que cookies sejam enviados
+        window.location.replace('/admin')
+        return
+      }
+      setError('Email ou senha inválidos')
+    } catch {
       setError('Erro ao fazer login')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleResetSenha() {
+    setResetMsg('')
+    try {
+      const res = await fetch('/api/reset-admin-password')
+      const data = await res.json()
+      if (data.ok) {
+        setResetMsg('Senha redefinida! Use admin@vouali.com / admin123')
+        setEmail('admin@vouali.com')
+        setSenha('admin123')
+      } else {
+        setResetMsg('Erro: ' + (data.erro || 'tente novamente'))
+      }
+    } catch (e) {
+      setResetMsg('Erro ao redefinir. Verifique se o servidor está rodando.')
     }
   }
 
@@ -55,6 +86,7 @@ export default function AdminLoginPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -69,6 +101,7 @@ export default function AdminLoginPage() {
             <input
               id="senha"
               type="password"
+              autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
@@ -82,6 +115,12 @@ export default function AdminLoginPage() {
             </div>
           )}
 
+          {resetMsg && (
+            <div className="bg-green-50 border-2 border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
+              {resetMsg}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -89,6 +128,22 @@ export default function AdminLoginPage() {
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          {isLocalhost && (
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-xs text-gray-500 mb-2">Problema para entrar no localhost?</p>
+              <button
+                type="button"
+                onClick={handleResetSenha}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+              >
+                Redefinir senha do admin
+              </button>
+              <p className="text-xs text-gray-400 mt-1">
+                Padrão: admin@vouali.com / admin123
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
@@ -37,32 +37,47 @@ export default function HomePage() {
     
     async function fetchCards() {
       try {
+        // Buscar em paralelo para melhor performance
         const [homeRes, apoiosRes] = await Promise.all([
           fetch('/api/promo-cards?placement=HOME'),
           fetch('/api/promo-cards?placement=APOIO'),
         ])
         if (cancelled) return
         
+        // Processar HOME cards
         if (homeRes.ok) {
           const cards = await homeRes.json()
           if (!cancelled) setPromoCards(cards || [])
         }
+        
+        // Processar APOIO cards de forma otimizada
         if (apoiosRes.ok) {
           const apoiosCards = await apoiosRes.json()
           if (!cancelled && Array.isArray(apoiosCards)) {
-            const list = apoiosCards.map((c: PromoCard) => {
-              const imageUrl = c.imageUrl || (Array.isArray(c.media) && c.media.length > 0 ? c.media.find((m: { mediaType: string }) => m.mediaType === 'image')?.mediaUrl : undefined) || ''
-              return {
-                imageUrl,
-                title: c.title || '',
-                linkUrl: c.linkEnabled && c.linkUrl ? c.linkUrl : undefined,
+            // Otimizar: processar de forma eficiente (apoios não têm media, só imageUrl)
+            const processedApoios: { imageUrl: string; title: string; linkUrl?: string }[] = []
+            
+            for (const c of apoiosCards) {
+              // Apoios sempre têm imageUrl (validado no backend)
+              const imageUrl = c.imageUrl
+              if (imageUrl) {
+                processedApoios.push({
+                  imageUrl,
+                  title: c.title || '',
+                  linkUrl: c.linkEnabled && c.linkUrl ? c.linkUrl : undefined,
+                })
               }
-            }).filter((a: { imageUrl: string }) => a.imageUrl)
-            setApoios(list.length > 0 ? list : APOIOS_FALLBACK)
+            }
+            
+            if (!cancelled) {
+              setApoios(processedApoios.length > 0 ? processedApoios : APOIOS_FALLBACK)
+            }
           }
         }
       } catch (err) {
-        if (!cancelled) console.error('Erro ao carregar cards:', err)
+        if (!cancelled && process.env.NODE_ENV === 'development') {
+          console.error('Erro ao carregar cards:', err)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -73,46 +88,68 @@ export default function HomePage() {
     return () => { cancelled = true }
   }, [])
 
-  const percursoCard = promoCards.find((c) =>
-    (c.title || '').toLowerCase().includes('percurso')
-  )
-  const abadaCard = promoCards.find((c) => {
-    const t = (c.title || '').toLowerCase()
-    return t.includes('abad') || t.includes('camisa') || t.includes('uniforme')
-  })
-  const galeriaCard = promoCards.find((c) => {
-    const t = (c.title || '').toLowerCase()
-    return t.includes('galeria') || t.includes('fotos') || t.includes('outros anos') || t.includes('anos anteriores')
-  })
-  // Destaques: excluir cards "especiais" que já têm lugar próprio na página (percurso e galeria)
-  const highlightCardsBase = promoCards.filter((c) => {
-    if (percursoCard && c.id === percursoCard.id) return false
-    if (galeriaCard && c.id === galeriaCard.id) return false
-    return true
-  })
-  const highlightCards = highlightCardsBase
+  // Memoizar cálculos pesados - otimizado para fazer uma única passada pelos cards
+  const { percursoCard, abadaCard, galeriaCard, highlightCards, galleryMedia, galleryLink } = useMemo(() => {
+    let percurso: PromoCard | undefined
+    let abada: PromoCard | undefined
+    let galeria: PromoCard | undefined
+    const highlights: PromoCard[] = []
+    
+    // Uma única passada pelos cards para melhor performance
+    for (const card of promoCards) {
+      const titleLower = (card.title || '').toLowerCase()
+      
+      // Identificar cards especiais
+      if (!percurso && titleLower.includes('percurso')) {
+        percurso = card
+        continue // Não adicionar aos highlights
+      }
+      
+      if (!abada && (titleLower.includes('abad') || titleLower.includes('camisa') || titleLower.includes('uniforme'))) {
+        abada = card
+        continue // Não adicionar aos highlights
+      }
+      
+      if (!galeria && (titleLower.includes('galeria') || titleLower.includes('fotos') || titleLower.includes('outros anos') || titleLower.includes('anos anteriores'))) {
+        galeria = card
+        continue // Não adicionar aos highlights
+      }
+      
+      // Adicionar aos highlights se não for um card especial
+      highlights.push(card)
+    }
 
-  const galleryMedia: PromoCardMedia[] = (Array.isArray(galeriaCard?.media) && galeriaCard!.media!.length > 0
-    ? galeriaCard!.media!
-    : highlightCards.flatMap((c) => (Array.isArray(c.media) ? c.media : []))
-  ).filter((m) => m.mediaType === 'image')
+    // Processar mídias da galeria ou dos highlights
+    const media: PromoCardMedia[] = (Array.isArray(galeria?.media) && galeria.media.length > 0
+      ? galeria.media
+      : highlights.flatMap((c) => (Array.isArray(c.media) ? c.media : []))
+    ).filter((m) => m.mediaType === 'image')
 
-  // Link da galeria:
-  // - Se houver um card "galeria", respeitar linkEnabled/linkUrl dele.
-  // - Se não houver, manter comportamento antigo (clicar leva ao /comprar).
-  const galleryLink = galeriaCard
-    ? (galeriaCard.linkEnabled ? (galeriaCard.linkUrl || '/comprar') : null)
-    : '/comprar'
+    const link = galeria
+      ? (galeria.linkEnabled ? (galeria.linkUrl || '/comprar') : null)
+      : '/comprar'
 
+    return {
+      percursoCard: percurso,
+      abadaCard: abada,
+      galeriaCard: galeria,
+      highlightCards: highlights,
+      galleryMedia: media,
+      galleryLink: link,
+    }
+  }, [promoCards])
+
+  // Constante fora do render para evitar recriação
   const glassBorderBg =
     'linear-gradient(90deg, rgba(34,197,94,0.55), rgba(56,189,248,0.35), rgba(59,130,246,0.50))'
 
-  const galleryThumbs = (() => {
+  // Memoizar galleryThumbs para evitar recálculo desnecessário
+  const galleryThumbs = useMemo(() => {
     const list = galleryMedia || []
     if (list.length <= 8) return list
     const start = ((galleryIndex % list.length) + list.length) % list.length
     return Array.from({ length: 8 }, (_, i) => list[(start + i) % list.length])
-  })()
+  }, [galleryMedia, galleryIndex])
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#030817] text-[#EAF2FF]">
@@ -229,7 +266,8 @@ export default function HomePage() {
                       src={abadaCard.imageUrl}
                       alt={abadaCard.title || 'Abadá'}
                       className="h-full w-full object-contain"
-                      loading="lazy"
+                      loading="eager"
+                      fetchPriority="high"
                     />
                   </div>
                 </div>
@@ -581,6 +619,7 @@ export default function HomePage() {
           {apoios.length > 0 ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4">
               {apoios.map((apoio, idx) => {
+                const showTitle = apoio.title && apoio.title !== 'Apoiador'
                 const card = (
                   <div
                     key={idx}
@@ -589,14 +628,16 @@ export default function HomePage() {
                     <div className="w-full h-full flex items-center justify-center p-1.5 min-h-0 flex-1">
                       <img
                         src={apoio.imageUrl}
-                        alt={apoio.title}
+                        alt={apoio.title || 'Apoiador'}
                         className="max-h-full max-w-full w-auto h-auto object-contain"
                         loading="lazy"
                       />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-medium text-white/70 mt-1.5 line-clamp-2 text-center leading-tight">
-                      {apoio.title}
-                    </span>
+                    {showTitle && (
+                      <span className="text-[10px] sm:text-xs font-medium text-white/70 mt-1.5 line-clamp-2 text-center leading-tight">
+                        {apoio.title}
+                      </span>
+                    )}
                   </div>
                 )
                 if (apoio.linkUrl) {

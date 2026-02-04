@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const promoCardSchema = z.object({
-  title: z.string().min(1, 'Título é obrigatório'),
-  content: z.string().min(1, 'Conteúdo é obrigatório'),
+  title: z.string().optional().transform(val => val?.trim() || 'Apoiador'),
+  content: z.string().optional().transform(val => val?.trim() || '—'),
   imageUrl: z.string().optional().or(z.literal('')).transform(val => {
     if (!val || val === '') return undefined
     // Aceitar URLs completas ou relativas (começando com /)
@@ -41,6 +41,10 @@ const promoCardSchema = z.object({
       if (!val) return undefined
       return val
     }),
+}).superRefine((data, ctx) => {
+  if (data.placement === 'APOIO' && !data.imageUrl) {
+    ctx.addIssue({ code: 'custom', message: 'Logo é obrigatório', path: ['imageUrl'] })
+  }
 })
 
 // GET - Listar todos os cards
@@ -57,12 +61,28 @@ export async function GET(request: NextRequest) {
 
     const where = activeOnly ? { active: true } : {}
 
+    // Otimizar: não carregar mídias aqui (são carregadas sob demanda quando necessário)
+    // Isso reduz drasticamente o tamanho da resposta e melhora performance
     const cards = await prisma.promoCard.findMany({
       where,
-      include: {
-        media: {
-          orderBy: { displayOrder: 'asc' },
-        },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        imageUrl: true,
+        active: true,
+        displayOrder: true,
+        backgroundColor: true,
+        textColor: true,
+        autoPlay: true,
+        slideInterval: true,
+        linkEnabled: true,
+        linkUrl: true,
+        placement: true,
+        comprarSlot: true,
+        createdAt: true,
+        updatedAt: true,
+        // Não incluir media aqui - será carregada sob demanda quando o card for editado
       },
       orderBy: [
         { displayOrder: 'asc' },
@@ -105,8 +125,8 @@ export async function POST(request: NextRequest) {
 
     const card = await prisma.promoCard.create({
       data: {
-        title: data.title,
-        content: data.content,
+        title: data.title || 'Apoiador',
+        content: data.content || '—',
         imageUrl: data.imageUrl ?? null,
         active: data.active,
         displayOrder: data.displayOrder,

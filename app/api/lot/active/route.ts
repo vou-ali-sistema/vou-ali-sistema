@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Cache por 30 segundos (lote ativo pode mudar, mas não constantemente)
+export const revalidate = 30
 export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
@@ -26,7 +27,9 @@ export async function GET() {
     }
 
     return NextResponse.json(activeLot, {
-      headers: { 'Cache-Control': 'no-store, max-age=0' },
+      headers: { 
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
     })
   } catch (error) {
     console.error('Erro ao buscar lote ativo:', error)

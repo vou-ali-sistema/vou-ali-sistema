@@ -14,9 +14,9 @@ async function main() {
     create: { key: "purchase_enabled", valueBool: true },
   });
 
+  const passwordHash = await bcrypt.hash(pass, 10);
   const existing = await prisma.user.findUnique({ where: { email } });
   if (!existing) {
-    const passwordHash = await bcrypt.hash(pass, 10);
     await prisma.user.create({
       data: {
         name: "Admin",
@@ -27,7 +27,11 @@ async function main() {
     });
     console.log("Admin criado:", email, pass);
   } else {
-    console.log("Admin já existe:", email);
+    await prisma.user.update({
+      where: { email },
+      data: { passwordHash, name: "Admin", role: "ADMIN" },
+    });
+    console.log("Admin existente – senha redefinida para:", pass);
   }
 
   // Criar "Lote 1" ativo com preços padrão

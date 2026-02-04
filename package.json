@@ -14,7 +14,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "reset-admin": "tsx scripts/reset-admin-password.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
@@ -28,6 +29,7 @@
     "next": "^16.1.2",
     "next-auth": "^4.24.5",
     "nodemailer": "^7.0.12",
+    "pdfjs-dist": "^5.4.624",
     "qrcode": "^1.5.3",
     "qrcode.react": "^3.1.0",
     "react": "^18",

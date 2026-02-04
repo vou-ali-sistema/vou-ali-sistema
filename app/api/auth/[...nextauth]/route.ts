@@ -10,9 +10,13 @@ const handler = NextAuth(authOptions)
 
 function normalizeNextAuthUrl(req: Request) {
   // Em produção (Vercel), o domínio pode variar entre www e sem-www.
-  // Se NEXTAUTH_URL não bater com o host atual, o NextAuth pode falhar.
+  // Em localhost, usar http para que cookies/sessão funcionem.
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host')
-  const proto = req.headers.get('x-forwarded-proto') || 'https'
+  let proto = req.headers.get('x-forwarded-proto') || ''
+  if (!proto && host && /localhost|127\.0\.0\.1/.test(host)) {
+    proto = 'http'
+  }
+  if (!proto) proto = 'https'
 
   if (host) {
     const desired = `${proto}://${host}`

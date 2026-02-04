@@ -50,7 +50,28 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
 
     const orders = await prisma.order.findMany({
       where,
-      include: { items: true, customer: true },
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
+        totalValueCents: true,
+        createdAt: true,
+        items: {
+          select: {
+            id: true,
+            itemType: true,
+            quantity: true,
+          },
+        },
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       take: 200,
     })

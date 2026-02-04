@@ -26,7 +26,6 @@ export default function AdminLayout({
       { href: '/admin/cortesias', label: 'Cortesias' },
       { href: '/admin/lotes', label: 'Lotes' },
       { href: '/admin/promo-cards', label: 'Cards' },
-      { href: '/admin/promo-cards?new=apoio', label: 'Apoios' },
     ],
     []
   )

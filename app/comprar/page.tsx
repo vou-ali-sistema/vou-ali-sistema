@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
@@ -53,60 +53,70 @@ export default function ComprarPage() {
     { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1 }
   ])
 
-  // Buscar lote ativo, preços e cards de divulgação
+  // Buscar lote ativo, preços e cards de divulgação em paralelo para melhor performance
   useEffect(() => {
+    let cancelled = false
+    
     async function fetchData() {
       try {
-        // Verificar se a página de compra está habilitada
-        const statusRes = await fetch('/api/public/purchase-status', { cache: 'no-store' })
+        // Executar todos os fetches em paralelo para melhorar tempo de resposta
+        const [statusRes, lotRes, cardsRes] = await Promise.all([
+          fetch('/api/public/purchase-status', { cache: 'no-store' }),
+          fetch('/api/lot/active'),
+          fetch('/api/promo-cards?placement=COMPRAR'),
+        ])
+        
+        if (cancelled) return
+
+        // Verificar status de compra
         if (statusRes.ok) {
           const status = await statusRes.json()
           const enabled = status?.purchaseEnabled !== false
-          setPurchaseEnabled(enabled)
-          if (!enabled) {
-            setError('As compras estão temporariamente indisponíveis. Aguarde ou entre em contato com a organização.')
-            setLoading(false)
-            return
+          if (!cancelled) {
+            setPurchaseEnabled(enabled)
+            if (!enabled) {
+              setError('As compras estão temporariamente indisponíveis. Aguarde ou entre em contato com a organização.')
+              setLoading(false)
+              return
+            }
           }
         } else {
-          // se falhar o status, não travar (fallback)
-          setPurchaseEnabled(true)
+          if (!cancelled) setPurchaseEnabled(true)
         }
 
-        // Buscar lote ativo
-        const lotRes = await fetch('/api/lot/active')
+        // Processar lote ativo
         if (!lotRes.ok) {
           if (lotRes.status === 404) {
-            setError('Nenhum lote ativo encontrado. As vendas estão temporariamente indisponíveis.')
+            if (!cancelled) {
+              setError('Nenhum lote ativo encontrado. As vendas estão temporariamente indisponíveis.')
+              setLoading(false)
+            }
+            return
           } else {
             throw new Error('Erro ao carregar informações')
           }
-          setLoading(false)
-          return
         }
         
         const activeLot = await lotRes.json()
-        setLot(activeLot)
+        if (!cancelled) setLot(activeLot)
 
-        // Buscar cards de divulgação
-        try {
-          const cardsRes = await fetch('/api/promo-cards?placement=COMPRAR')
-          if (cardsRes.ok) {
-            const cards = await cardsRes.json()
-            setPromoCards(cards)
-          }
-        } catch (err) {
-          console.error('Erro ao carregar cards:', err)
-          // Não bloquear a página se os cards não carregarem
+        // Processar cards de divulgação (não bloqueia se falhar)
+        if (cardsRes.ok) {
+          const cards = await cardsRes.json()
+          if (!cancelled) setPromoCards(cards)
         }
       } catch (err: any) {
-        setError(err.message || 'Erro ao carregar informações')
+        if (!cancelled) {
+          setError(err.message || 'Erro ao carregar informações')
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     
     fetchData()
+    
+    return () => { cancelled = true }
   }, [])
 
   function adicionarItem() {
@@ -136,16 +146,16 @@ export default function ComprarPage() {
     setItems(novosItems)
   }
 
-  function calcularTotal(): number {
+  // Memoizar cálculo do total para evitar re-execução a cada render
+  const total = useMemo(() => {
     if (!lot) return 0
-    
-    return items.reduce((total, item) => {
+    return items.reduce((sum, item) => {
       const precoUnitario = item.itemType === 'ABADA' 
         ? lot.abadaPriceCents 
         : lot.pulseiraPriceCents
-      return total + (precoUnitario * item.quantity)
+      return sum + (precoUnitario * item.quantity)
     }, 0) / 100
-  }
+  }, [lot, items])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -270,10 +280,13 @@ export default function ComprarPage() {
     )
   }
 
-  const total = calcularTotal()
-  const topPreferred = promoCards.filter((c) => c.comprarSlot === 'TOP')
-  const bottomPreferred = promoCards.filter((c) => c.comprarSlot === 'BOTTOM')
-  const unSlotted = promoCards.filter((c) => !c.comprarSlot)
+  // Memoizar filtros de cards para evitar re-execução a cada render
+  const { topPreferred, bottomPreferred, unSlotted } = useMemo(() => {
+    const top = promoCards.filter((c) => c.comprarSlot === 'TOP')
+    const bottom = promoCards.filter((c) => c.comprarSlot === 'BOTTOM')
+    const unSlotted = promoCards.filter((c) => !c.comprarSlot)
+    return { topPreferred: top, bottomPreferred: bottom, unSlotted }
+  }, [promoCards])
 
   const topCard = topPreferred[0] || unSlotted[0] || null
   const bottomCandidate =

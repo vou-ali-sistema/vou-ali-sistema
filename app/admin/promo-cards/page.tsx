@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 interface PromoCardMedia {
   id: string
@@ -34,7 +34,6 @@ interface PromoCard {
 export default function PromoCardsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [cards, setCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -76,13 +75,12 @@ export default function PromoCardsPage() {
   }
 
   async function convertPdfToPng(file: File) {
-    const pdfjs = await import('pdfjs-dist/build/pdf')
-    // Worker via CDN para evitar bundling pesado no client
-    pdfjs.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+    const pdfjs = await import('pdfjs-dist')
+    const { getDocument, GlobalWorkerOptions } = pdfjs
+    GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs'
 
     const buffer = await file.arrayBuffer()
-    const pdf = await pdfjs.getDocument({ data: buffer }).promise
+    const pdf = await getDocument({ data: buffer }).promise
     const page = await pdf.getPage(1)
     const viewport = page.getViewport({ scale: 2 })
     const canvas = document.createElement('canvas')
@@ -123,33 +121,18 @@ export default function PromoCardsPage() {
     }
   }, [status])
 
+  // Abrir modal "Adicionar Apoio" quando ?new=apoio na URL (ex: menu Apoios)
   useEffect(() => {
-    if (status !== 'authenticated' || loading) return
-    if (searchParams.get('new') === 'apoio') {
-      setEditingCard(null)
-      setFormData({
-        title: '',
-        content: '—',
-        imageUrl: '',
-        active: true,
-        displayOrder: 0,
-        backgroundColor: '#f8f9fa',
-        textColor: '#333333',
-        autoPlay: true,
-        slideInterval: 3000,
-        linkEnabled: false,
-        linkUrl: '',
-        placement: 'APOIO',
-        comprarSlot: '',
-      })
-      setPreviewImage(null)
-      setCardMedia([])
-      setShowModal(true)
-      setError('')
-      setInfo('')
-      router.replace('/admin/promo-cards')
+    if (status !== 'authenticated' || loading || showModal) return
+    if (typeof window === 'undefined') return
+    
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('new') === 'apoio') {
+      openAdicionarApoio()
+      // Limpar URL sem recarregar a página
+      window.history.replaceState({}, '', '/admin/promo-cards')
     }
-  }, [status, loading, searchParams, router])
+  }, [status, loading, showModal])
 
   async function fetchCards() {
     try {
@@ -195,7 +178,9 @@ export default function PromoCardsPage() {
           setCardMedia([])
         }
       } catch (err) {
-        console.error('Erro ao carregar mídias:', err)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Erro ao carregar mídias:', err)
+        }
         setCardMedia([])
       }
     } else {
@@ -258,6 +243,7 @@ export default function PromoCardsPage() {
     setInfo('')
 
     try {
+      let currentOrder = cardMedia.length
       for (const rawFile of list) {
         const file = await normalizeToImage(rawFile)
         const fd = new FormData()
@@ -281,7 +267,7 @@ export default function PromoCardsPage() {
           body: JSON.stringify({
             mediaUrl: uploadData.url,
             mediaType: 'image',
-            displayOrder: cardMedia.length,
+            displayOrder: currentOrder++,
           }),
         })
 
@@ -301,56 +287,6 @@ export default function PromoCardsPage() {
     }
   }
 
-  async function handleAddMedia(file: File, mediaType: 'image' | 'video') {
-    if (!editingCard) {
-      setError('Salve o card primeiro antes de adicionar mídias')
-      return
-    }
-
-    setUploadingMedia(true)
-    setError('')
-
-    try {
-      const uploadFile = mediaType === 'image' ? await normalizeToImage(file) : file
-      const formData = new FormData()
-      formData.append('file', uploadFile)
-
-      const uploadRes = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!uploadRes.ok) {
-        const msg = await getUploadError(uploadRes)
-        throw new Error(msg || 'Erro ao fazer upload')
-      }
-
-      const uploadData = await uploadRes.json()
-
-      // Adicionar mídia ao card
-      const mediaRes = await fetch(`/api/admin/promo-cards/${editingCard.id}/media`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mediaUrl: uploadData.url,
-          mediaType: mediaType,
-          displayOrder: cardMedia.length,
-        }),
-      })
-
-      if (!mediaRes.ok) {
-        throw new Error('Erro ao adicionar mídia ao card')
-      }
-
-      const newMedia = await mediaRes.json()
-      setCardMedia([...cardMedia, newMedia])
-    } catch (err: any) {
-      setError(err.message || 'Erro ao adicionar mídia')
-    } finally {
-      setUploadingMedia(false)
-    }
-  }
-
   async function handleRemoveMedia(mediaId: string) {
     if (!editingCard) return
 
@@ -361,7 +297,7 @@ export default function PromoCardsPage() {
 
       if (!res.ok) throw new Error('Erro ao remover mídia')
 
-      setCardMedia(cardMedia.filter(m => m.id !== mediaId))
+      setCardMedia((prev) => prev.filter(m => m.id !== mediaId))
     } catch (err: any) {
       setError(err.message || 'Erro ao remover mídia')
     }
@@ -447,7 +383,9 @@ export default function PromoCardsPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        console.error('Erro ao salvar card:', data)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Erro ao salvar card:', data)
+        }
         const errorMsg = data.error || 'Erro ao salvar card'
         const details = data.details ? `\n\nDetalhes: ${JSON.stringify(data.details, null, 2)}` : ''
         throw new Error(errorMsg + details)
@@ -456,7 +394,14 @@ export default function PromoCardsPage() {
       const saved = await res.json().catch(() => null)
       await fetchCards()
 
-      // Se estiver criando, manter modal aberto para adicionar fotos ao carrossel
+      // Para apoios: fechar modal após criar
+      if (formData.placement === 'APOIO') {
+        setInfo('Apoio adicionado!')
+        closeModal()
+        return
+      }
+
+      // Se estiver criando card normal, manter modal aberto para adicionar fotos
       if (!editingCard && saved?.id) {
         setEditingCard(saved)
         setInfo('Card criado! Agora você pode adicionar várias fotos no bloco "Fotos do Carrossel".')
@@ -523,6 +468,17 @@ export default function PromoCardsPage() {
     }
   }
 
+  // Hooks devem estar ANTES de qualquer return condicional
+  const isApoioModal = formData.placement === 'APOIO' && (!editingCard || editingCard?.placement === 'APOIO')
+  
+  // Memoizar mídias filtradas para evitar re-execução a cada render
+  const imageMedia = useMemo(() => {
+    return cardMedia
+      .filter((m) => m.mediaType === 'image')
+      .slice()
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+  }, [cardMedia])
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -534,47 +490,50 @@ export default function PromoCardsPage() {
     )
   }
 
+  function openAdicionarApoio() {
+    setEditingCard(null)
+    setFormData({
+      title: 'Apoiador',
+      content: '—',
+      imageUrl: '',
+      active: true,
+      displayOrder: 0,
+      backgroundColor: '#f8f9fa',
+      textColor: '#333333',
+      autoPlay: true,
+      slideInterval: 3000,
+      linkEnabled: false,
+      linkUrl: '',
+      placement: 'APOIO',
+      comprarSlot: '',
+    })
+    setPreviewImage(null)
+    setCardMedia([])
+    setShowModal(true)
+    setError('')
+    setInfo('')
+  }
+
   return (
     <div className="px-4 py-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-blue-900 mb-2">Cards de Divulgação</h1>
-          <p className="text-gray-600">Cards na home, compra e seção Nossos Apoios. Use &quot;Adicionar Apoio&quot; para logos.</p>
+          <p className="text-gray-600">Cards na home, compra e seção Nossos Apoios.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={openAdicionarApoio}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg transition-all"
+          >
+            + Novo Apoio
+          </button>
           <button
             onClick={() => openModal()}
             className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold shadow-lg transition-all"
           >
             + Novo Card
-          </button>
-          <button
-            onClick={() => {
-              setEditingCard(null)
-              setFormData({
-                title: '',
-                content: '—',
-                imageUrl: '',
-                active: true,
-                displayOrder: 0,
-                backgroundColor: '#f8f9fa',
-                textColor: '#333333',
-                autoPlay: true,
-                slideInterval: 3000,
-                linkEnabled: false,
-                linkUrl: '',
-                placement: 'APOIO',
-                comprarSlot: '',
-              })
-              setPreviewImage(null)
-              setCardMedia([])
-              setShowModal(true)
-              setError('')
-              setInfo('')
-            }}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg transition-all"
-          >
-            + Adicionar Apoio
           </button>
         </div>
       </div>
@@ -590,38 +549,17 @@ export default function PromoCardsPage() {
           <p className="text-gray-600 mb-4">Nenhum card cadastrado ainda.</p>
           <div className="flex flex-wrap justify-center gap-3">
             <button
+              type="button"
+              onClick={openAdicionarApoio}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            >
+              + Novo Apoio
+            </button>
+            <button
               onClick={() => openModal()}
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
             >
               Criar Primeiro Card
-            </button>
-            <button
-              onClick={() => {
-                setEditingCard(null)
-                setFormData({
-                  title: '',
-                  content: '—',
-                  imageUrl: '',
-                  active: true,
-                  displayOrder: 0,
-                  backgroundColor: '#f8f9fa',
-                  textColor: '#333333',
-                  autoPlay: true,
-                  slideInterval: 3000,
-                  linkEnabled: false,
-                  linkUrl: '',
-                  placement: 'APOIO',
-                  comprarSlot: '',
-                })
-                setPreviewImage(null)
-                setCardMedia([])
-                setShowModal(true)
-                setError('')
-                setInfo('')
-              }}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-            >
-              + Adicionar Apoio
             </button>
           </div>
         </div>
@@ -696,7 +634,7 @@ export default function PromoCardsPage() {
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b-2 border-gray-200">
               <h2 className="text-2xl font-bold text-blue-900">
-                {editingCard ? 'Editar Card' : 'Novo Card'}
+                {isApoioModal ? (editingCard ? 'Editar Apoio' : 'Novo Apoio') : editingCard ? 'Editar Card' : 'Novo Card'}
               </h2>
             </div>
 
@@ -706,6 +644,9 @@ export default function PromoCardsPage() {
                   {info}
                 </div>
               )}
+
+              {!isApoioModal && (
+                <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Título *
@@ -733,19 +674,16 @@ export default function PromoCardsPage() {
                   placeholder="Descreva o evento, informações importantes, etc..."
                 />
               </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Imagem {formData.placement === 'APOIO' ? '(obrigatório para apoios)' : '(opcional)'}
+                  {isApoioModal ? 'Logo do apoio *' : `Imagem ${formData.placement === 'APOIO' ? '(obrigatório)' : '(opcional)'}`}
                 </label>
                 
-                {formData.placement === 'APOIO' && (
-                  <div className="mb-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                    <p className="text-sm font-semibold text-blue-900 mb-1">🏷️ Logo do apoio</p>
-                    <p className="text-xs text-blue-800">
-                      Envie o logo em <strong>PNG, JPG ou PDF</strong> (máx. 5MB). Para apoios, use o campo &quot;Imagem&quot; aqui ou as &quot;Fotos do carrossel&quot; depois de salvar.
-                    </p>
-                  </div>
+                {isApoioModal && (
+                  <p className="text-xs text-gray-600 mb-2">Envie o logo em PNG ou JPG (máx. 5MB). Só isso é necessário.</p>
                 )}
                 
                 {/* Informações sobre tamanho ideal */}
@@ -806,7 +744,8 @@ export default function PromoCardsPage() {
                 </div>
               </div>
 
-              {/* Fotos do carrossel (múltiplas) */}
+              {/* Fotos do carrossel (múltiplas) - só para cards normais */}
+              {!isApoioModal && (
               <div className="border-t-2 border-gray-200 pt-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">🖼️ Fotos do Carrossel (várias)</h3>
                 <p className="text-xs text-gray-600 mb-3">
@@ -834,11 +773,7 @@ export default function PromoCardsPage() {
                 {uploadingMedia && <p className="text-sm text-blue-600 mt-2">Adicionando fotos...</p>}
 
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {cardMedia
-                    .filter((m) => m.mediaType === 'image')
-                    .slice()
-                    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-                    .map((m) => (
+                  {imageMedia.map((m) => (
                       <div key={m.id} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                         <div className="aspect-square bg-[#f8f9fa]">
                           <img src={m.mediaUrl} alt="Foto do carrossel" className="h-full w-full object-cover" />
@@ -857,11 +792,13 @@ export default function PromoCardsPage() {
                     ))}
                 </div>
 
-                {editingCard && cardMedia.filter((m) => m.mediaType === 'image').length === 0 && (
+                {editingCard && imageMedia.length === 0 && (
                   <p className="text-sm text-gray-600 mt-3">Nenhuma foto adicionada ainda.</p>
                 )}
               </div>
+              )}
 
+              {!isApoioModal && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -887,8 +824,9 @@ export default function PromoCardsPage() {
                   />
                 </div>
               </div>
+              )}
 
-              {/* Configurações do carrossel */}
+              {!isApoioModal && (
               <div className="border-t-2 border-gray-200 pt-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">🎞️ Carrossel</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -927,7 +865,9 @@ export default function PromoCardsPage() {
                   </div>
                 </div>
               </div>
+              )}
 
+              {!isApoioModal && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -958,8 +898,9 @@ export default function PromoCardsPage() {
                   </label>
                 </div>
               </div>
+              )}
 
-              {/* Onde aparece */}
+              {!isApoioModal && (
               <div className="border-t-2 border-gray-200 pt-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">📍 Onde o card aparece</h3>
 
@@ -1011,9 +952,11 @@ export default function PromoCardsPage() {
                   </div>
                 </div>
               </div>
+              )}
 
-              {/* Configurações de Link */}
+              {!isApoioModal && (
               <div className="border-t-2 border-gray-200 pt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 Configurações de Link</h3>
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">🔗 Configurações de Link</h3>
                 
                 <div className="mb-4">
@@ -1051,6 +994,7 @@ export default function PromoCardsPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {error && (
                 <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -1058,7 +1002,21 @@ export default function PromoCardsPage() {
                 </div>
               )}
 
-              <div className="flex gap-4 pt-4">
+                {isApoioModal && (
+                  <div className="border-t-2 border-gray-200 pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Link (opcional)</label>
+                    <input
+                      type="url"
+                      value={formData.linkUrl}
+                      onChange={(e) => setFormData(prev => ({ ...prev, linkUrl: e.target.value, linkEnabled: !!e.target.value.trim() }))}
+                      placeholder="https://site-do-apoiador.com"
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Se preenchido, o logo será clicável.</p>
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-4">
                 <button
                   type="button"
                   onClick={closeModal}
@@ -1070,7 +1028,7 @@ export default function PromoCardsPage() {
                   type="submit"
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
                 >
-                  {editingCard ? 'Salvar Alterações' : 'Criar Card'}
+                  {isApoioModal ? (editingCard ? 'Salvar' : 'Adicionar Apoio') : (editingCard ? 'Salvar Alterações' : 'Criar Card')}
                 </button>
               </div>
             </form>

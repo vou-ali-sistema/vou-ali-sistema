@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const promoCardSchema = z.object({
-  title: z.string().min(1, 'Título é obrigatório'),
-  content: z.string().min(1, 'Conteúdo é obrigatório'),
+  title: z.string().optional().transform(val => val?.trim() || 'Apoiador'),
+  content: z.string().optional().transform(val => val?.trim() || '—'),
   imageUrl: z.string().optional().or(z.literal('')).transform(val => {
     if (!val || val === '') return undefined
     // Aceitar URLs completas ou relativas (começando com /)
