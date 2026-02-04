@@ -19,45 +19,46 @@ export async function GET(request: NextRequest) {
         ? { equals: 'APOIO' as any }
         : undefined
 
-    // Otimizar: para APOIO, não carregar mídias (só precisam de imageUrl)
-    // Para HOME e COMPRAR, carregar mídias pois podem ter carrosséis
-    const isApoioOnly = placement === 'APOIO'
-    
+    const selectBase = {
+      id: true,
+      title: true,
+      content: true,
+      imageUrl: true,
+      backgroundColor: true,
+      textColor: true,
+      autoPlay: true,
+      slideInterval: true,
+      linkEnabled: true,
+      linkUrl: true,
+      placement: true,
+      comprarSlot: true,
+      displayOrder: true,
+      createdAt: true,
+      updatedAt: true,
+    } as const
+
+    const selectWithMedia = {
+      ...selectBase,
+      media: {
+        orderBy: { displayOrder: 'asc' as const },
+        select: {
+          id: true,
+          mediaUrl: true,
+          mediaType: true,
+          displayOrder: true,
+          createdAt: true,
+        },
+      },
+    } as const
+
+    const includeMedia = placement !== 'APOIO'
+
     const cards = await prisma.promoCard.findMany({
       where: {
         active: true,
         ...(wherePlacement ? { placement: wherePlacement } : {}),
       },
-      ...(isApoioOnly 
-        ? {
-            // Para apoios, não incluir mídias - só precisam de imageUrl
-            select: {
-              id: true,
-              title: true,
-              content: true,
-              imageUrl: true,
-              backgroundColor: true,
-              textColor: true,
-              autoPlay: true,
-              slideInterval: true,
-              linkEnabled: true,
-              linkUrl: true,
-              placement: true,
-              comprarSlot: true,
-              displayOrder: true,
-              createdAt: true,
-              updatedAt: true,
-            }
-          }
-        : {
-            // Para HOME e COMPRAR, incluir mídias para carrosséis
-            include: {
-              media: {
-                orderBy: { displayOrder: 'asc' },
-              },
-            },
-          }
-      ),
+      select: includeMedia ? selectWithMedia : selectBase,
       orderBy: [
         { displayOrder: 'asc' },
         { createdAt: 'desc' },
@@ -71,8 +72,7 @@ export async function GET(request: NextRequest) {
       linkUrl: card.linkUrl ?? null,
       placement: card.placement ?? 'BOTH',
       comprarSlot: card.comprarSlot ?? null,
-      // Para apoios (que não têm media), adicionar array vazio para compatibilidade
-      media: isApoioOnly ? [] : (card as any).media || [],
+      media: 'media' in card ? (card.media ?? []) : [],
     }))
 
     return NextResponse.json(cardsWithDefaults, {
