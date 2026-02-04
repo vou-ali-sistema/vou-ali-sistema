@@ -92,19 +92,52 @@ export async function GET(request: NextRequest) {
 
     // Garantir que campos novos tenham valores padrão para compatibilidade
     // Adicionar media como array vazio (será carregado sob demanda quando necessário)
-    const cardsWithDefaults = cards.map(card => ({
-      ...card,
-      autoPlay: card.autoPlay ?? true,
-      slideInterval: card.slideInterval ?? 5000,
-      linkEnabled: card.linkEnabled ?? true,
-      linkUrl: card.linkUrl ?? null,
-      placement: card.placement ?? 'BOTH',
-      comprarSlot: card.comprarSlot ?? null,
-      media: [], // Array vazio - mídias são carregadas sob demanda via /api/admin/promo-cards/[id]/media
-      // Garantir que datas sejam serializadas corretamente
-      createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : card.createdAt,
-      updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : card.updatedAt,
-    }))
+    const cardsWithDefaults = cards.map(card => {
+      try {
+        return {
+          id: String(card.id),
+          title: String(card.title || ''),
+          content: String(card.content || ''),
+          imageUrl: card.imageUrl ? String(card.imageUrl) : null,
+          active: Boolean(card.active),
+          displayOrder: Number(card.displayOrder) || 0,
+          backgroundColor: card.backgroundColor ? String(card.backgroundColor) : null,
+          textColor: card.textColor ? String(card.textColor) : null,
+          autoPlay: card.autoPlay ?? true,
+          slideInterval: Number(card.slideInterval) || 5000,
+          linkEnabled: card.linkEnabled ?? true,
+          linkUrl: card.linkUrl ? String(card.linkUrl) : null,
+          placement: (card.placement || 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
+          comprarSlot: card.comprarSlot ? (card.comprarSlot as 'TOP' | 'BOTTOM') : null,
+          media: [], // Array vazio - mídias são carregadas sob demanda via /api/admin/promo-cards/[id]/media
+          // Garantir que datas sejam serializadas corretamente
+          createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : String(card.createdAt || new Date().toISOString()),
+          updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : String(card.updatedAt || new Date().toISOString()),
+        }
+      } catch (err) {
+        console.error('Erro ao processar card:', card.id, err)
+        // Retornar card básico em caso de erro
+        return {
+          id: String(card.id),
+          title: String(card.title || ''),
+          content: String(card.content || ''),
+          imageUrl: null,
+          active: Boolean(card.active),
+          displayOrder: 0,
+          backgroundColor: null,
+          textColor: null,
+          autoPlay: true,
+          slideInterval: 5000,
+          linkEnabled: true,
+          linkUrl: null,
+          placement: 'BOTH' as const,
+          comprarSlot: null,
+          media: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      }
+    })
 
     return NextResponse.json(cardsWithDefaults)
   } catch (error) {
