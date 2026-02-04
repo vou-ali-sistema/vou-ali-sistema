@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Garantir que campos novos tenham valores padrão para compatibilidade
+    // Adicionar media como array vazio (será carregado sob demanda quando necessário)
     const cardsWithDefaults = cards.map(card => ({
       ...card,
       autoPlay: card.autoPlay ?? true,
@@ -99,6 +100,10 @@ export async function GET(request: NextRequest) {
       linkUrl: card.linkUrl ?? null,
       placement: card.placement ?? 'BOTH',
       comprarSlot: card.comprarSlot ?? null,
+      media: [], // Array vazio - mídias são carregadas sob demanda via /api/admin/promo-cards/[id]/media
+      // Garantir que datas sejam serializadas corretamente
+      createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : card.createdAt,
+      updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : card.updatedAt,
     }))
 
     return NextResponse.json(cardsWithDefaults)
