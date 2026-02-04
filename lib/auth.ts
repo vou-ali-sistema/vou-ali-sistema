@@ -6,7 +6,6 @@ import bcrypt from 'bcryptjs'
 export const authOptions: NextAuthOptions = {
   // Em produção (Vercel), isso precisa estar definido para JWT/session funcionar.
   secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true,
   providers: [
     CredentialsProvider({
       name: 'Credentials',
