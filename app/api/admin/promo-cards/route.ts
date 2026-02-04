@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -12,10 +9,7 @@ const promoCardSchema = z.object({
   content: z.string().optional().transform(val => val?.trim() || '—'),
   imageUrl: z.string().optional().or(z.literal('')).transform(val => {
     if (!val || val === '') return undefined
-    // Aceitar URLs completas ou relativas (começando com /)
-    if (val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://')) {
-      return val
-    }
+    if (val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://')) return val
     return undefined
   }),
   active: z.boolean().default(true),
@@ -27,32 +21,19 @@ const promoCardSchema = z.object({
   linkEnabled: z.boolean().default(true),
   linkUrl: z.string().optional().or(z.literal('')).transform(val => {
     if (!val || val === '') return undefined
-    // Aceitar URLs completas ou relativas (começando com /)
-    if (val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://')) {
-      return val
-    }
+    if (val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://')) return val
     return undefined
   }),
   placement: z.enum(['HOME', 'COMPRAR', 'BOTH', 'APOIO']).default('BOTH'),
-  // UI envia '' quando não selecionado; aceitar e normalizar para undefined.
-  comprarSlot: z
-    .enum(['TOP', 'BOTTOM'])
-    .optional()
-    .nullable()
-    .or(z.literal(''))
-    .transform((val) => {
-      if (!val) return undefined
-      return val
-    }),
+  comprarSlot: z.enum(['TOP', 'BOTTOM']).optional().nullable().or(z.literal('')).transform((val) => (val ? val : undefined)),
 }).superRefine((data, ctx) => {
   if (data.placement === 'APOIO' && !data.imageUrl) {
     ctx.addIssue({ code: 'custom', message: 'Logo é obrigatório', path: ['imageUrl'] })
   }
 })
 
-// GET - Listar todos os cards
-// Resposta 100% serializável (apenas primitivos/strings) para evitar 500 ao serializar JSON
-function serializeCard(card: {
+/** Serializa um card para JSON (apenas tipos seguros) */
+function toPlainCard(card: {
   id: string
   title: string | null
   content: string | null
@@ -76,8 +57,8 @@ function serializeCard(card: {
     title: String(card.title ?? ''),
     content: String(card.content ?? ''),
     imageUrl: card.imageUrl != null ? String(card.imageUrl) : null,
-    active: Boolean(card.active),
-    displayOrder: Number(card.displayOrder) ?? 0,
+    active: !!card.active,
+    displayOrder: Number(card.displayOrder) || 0,
     backgroundColor: card.backgroundColor != null ? String(card.backgroundColor) : null,
     textColor: card.textColor != null ? String(card.textColor) : null,
     autoPlay: card.autoPlay ?? true,
@@ -101,38 +82,42 @@ function serializeCard(card: {
 }
 
 export async function GET(request: NextRequest) {
+  let session: { user?: { email?: string } } | null = null
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    }
-  } catch (_e) {
-    return NextResponse.json({ error: 'Erro de autenticação' }, { status: 401 })
+    const { getServerSession } = await import('next-auth')
+    const { authOptions } = await import('@/lib/auth')
+    session = await getServerSession(authOptions)
+  } catch (authErr) {
+    console.error('promo-cards GET: auth error', authErr)
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  if (!session) {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
   try {
+    const { prisma } = await import('@/lib/prisma')
     const activeOnly = new URL(request.url).searchParams.get('activeOnly') === 'true'
     const where = activeOnly ? { active: true } : {}
 
     const cards = await prisma.promoCard.findMany({
       where,
-      include: {
-        media: { orderBy: { displayOrder: 'asc' } },
-      },
+      include: { media: { orderBy: { displayOrder: 'asc' } } },
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
     })
 
-    const payload: ReturnType<typeof serializeCard>[] = []
+    const payload: ReturnType<typeof toPlainCard>[] = []
     for (const card of cards) {
       try {
-        payload.push(serializeCard(card))
-      } catch (cardErr) {
-        console.error('Erro ao serializar card', card.id, cardErr)
+        payload.push(toPlainCard(card))
+      } catch (_) {
+        // ignora card com erro
       }
     }
     return NextResponse.json(payload)
-  } catch (e) {
-    console.error('GET /api/admin/promo-cards error:', e)
+  } catch (err) {
+    console.error('promo-cards GET:', err)
     return NextResponse.json([])
   }
 }
@@ -140,12 +125,14 @@ export async function GET(request: NextRequest) {
 // POST - Criar novo card
 export async function POST(request: NextRequest) {
   try {
+    const { getServerSession } = await import('next-auth')
+    const { authOptions } = await import('@/lib/auth')
     const session = await getServerSession(authOptions)
-
     if (!session) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
+    const { prisma } = await import('@/lib/prisma')
     const body = await request.json()
     const data = promoCardSchema.parse(body)
 
@@ -165,26 +152,15 @@ export async function POST(request: NextRequest) {
         placement: data.placement,
         comprarSlot: data.comprarSlot ?? null,
       },
-      include: {
-        media: {
-          orderBy: { displayOrder: 'asc' },
-        },
-      },
+      include: { media: { orderBy: { displayOrder: 'asc' } } },
     })
 
-    return NextResponse.json(card, { status: 201 })
+    return NextResponse.json(toPlainCard(card), { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Dados inválidos', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Dados inválidos', details: error.errors }, { status: 400 })
     }
-
-    console.error('Erro ao criar card:', error)
-    return NextResponse.json(
-      { error: 'Erro ao criar card' },
-      { status: 500 }
-    )
+    console.error('promo-cards POST:', error)
+    return NextResponse.json({ error: 'Erro ao criar card' }, { status: 500 })
   }
 }
