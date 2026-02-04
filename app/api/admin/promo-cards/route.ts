@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 const promoCardSchema = z.object({
   title: z.string().optional().transform(val => val?.trim() || 'Apoiador'),
   content: z.string().optional().transform(val => val?.trim() || '—'),
@@ -48,96 +51,88 @@ const promoCardSchema = z.object({
 })
 
 // GET - Listar todos os cards
+// Resposta 100% serializável (apenas primitivos/strings) para evitar 500 ao serializar JSON
+function serializeCard(card: {
+  id: string
+  title: string | null
+  content: string | null
+  imageUrl: string | null
+  active: boolean
+  displayOrder: number
+  backgroundColor: string | null
+  textColor: string | null
+  autoPlay?: boolean | null
+  slideInterval?: number | null
+  linkEnabled?: boolean | null
+  linkUrl?: string | null
+  placement?: string | null
+  comprarSlot?: string | null
+  createdAt: Date
+  updatedAt: Date
+  media?: Array<{ id: string; mediaUrl: string; mediaType: string; displayOrder: number; createdAt?: Date }>
+}) {
+  return {
+    id: String(card.id),
+    title: String(card.title ?? ''),
+    content: String(card.content ?? ''),
+    imageUrl: card.imageUrl != null ? String(card.imageUrl) : null,
+    active: Boolean(card.active),
+    displayOrder: Number(card.displayOrder) ?? 0,
+    backgroundColor: card.backgroundColor != null ? String(card.backgroundColor) : null,
+    textColor: card.textColor != null ? String(card.textColor) : null,
+    autoPlay: card.autoPlay ?? true,
+    slideInterval: Number(card.slideInterval) ?? 5000,
+    linkEnabled: card.linkEnabled ?? true,
+    linkUrl: card.linkUrl != null ? String(card.linkUrl) : null,
+    placement: (card.placement ?? 'BOTH') as 'HOME' | 'COMPRAR' | 'BOTH' | 'APOIO',
+    comprarSlot: card.comprarSlot != null ? (card.comprarSlot as 'TOP' | 'BOTTOM') : null,
+    createdAt: card.createdAt instanceof Date ? card.createdAt.toISOString() : String(card.createdAt),
+    updatedAt: card.updatedAt instanceof Date ? card.updatedAt.toISOString() : String(card.updatedAt),
+    media: Array.isArray(card.media)
+      ? card.media.map((m) => ({
+          id: String(m.id),
+          mediaUrl: String(m.mediaUrl),
+          mediaType: String(m.mediaType ?? 'image'),
+          displayOrder: Number(m.displayOrder) ?? 0,
+          createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : (m.createdAt ? String(m.createdAt) : ''),
+        }))
+      : [],
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-
     if (!session) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+  } catch (_e) {
+    return NextResponse.json({ error: 'Erro de autenticação' }, { status: 401 })
+  }
 
-    const { searchParams } = new URL(request.url)
-    const activeOnly = searchParams.get('activeOnly') === 'true'
-
+  try {
+    const activeOnly = new URL(request.url).searchParams.get('activeOnly') === 'true'
     const where = activeOnly ? { active: true } : {}
 
-    // Buscar cards - versão simplificada e robusta
-    let cards
-    try {
-      cards = await prisma.promoCard.findMany({
-        where,
-        include: {
-          media: {
-            orderBy: { displayOrder: 'asc' },
-          },
-        },
-        orderBy: [
-          { displayOrder: 'asc' },
-          { createdAt: 'desc' },
-        ],
-      })
-    } catch (prismaError: any) {
-      console.error('Erro na query do Prisma:', {
-        message: prismaError?.message,
-        code: prismaError?.code,
-        meta: prismaError?.meta,
-      })
-      // Retornar array vazio em caso de erro do Prisma para não quebrar a página
-      return NextResponse.json([])
-    }
-
-    // Se não houver cards, retornar array vazio
-    if (!Array.isArray(cards) || cards.length === 0) {
-      return NextResponse.json([])
-    }
-
-    // Garantir que campos novos tenham valores padrão para compatibilidade
-    // Versão simplificada - usar spread e apenas ajustar campos necessários
-    const cardsWithDefaults = cards.map(card => {
-      // Usar spread operator e apenas ajustar campos que podem ser null/undefined
-      const result: any = {
-        ...card,
-        autoPlay: card.autoPlay ?? true,
-        slideInterval: card.slideInterval ?? 5000,
-        linkEnabled: card.linkEnabled ?? true,
-        linkUrl: card.linkUrl ?? null,
-        placement: card.placement ?? 'BOTH',
-        comprarSlot: card.comprarSlot ?? null,
-        media: Array.isArray(card.media) ? card.media : [],
-      }
-      
-      // Garantir serialização de datas
-      if (result.createdAt instanceof Date) {
-        result.createdAt = result.createdAt.toISOString()
-      }
-      if (result.updatedAt instanceof Date) {
-        result.updatedAt = result.updatedAt.toISOString()
-      }
-      
-      // Serializar mídias se necessário
-      if (Array.isArray(result.media) && result.media.length > 0) {
-        result.media = result.media.map((m: any) => ({
-          ...m,
-          createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
-        }))
-      }
-      
-      return result
+    const cards = await prisma.promoCard.findMany({
+      where,
+      include: {
+        media: { orderBy: { displayOrder: 'asc' } },
+      },
+      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
     })
 
-    return NextResponse.json(cardsWithDefaults)
-  } catch (error) {
-    console.error('Erro ao buscar cards:', error)
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    const errorStack = error instanceof Error ? error.stack : undefined
-    
-    // Em caso de erro, retornar array vazio para não quebrar a página
-    // Logs detalhados apenas em desenvolvimento
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Stack trace:', errorStack)
+    const payload: ReturnType<typeof serializeCard>[] = []
+    for (const card of cards) {
+      try {
+        payload.push(serializeCard(card))
+      } catch (cardErr) {
+        console.error('Erro ao serializar card', card.id, cardErr)
+      }
     }
-    
-    // Retornar array vazio em vez de erro 500 para permitir que a página carregue
+    return NextResponse.json(payload)
+  } catch (e) {
+    console.error('GET /api/admin/promo-cards error:', e)
     return NextResponse.json([])
   }
 }
