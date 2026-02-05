@@ -11,10 +11,10 @@ const cspCheckout =
   "font-src 'self' data:; " +
   "object-src 'none'; base-uri 'self'; form-action 'self';"
 
-// CSP forte para o restante do site (sem strict-dynamic/nonce que bloqueiam scripts do MP).
+// CSP para o restante do site: permite scripts inline do Next.js/React (admin, comprar, etc.).
 const cspStrict =
   "default-src 'self'; " +
-  "script-src 'self'; " +
+  "script-src 'self' 'unsafe-inline'; " +
   "style-src 'self' 'unsafe-inline'; " +
   "img-src 'self' data: blob: https:; " +
   "font-src 'self' data:; " +
