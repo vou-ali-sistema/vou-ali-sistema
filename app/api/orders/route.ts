@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { criarPreferenciaPedido } from '@/lib/mercado-pago'
 import { z } from 'zod'
-import { isPurchaseEnabled } from '@/lib/settings'
 
 const criarOrderSchema = z.object({
   customer: z.object({
@@ -19,6 +16,10 @@ const criarOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Import dinâmico para evitar problemas de inicialização
+    const { prisma } = await import('@/lib/prisma')
+    const { isPurchaseEnabled } = await import('@/lib/settings')
+    
     const purchaseEnabled = await isPurchaseEnabled()
     if (!purchaseEnabled) {
       return NextResponse.json(
@@ -125,11 +126,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         orderId: order.id,
         paymentLink: null,
-        warning: 'Mercado Pago não configurado. Configure o MERCADOPAGO_ACCESS_TOKEN no arquivo .env',
+        warning: 'Mercado Pago não configurado. Configure o MERCADOPAGO_ACCESS_TOKEN no Vercel (Environment Variables).',
       })
     }
 
     try {
+      const { criarPreferenciaPedido } = await import('@/lib/mercado-pago')
       const preference = await criarPreferenciaPedido(order.id)
       
       await prisma.order.update({

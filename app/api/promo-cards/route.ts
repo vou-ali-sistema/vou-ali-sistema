@@ -82,10 +82,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Erro ao buscar cards públicos:', error)
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar cards', details: errorMessage },
-      { status: 500 }
-    )
+    // Retornar array vazio para a página não quebrar; dados públicos são não-críticos
+    return NextResponse.json([], {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
+    })
   }
 }

@@ -16,7 +16,7 @@ export const mercadoPago = new Preference(client)
 
 export async function criarPreferenciaPedido(orderId: string) {
   if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
-    throw new Error('MERCADOPAGO_ACCESS_TOKEN não está configurado no arquivo .env')
+    throw new Error('MERCADOPAGO_ACCESS_TOKEN não está configurado. Configure no Vercel (Settings > Environment Variables) para produção.')
   }
 
   const order = await prisma.order.findUnique({
@@ -98,6 +98,7 @@ export async function criarPreferenciaPedido(orderId: string) {
       // Para desenvolvimento local, apenas criar a preferência sem URLs
       // O usuário precisará usar o init_point retornado
       console.warn('⚠️ Modo desenvolvimento: URLs HTTP não são suportadas pelo Mercado Pago. Use ngrok para HTTPS ou teste em produção.')
+      // Ainda assim, tentar criar a preferência (pode funcionar sem back_urls)
     }
 
     const preference = await mercadoPago.create({

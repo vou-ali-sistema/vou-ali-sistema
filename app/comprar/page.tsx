@@ -100,10 +100,10 @@ export default function ComprarPage() {
         const activeLot = await lotRes.json()
         if (!cancelled) setLot(activeLot)
 
-        // Processar cards de divulgação (não bloqueia se falhar)
+        // Processar cards de divulgação (não bloqueia se falhar; garantir array)
         if (cardsRes.ok) {
-          const cards = await cardsRes.json()
-          if (!cancelled) setPromoCards(cards)
+          const data = await cardsRes.json()
+          if (!cancelled) setPromoCards(Array.isArray(data) ? data : [])
         }
       } catch (err: any) {
         if (!cancelled) {

@@ -44,10 +44,11 @@ export default function HomePage() {
         ])
         if (cancelled) return
         
-        // Processar HOME cards
+        // Processar HOME cards (garantir sempre array para não quebrar o useMemo)
         if (homeRes.ok) {
-          const cards = await homeRes.json()
-          if (!cancelled) setPromoCards(cards || [])
+          const data = await homeRes.json()
+          const cards = Array.isArray(data) ? data : []
+          if (!cancelled) setPromoCards(cards)
         }
         
         // Processar APOIO cards de forma otimizada
