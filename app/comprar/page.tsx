@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
@@ -205,29 +205,29 @@ export default function ComprarPage() {
   }
   
   // Adicionar abadá de um lote específico
-  function adicionarAbadaDoLote(lotId: string) {
+  const adicionarAbadaDoLote = useCallback((lotId: string) => {
     const lot = lots.find(l => l.id === lotId)
     if (!lot) return
     
-    setItems([...items, { 
+    setItems(prevItems => [...prevItems, { 
       itemType: 'ABADA', 
       size: 'Tamanho Único', 
       quantity: 1, 
       lotId: lotId 
     }])
-  }
+  }, [lots])
 
   // Adicionar pulseira extra de um lote específico
-  function adicionarPulseiraDoLote(lotId: string) {
+  const adicionarPulseiraDoLote = useCallback((lotId: string) => {
     const lot = lots.find(l => l.id === lotId)
     if (!lot) return
     
-    setItems([...items, { 
+    setItems(prevItems => [...prevItems, { 
       itemType: 'PULSEIRA_EXTRA', 
       quantity: 1,
       lotId: lotId
     }])
-  }
+  }, [lots])
 
   // Adicionar pulseira extra (não precisa de lote selecionado)
   function adicionarPulseiraExtra() {
@@ -255,60 +255,64 @@ export default function ComprarPage() {
 
   // Handler para mudança de lote masculino
   // NÃO adiciona itens automaticamente - apenas marca o lote como selecionado
-  function handleLoteMasculinoChange(lotId: string) {
+  const handleLoteMasculinoChange = useCallback((lotId: string) => {
     const lotAnterior = selectedLotIdMasculino
     
     // Atualizar estado do lote selecionado
     setSelectedLotIdMasculino(lotId || null)
     
-    // Se desmarcou o lote, remover TODOS os itens deste lote
+    // Se desmarcou o lote, remover TODOS os itens deste lote (deferir para não bloquear)
     if (!lotId && lotAnterior) {
-      setItems(prevItems => {
-        const itemsRestantes = prevItems.filter(item => item.lotId !== lotAnterior)
-        
-        // Se era o primeiro lote, atualizar para o próximo lote disponível
-        if (primeiroLoteSelecionado === lotAnterior) {
-          const proximoLote = selectedLotIdFeminino || selectedLotesGenericos[0] || null
-          setPrimeiroLoteSelecionado(proximoLote)
-        }
-        
-        return itemsRestantes
-      })
+      setTimeout(() => {
+        setItems(prevItems => {
+          const itemsRestantes = prevItems.filter(item => item.lotId !== lotAnterior)
+          
+          // Se era o primeiro lote, atualizar para o próximo lote disponível
+          if (primeiroLoteSelecionado === lotAnterior) {
+            const proximoLote = selectedLotIdFeminino || selectedLotesGenericos[0] || null
+            setPrimeiroLoteSelecionado(proximoLote)
+          }
+          
+          return itemsRestantes
+        })
+      }, 0)
     } else if (lotId && !primeiroLoteSelecionado) {
       // Se este é o primeiro lote selecionado, marcar como primeiro
       setPrimeiroLoteSelecionado(lotId)
     }
-  }
+  }, [selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos, primeiroLoteSelecionado])
 
   // Handler para mudança de lote feminino
   // NÃO adiciona itens automaticamente - apenas marca o lote como selecionado
-  function handleLoteFemininoChange(lotId: string) {
+  const handleLoteFemininoChange = useCallback((lotId: string) => {
     const lotAnterior = selectedLotIdFeminino
     
     // Atualizar estado do lote selecionado
     setSelectedLotIdFeminino(lotId || null)
     
-    // Se desmarcou o lote, remover TODOS os itens deste lote
+    // Se desmarcou o lote, remover TODOS os itens deste lote (deferir para não bloquear)
     if (!lotId && lotAnterior) {
-      setItems(prevItems => {
-        const itemsRestantes = prevItems.filter(item => item.lotId !== lotAnterior)
-        
-        // Se era o primeiro lote, atualizar para o próximo lote disponível
-        if (primeiroLoteSelecionado === lotAnterior) {
-          const proximoLote = selectedLotIdMasculino || selectedLotesGenericos[0] || null
-          setPrimeiroLoteSelecionado(proximoLote)
-        }
-        
-        return itemsRestantes
-      })
+      setTimeout(() => {
+        setItems(prevItems => {
+          const itemsRestantes = prevItems.filter(item => item.lotId !== lotAnterior)
+          
+          // Se era o primeiro lote, atualizar para o próximo lote disponível
+          if (primeiroLoteSelecionado === lotAnterior) {
+            const proximoLote = selectedLotIdMasculino || selectedLotesGenericos[0] || null
+            setPrimeiroLoteSelecionado(proximoLote)
+          }
+          
+          return itemsRestantes
+        })
+      }, 0)
     } else if (lotId && !primeiroLoteSelecionado) {
       // Se este é o primeiro lote selecionado, marcar como primeiro
       setPrimeiroLoteSelecionado(lotId)
     }
-  }
+  }, [selectedLotIdFeminino, selectedLotIdMasculino, selectedLotesGenericos, primeiroLoteSelecionado])
 
   // Handler para mudança de lote genérico (sem distinção de gênero)
-  function handleLoteGenericoChange(lotId: string, isSelected: boolean) {
+  const handleLoteGenericoChange = useCallback((lotId: string, isSelected: boolean) => {
     if (isSelected) {
       // Adicionar lote aos selecionados
       setSelectedLotesGenericos(prev => [...prev, lotId])
@@ -321,26 +325,29 @@ export default function ComprarPage() {
       // Remover lote dos selecionados
       setSelectedLotesGenericos(prev => prev.filter(id => id !== lotId))
       
-      // Remover todos os itens deste lote
-      setItems(prevItems => {
-        const itemsRestantes = prevItems.filter(item => item.lotId !== lotId)
-        
-        // Se era o primeiro lote, atualizar para o próximo disponível
-        if (primeiroLoteSelecionado === lotId) {
-          const proximoLote = selectedLotIdMasculino || selectedLotIdFeminino || selectedLotesGenericos.find(id => id !== lotId) || null
-          setPrimeiroLoteSelecionado(proximoLote)
-        }
-        
-        return itemsRestantes
-      })
+      // Remover todos os itens deste lote (deferir para não bloquear)
+      setTimeout(() => {
+        setItems(prevItems => {
+          const itemsRestantes = prevItems.filter(item => item.lotId !== lotId)
+          
+          // Se era o primeiro lote, atualizar para o próximo disponível
+          if (primeiroLoteSelecionado === lotId) {
+            const proximoLote = selectedLotIdMasculino || selectedLotIdFeminino || selectedLotesGenericos.find(id => id !== lotId) || null
+            setPrimeiroLoteSelecionado(proximoLote)
+          }
+          
+          return itemsRestantes
+        })
+      }, 0)
     }
-  }
+  }, [selectedLotesGenericos, selectedLotIdMasculino, selectedLotIdFeminino, primeiroLoteSelecionado])
 
-  function removerItem(index: number) {
+  const removerItem = useCallback((index: number) => {
     // Permitir remover qualquer item, mesmo que seja o único
     // O usuário pode sempre adicionar novamente se necessário
-    setItems(items.filter((_, i) => i !== index))
-  }
+    // Usar função de atualização para evitar dependência de items
+    setItems(prevItems => prevItems.filter((_, i) => i !== index))
+  }, [])
 
   function atualizarItem(index: number, campo: keyof Item, valor: any) {
     const novosItems = [...items]
@@ -383,12 +390,14 @@ export default function ComprarPage() {
     return { topPreferred: top, bottomPreferred: bottom, unSlotted }
   }, [promoCards])
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
 
-    // Validações
+    // Validações rápidas (deferir para não bloquear)
+    await new Promise(resolve => setTimeout(resolve, 0))
+
     if (!name.trim()) {
       setError('Nome é obrigatório')
       setSubmitting(false)
@@ -407,12 +416,13 @@ export default function ComprarPage() {
       return
     }
 
-    // Garantir que todos os abadás tenham tamanho único
-    for (const item of items) {
+    // Garantir que todos os abadás tenham tamanho único (usar cópia para não mutar diretamente)
+    const itemsComTamanho = items.map(item => {
       if (item.itemType === 'ABADA' && !item.size) {
-        item.size = 'Tamanho Único'
+        return { ...item, size: 'Tamanho Único' }
       }
-    }
+      return item
+    })
 
     try {
       // Validar que pelo menos um lote foi selecionado
@@ -423,14 +433,14 @@ export default function ComprarPage() {
       }
 
       // Validar que há pelo menos um item
-      if (items.length === 0) {
+      if (itemsComTamanho.length === 0) {
         setError('Nenhum item encontrado. Selecione um lote para adicionar itens ao pedido.')
         setSubmitting(false)
         return
       }
 
       // Validar que todos os itens têm lote selecionado
-      const itemsSemLote = items.filter(item => !item.lotId)
+      const itemsSemLote = itemsComTamanho.filter(item => !item.lotId)
       if (itemsSemLote.length > 0) {
         setError('Alguns itens não têm lote associado. Recarregue a página e tente novamente.')
         setSubmitting(false)
@@ -438,7 +448,7 @@ export default function ComprarPage() {
       }
 
       // Validar que todos os itens têm tipo válido
-      const itemsSemTipo = items.filter(item => !item.itemType)
+      const itemsSemTipo = itemsComTamanho.filter(item => !item.itemType)
       if (itemsSemTipo.length > 0) {
         setError('Alguns itens não têm tipo definido. Recarregue a página e tente novamente.')
         setSubmitting(false)
@@ -446,7 +456,7 @@ export default function ComprarPage() {
       }
 
       // Agrupar itens por lote
-      const itemsByLot = items.reduce((acc, item) => {
+      const itemsByLot = itemsComTamanho.reduce((acc, item) => {
         const lotId = item.lotId!
         if (!acc[lotId]) {
           acc[lotId] = []
@@ -525,7 +535,7 @@ export default function ComprarPage() {
     } finally {
       setSubmitting(false)
     }
-  }
+  }, [name, phone, email, items, selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos])
 
   if (loading) {
     return (
