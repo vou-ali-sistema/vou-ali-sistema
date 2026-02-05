@@ -36,7 +36,6 @@ interface PromoCard {
 
 export default function ComprarPage() {
   const [lots, setLots] = useState<Lot[]>([])
-  const [selectedLotId, setSelectedLotId] = useState<string | null>(null)
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
   const [purchaseEnabled, setPurchaseEnabled] = useState<boolean | null>(null)
