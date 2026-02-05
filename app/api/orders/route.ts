@@ -152,18 +152,27 @@ export async function POST(request: NextRequest) {
     try {
       const { criarPreferenciaPedido } = await import('@/lib/mercado-pago')
       const preference = await criarPreferenciaPedido(order.id)
-      
+      const preferenceId = (preference as any).id ?? null
+      const initPoint = (preference as any).init_point ?? null
+
       await prisma.order.update({
         where: { id: order.id },
         data: {
-          mpPreferenceId: preference.id,
-          paymentLink: preference.init_point,
+          mpPreferenceId: preferenceId,
+          paymentLink: initPoint,
         }
+      })
+
+      // Checklist: logar orderId, preferenceId e init_point para rastreio
+      console.log('[MP] Preferência criada:', {
+        orderId: order.id,
+        preferenceId,
+        init_point: initPoint ? `${initPoint.substring(0, 60)}...` : null,
       })
 
       return NextResponse.json({
         orderId: order.id,
-        paymentLink: preference.init_point,
+        paymentLink: initPoint,
       })
     } catch (mpError: any) {
       console.error('Erro ao criar preferência Mercado Pago:', mpError)

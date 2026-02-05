@@ -73,7 +73,8 @@ export async function criarPreferenciaPedido(orderId: string) {
     const pendingUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
     const notificationUrl = `${baseUrl}/api/webhooks/mercadopago`
 
-    console.log('Criando preferência com URLs:', {
+    console.log('[MP] Criando preferência com URLs:', {
+      orderId,
       baseUrl,
       success: successUrl,
       failure: failureUrl,

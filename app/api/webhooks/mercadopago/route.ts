@@ -46,57 +46,88 @@ async function consultarPagamentoMP(paymentId: string) {
   return response.json()
 }
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  const query: Record<string, string> = {}
   try {
-    const body = await request.json()
-    
-    // Extrair paymentId do payload (pode vir em diferentes formatos)
-    let paymentId: string | null = null
-    
-    if (body.data?.id) {
-      paymentId = extractPaymentId(body.data.id)
-    } else if (body.resource) {
-      paymentId = extractPaymentId(body.resource)
-    } else if (body.id) {
-      paymentId = extractPaymentId(body.id)
-    }
+    const u = new URL(request.url)
+    u.searchParams.forEach((v, k) => { query[k] = v })
+  } catch {
+    /* ignore */
+  }
+  console.log('[Webhook MP] GET recebido (ping?):', query)
+  return NextResponse.json({ received: true })
+}
 
-    if (!paymentId) {
-      console.log('Webhook recebido sem paymentId:', body)
-      return NextResponse.json({ received: true })
-    }
+export async function POST(request: NextRequest) {
+  const quick200 = () => NextResponse.json({ received: true })
 
-    // Consultar API do Mercado Pago para obter detalhes do pagamento
+  let body: any = {}
+  try {
+    body = await request.json()
+  } catch {
+    body = {}
+  }
+
+  const url = request.url
+  const query: Record<string, string> = {}
+  try {
+    const u = new URL(url)
+    u.searchParams.forEach((v, k) => { query[k] = v })
+  } catch {
+    /* ignore */
+  }
+
+  const headersLog = {
+    'x-signature': request.headers.get('x-signature') ?? undefined,
+    'x-request-id': request.headers.get('x-request-id') ?? undefined,
+    'content-type': request.headers.get('content-type') ?? undefined,
+  }
+
+  console.log('[Webhook MP] Recebido:', {
+    method: request.method,
+    query,
+    headers: headersLog,
+    bodyKeys: Object.keys(body),
+    body: JSON.stringify(body).slice(0, 500),
+  })
+
+  let paymentId: string | null = null
+  if (body?.data?.id != null) {
+    paymentId = extractPaymentId(String(body.data.id))
+  }
+  if (!paymentId && body?.resource) paymentId = extractPaymentId(body.resource)
+  if (!paymentId && body?.id != null) paymentId = extractPaymentId(String(body.id))
+  if (!paymentId && query['data.id']) paymentId = extractPaymentId(query['data.id'])
+
+  if (!paymentId) {
+    console.log('[Webhook MP] Sem paymentId, ignorando. body:', body)
+    return quick200()
+  }
+
+  try {
     const payment = await consultarPagamentoMP(paymentId)
-    
-    const externalReference = payment.external_reference
+    const externalReference =
+      payment.external_reference != null
+        ? String(payment.external_reference).trim()
+        : null
+
     if (!externalReference) {
-      console.log('Pagamento sem external_reference:', paymentId)
-      return NextResponse.json({ received: true })
+      console.log('[Webhook MP] Pagamento sem external_reference:', paymentId, 'payment keys:', Object.keys(payment))
+      return quick200()
     }
 
     const order = await prisma.order.findUnique({
-      where: { id: externalReference }
+      where: { id: externalReference },
     })
 
     if (!order) {
-      console.log('Pedido não encontrado:', externalReference)
-      return NextResponse.json({ received: true })
+      console.log('[Webhook MP] Pedido não encontrado:', externalReference)
+      return quick200()
     }
 
-    // Se status == "approved"
     if (payment.status === 'approved') {
-      // Gerar exchangeToken se ainda não existir
       let exchangeToken = order.exchangeToken
-      if (!exchangeToken) {
-        exchangeToken = gerarTokenTroca()
-      }
-
-      // Buscar dados do cliente para enviar email
-      const orderWithCustomer = await prisma.order.findUnique({
-        where: { id: externalReference },
-        include: { customer: true }
-      })
+      if (!exchangeToken) exchangeToken = gerarTokenTroca()
 
       await prisma.order.update({
         where: { id: externalReference },
@@ -105,29 +136,26 @@ export async function POST(request: NextRequest) {
           paymentStatus: 'APPROVED',
           paidAt: new Date(),
           mpPaymentId: paymentId,
-          exchangeToken: exchangeToken,
-        }
+          exchangeToken,
+        },
       })
 
-      console.log(`Pedido ${externalReference} aprovado e token gerado`)
+      console.log('[Webhook MP] Pedido atualizado PAGO:', externalReference)
 
-      // Enviar email com token de troca
+      const orderWithCustomer = await prisma.order.findUnique({
+        where: { id: externalReference },
+        include: { customer: true },
+      })
       if (orderWithCustomer?.customer?.email) {
-        try {
-          await sendTokenEmail({
-            to: orderWithCustomer.customer.email,
-            customerName: orderWithCustomer.customer.name,
-            token: exchangeToken,
-            orderId: externalReference,
-            mpPaymentId: paymentId,
-          })
-          console.log(`Email enviado para ${orderWithCustomer.customer.email}`)
-        } catch (emailError) {
-          console.error('Erro ao enviar email:', emailError)
-          // Não falhar o webhook se o email falhar
-        }
-      } else {
-        console.warn(`Pedido ${externalReference} aprovado mas cliente não tem email cadastrado`)
+        sendTokenEmail({
+          to: orderWithCustomer.customer.email,
+          customerName: orderWithCustomer.customer.name,
+          token: exchangeToken,
+          orderId: externalReference,
+          mpPaymentId: paymentId,
+        }).catch((emailError) => {
+          console.error('[Webhook MP] Erro ao enviar email:', emailError)
+        })
       }
     } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
       await prisma.order.update({
@@ -136,24 +164,24 @@ export async function POST(request: NextRequest) {
           status: 'CANCELADO',
           paymentStatus: 'REJECTED',
           mpPaymentId: paymentId,
-        }
+        },
       })
+      console.log('[Webhook MP] Pedido atualizado CANCELADO:', externalReference)
     } else if (payment.status === 'refunded') {
       await prisma.order.update({
         where: { id: externalReference },
         data: {
           paymentStatus: 'REFUNDED',
           mpPaymentId: paymentId,
-        }
+        },
       })
+      console.log('[Webhook MP] Pedido atualizado REFUNDED:', externalReference)
     }
 
-    // Sempre responder 200 (idempotente)
-    return NextResponse.json({ received: true })
+    return quick200()
   } catch (error) {
-    console.error('Erro ao processar webhook:', error)
-    // Sempre responder 200 mesmo em caso de erro (idempotente)
-    return NextResponse.json({ received: true })
+    console.error('[Webhook MP] Erro ao processar:', error)
+    return quick200()
   }
 }
 
