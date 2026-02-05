@@ -171,25 +171,25 @@ export default function LotesPage() {
       )}
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-green-600">
-        <table className="w-full divide-y divide-gray-200 table-fixed">
+        <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-green-600 to-blue-900">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-1/4">
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Nome
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-24">
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                 Preço Abadá
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-40">
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                 Preço Pulseira
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-28">
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                 Produzidos (A/P)
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider w-24">
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
                 Ações
               </th>
             </tr>
@@ -197,27 +197,27 @@ export default function LotesPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {lotes.map((lote) => (
               <tr key={lote.id} className="hover:bg-gray-50">
-                <td className="px-4 py-4 text-sm font-medium text-gray-900 break-words">
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
                   {lote.name}
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                   R$ {(lote.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
                 </td>
-                <td className="px-4 py-4 text-sm text-gray-700">
+                <td className="px-6 py-4 text-sm text-gray-700">
                   {lote.pulseiraPriceCents !== null 
                     ? (
                       <div>
-                        <div className="font-medium break-words">{lote.pulseiraName || 'Pulseira Extra'}</div>
+                        <div className="font-medium">{lote.pulseiraName || 'Pulseira Extra'}</div>
                         <div className="text-xs text-gray-500">R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}</div>
                       </div>
                     )
                     : <span className="text-gray-400">-</span>
                   }
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                   {lote.abadaProducedQty ?? 0} / {lote.pulseiraProducedQty ?? 0}
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     lote.active
                       ? 'bg-green-100 text-green-800'
@@ -226,7 +226,7 @@ export default function LotesPage() {
                     {lote.active ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   {lote.active ? (
                     <button
                       onClick={() => handleDeactivate(lote.id)}
