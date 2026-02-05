@@ -64,9 +64,10 @@ export async function criarPreferenciaPedido(orderId: string) {
     // Para desenvolvimento local, você precisa usar ngrok ou similar
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.startsWith('http://')
     
-    const successUrl = `${baseUrl}/troca/pendente`
-    const failureUrl = `${baseUrl}/troca/pendente`
-    const pendingUrl = `${baseUrl}/troca/pendente`
+    // Incluir orderId na URL de retorno para facilitar busca do pedido
+    const successUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
+    const failureUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
+    const pendingUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
     const notificationUrl = `${baseUrl}/api/webhooks/mercadopago`
 
     console.log('Criando preferência com URLs:', {

@@ -78,15 +78,17 @@ export default function PedidosToolbar({
     const formData = new FormData(e.currentTarget)
     const q = formData.get('q')?.toString() || ''
     const status = formData.get('status')?.toString() || ''
-    const archived = formData.get('archived')?.toString() || ''
+    const archived = formData.get('archived') ? '1' : ''
     
     const params = new URLSearchParams()
-    if (q) params.set('q', q)
-    if (status) params.set('status', status)
+    if (q.trim()) params.set('q', q.trim())
+    if (status.trim()) params.set('status', status.trim())
     if (archived === '1') params.set('archived', '1')
     
     const queryString = params.toString()
-    router.push(`/admin/pedidos${queryString ? `?${queryString}` : ''}`)
+    const url = `/admin/pedidos${queryString ? `?${queryString}` : ''}`
+    
+    router.push(url)
   }
 
   return (
@@ -98,6 +100,7 @@ export default function PedidosToolbar({
           </label>
           <input
             name="q"
+            key={`q-${q}`} // Forçar re-render quando q mudar
             defaultValue={q}
             placeholder="Ex: Maria, 1199999..., admin@..., ID do pedido..."
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -108,6 +111,7 @@ export default function PedidosToolbar({
           <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
           <select
             name="status"
+            key={`status-${status}`} // Forçar re-render quando status mudar
             defaultValue={status}
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
@@ -121,7 +125,13 @@ export default function PedidosToolbar({
 
         <div className="md:col-span-3 flex flex-wrap items-center gap-3">
           <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-            <input type="checkbox" name="archived" value="1" defaultChecked={archived === '1'} />
+            <input 
+              type="checkbox" 
+              name="archived" 
+              value="1" 
+              key={`archived-${archived}`}
+              defaultChecked={archived === '1'} 
+            />
             Mostrar arquivados
           </label>
 

@@ -34,9 +34,13 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
       conditions.push({ archivedAt: null })
     }
 
-    // Aplicar filtro de status
-    if (status) {
-      conditions.push({ status })
+    // Aplicar filtro de status (só se não estiver vazio e for um valor válido)
+    if (status && status !== '') {
+      // Validar que o status é um dos valores válidos
+      const validStatuses = ['PENDENTE', 'PAGO', 'RETIRADO', 'CANCELADO']
+      if (validStatuses.includes(status)) {
+        conditions.push({ status: status as 'PENDENTE' | 'PAGO' | 'RETIRADO' | 'CANCELADO' })
+      }
     }
 
     // Aplicar busca
@@ -96,7 +100,8 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
     })
 
     return { orders }
-  } catch {
+  } catch (error) {
+    console.error('getOrders - Erro:', error)
     return { orders: [] as any[] }
   }
 }

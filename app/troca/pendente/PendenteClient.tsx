@@ -247,6 +247,7 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
             </div>
           ) : null}
 
+          {/* Se já temos confirmação do pedido via OrderConfirmation, não mostrar duplicado */}
           {approved && (data as any).exchangeToken ? (
             <div className="mt-4 bg-gradient-to-br from-green-50 to-green-100 border-4 border-green-500 rounded-xl p-6 shadow-lg">
               <div className="text-center mb-4">
