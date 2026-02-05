@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Log para debug
+console.log('[activate route] Route handler loaded')
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,10 +27,12 @@ export async function POST(
     }
 
     const { id } = await params
+    console.log('[activate route] Received ID:', id)
     
     if (!id || typeof id !== 'string') {
+      console.error('[activate route] Invalid ID:', id)
       return NextResponse.json(
-        { error: 'ID do lote inválido' },
+        { error: 'ID do lote inválido', details: `ID recebido: ${id}` },
         { status: 400 }
       )
     }
@@ -37,12 +42,14 @@ export async function POST(
     // Verificar se o lote existe antes de tentar ativar
     const lotExists = await prisma.lot.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, name: true },
     })
+
+    console.log('[activate route] Lot exists check:', lotExists ? `Sim - ${lotExists.name}` : 'Não')
 
     if (!lotExists) {
       return NextResponse.json(
-        { error: 'Lote não encontrado' },
+        { error: 'Lote não encontrado', details: `ID procurado: ${id}` },
         { status: 404 }
       )
     }

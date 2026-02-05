@@ -40,6 +40,11 @@ export default function LotesPage() {
   }
 
   async function handleActivate(id: string) {
+    if (!id) {
+      alert('Erro: ID do lote não fornecido')
+      return
+    }
+
     try {
       const res = await fetch(`/api/admin/lots/${id}/activate`, {
         method: 'POST',
@@ -49,11 +54,24 @@ export default function LotesPage() {
         await fetchLotes()
         alert('Lote ativado com sucesso!')
       } else {
-        const data = await res.json().catch(() => ({}))
-        alert(data.error || 'Erro ao ativar lote')
+        let errorMsg = `Erro ${res.status} ao ativar lote`
+        try {
+          const data = await res.json()
+          errorMsg = data.error || errorMsg
+          if (data.details) {
+            errorMsg += `\n\nDetalhes: ${data.details}`
+          }
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) errorMsg += `\n\nResposta: ${text}`
+        }
+        alert(errorMsg)
+        console.error('Erro ao ativar lote:', { status: res.status, id })
       }
     } catch (error) {
-      alert('Erro ao ativar lote')
+      console.error('Erro ao ativar lote:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      alert(`Erro ao ativar lote: ${errorMessage}`)
     }
   }
 
