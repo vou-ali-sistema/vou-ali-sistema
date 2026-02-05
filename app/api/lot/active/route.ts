@@ -1,14 +1,31 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server'
 
-// Cache por 30 segundos (lote ativo pode mudar, mas não constantemente)
-export const revalidate = 30
+// Rota dinâmica porque pode usar searchParams
+export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const activeLot = await prisma.lot.findFirst({
-      where: { active: true },
+    const { prisma } = await import('@/lib/prisma')
+    
+    // Aceitar parâmetro opcional para filtrar por tipo (feminino/masculino)
+    const gender = request.nextUrl.searchParams.get('gender') // 'FEMININO' | 'MASCULINO'
+    
+    let where: any = { active: true }
+    
+    // Se especificar gênero, filtrar pelo nome
+    if (gender) {
+      const genderUpper = gender.toUpperCase()
+      if (genderUpper === 'FEMININO' || genderUpper === 'MASCULINO') {
+        where = {
+          active: true,
+          name: { contains: genderUpper, mode: 'insensitive' },
+        }
+      }
+    }
+    
+    const activeLots = await prisma.lot.findMany({
+      where,
       select: {
         id: true,
         name: true,
@@ -16,17 +33,29 @@ export async function GET() {
         pulseiraPriceCents: true,
         abadaProducedQty: true,
         pulseiraProducedQty: true,
-      }
+      },
+      orderBy: { createdAt: 'desc' }, // Mais recente primeiro
     })
 
-    if (!activeLot) {
+    if (activeLots.length === 0) {
       return NextResponse.json(
         { error: 'Nenhum lote ativo encontrado' },
         { status: 404 }
       )
     }
 
-    return NextResponse.json(activeLot, {
+    // Se houver apenas um, retornar como objeto (compatibilidade)
+    // Se houver múltiplos, retornar array
+    if (activeLots.length === 1) {
+      return NextResponse.json(activeLots[0], {
+        headers: { 
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        },
+      })
+    }
+
+    // Múltiplos lotes ativos - retornar array
+    return NextResponse.json(activeLots, {
       headers: { 
         'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
       },

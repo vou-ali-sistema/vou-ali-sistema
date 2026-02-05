@@ -54,13 +54,43 @@ export async function POST(
       )
     }
 
-    // Usar transação para garantir que só um lote fique ativo
+    // Detectar tipo do lote (FEMININO ou MASCULINO) pelo nome
+    const lotNameUpper = lotExists.name.toUpperCase()
+    const isFeminino = lotNameUpper.includes('FEMININO')
+    const isMasculino = lotNameUpper.includes('MASCULINO')
+    
+    console.log('[activate route] Lot type detection:', { isFeminino, isMasculino, name: lotExists.name })
+
+    // Usar transação para garantir consistência
     const result = await prisma.$transaction(async (tx) => {
-      // Desativar todos os lotes
-      await tx.lot.updateMany({
-        where: { active: true },
-        data: { active: false },
-      })
+      // Se for feminino, desativar apenas outros lotes femininos
+      // Se for masculino, desativar apenas outros lotes masculinos
+      // Se não identificar tipo, desativar todos (comportamento antigo)
+      if (isFeminino) {
+        await tx.lot.updateMany({
+          where: { 
+            active: true,
+            name: { contains: 'FEMININO', mode: 'insensitive' },
+            id: { not: id }
+          },
+          data: { active: false },
+        })
+      } else if (isMasculino) {
+        await tx.lot.updateMany({
+          where: { 
+            active: true,
+            name: { contains: 'MASCULINO', mode: 'insensitive' },
+            id: { not: id }
+          },
+          data: { active: false },
+        })
+      } else {
+        // Se não identificar tipo, desativar todos (comportamento antigo para compatibilidade)
+        await tx.lot.updateMany({
+          where: { active: true, id: { not: id } },
+          data: { active: false },
+        })
+      }
 
       // Ativar o lote solicitado
       const activatedLot = await tx.lot.update({

@@ -47,9 +47,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Buscar lote ativo
+    // Buscar lote ativo (pode haver múltiplos - feminino e masculino)
+    // Por padrão, usar o primeiro encontrado (ou podemos adicionar parâmetro gender no futuro)
     const activeLot = await prisma.lot.findFirst({
-      where: { active: true }
+      where: { active: true },
+      orderBy: { createdAt: 'desc' }, // Mais recente primeiro
     })
 
     if (!activeLot) {
