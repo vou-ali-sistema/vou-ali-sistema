@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
@@ -409,12 +409,15 @@ export default function ComprarPage() {
       }
 
       // Um único pedido com todos os itens; cada item envia seu lotId para o backend usar o preço do lote correto (feminino vs masculino)
-      const payloadItems = itemsComTamanho.map(item => ({
-        itemType: item.itemType,
-        size: item.itemType === 'ABADA' ? (item.size || 'Tamanho Único') : undefined,
-        quantity: item.quantity,
-        ...(item.lotId && { lotId: String(item.lotId).trim() }),
-      }))
+      const payloadItems = itemsComTamanho.map(item => {
+        const lotId = item.lotId != null ? String(item.lotId).trim() : ''
+        return {
+          itemType: item.itemType,
+          size: item.itemType === 'ABADA' ? (item.size || 'Tamanho Único') : undefined,
+          quantity: item.quantity,
+          ...(lotId ? { lotId } : {}),
+        }
+      })
 
       const res = await fetch('/api/orders', {
         method: 'POST',
@@ -460,12 +463,14 @@ export default function ComprarPage() {
     }
   }, [name, phone, email, items, selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos])
 
-  // Abrir checkout do Mercado Pago em nova aba (evita travamentos; formas de pagamento carregam melhor)
+  // Abrir checkout do Mercado Pago em nova aba (apenas uma vez; evita duas abas por Strict Mode ou re-render)
+  const paymentLinkOpenedRef = useRef<string | null>(null)
   useEffect(() => {
     if (!redirectingToPayment) return
+    if (paymentLinkOpenedRef.current === redirectingToPayment) return
+    paymentLinkOpenedRef.current = redirectingToPayment
     const opened = window.open(redirectingToPayment, '_blank', 'noopener,noreferrer')
     if (!opened) {
-      // Pop-up bloqueado: redirecionar na mesma janela após 1s
       const t = setTimeout(() => { window.location.href = redirectingToPayment }, 1000)
       return () => clearTimeout(t)
     }

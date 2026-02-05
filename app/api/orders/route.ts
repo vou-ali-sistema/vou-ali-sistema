@@ -80,11 +80,16 @@ export async function POST(request: NextRequest) {
     for (const item of data.items) {
       const rawLotId = item.lotId != null ? String(item.lotId).trim() : ''
       const lot = rawLotId ? lotMap.get(rawLotId) : null
+      if (rawLotId && !lot) {
+        return NextResponse.json(
+          { error: `Lote "${rawLotId}" não encontrado ou inativo. Recarregue a página e tente novamente.` },
+          { status: 400 }
+        )
+      }
       const lotToUse = lot || defaultLot
       if (!lotToUse) {
-        const id = rawLotId || data.lotId
         return NextResponse.json(
-          { error: `Lote não encontrado ou inativo: ${id}. Recarregue a página e tente novamente.` },
+          { error: 'Nenhum lote definido para este item. Recarregue a página e selecione os lotes novamente.' },
           { status: 400 }
         )
       }
