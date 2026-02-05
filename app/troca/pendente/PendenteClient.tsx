@@ -63,17 +63,29 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
           externalReference: externalRef,
         }),
       })
-      const json = (await res.json().catch(() => null)) as any
-      if (!res.ok) {
-        setData(json || { ok: false, error: `HTTP ${res.status}` })
+      
+      let json: any = null
+      try {
+        json = await res.json()
+      } catch (parseError) {
+        setData({ ok: false, error: `Erro ao processar resposta do servidor (HTTP ${res.status})` })
         return
       }
+      
+      if (!res.ok) {
+        setData(json || { ok: false, error: `Erro HTTP ${res.status}: ${res.statusText}` })
+        return
+      }
+      
       setData(json)
       
       // Se encontrou um pedido aprovado, limpar o localStorage
       if (json?.status === 'PAGO' && typeof window !== 'undefined') {
         localStorage.removeItem('vouali_recent_order_id')
       }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      setData({ ok: false, error: `Erro ao sincronizar: ${errorMessage}` })
     } finally {
       setBusy(false)
     }
@@ -118,31 +130,55 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
         }
         
         // Buscar dados atualizados
-        const externalRef = externalReference || recentOrderId || undefined
-        const res = await fetch('/api/public/payment/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentId,
-            preferenceId,
-            externalReference: externalRef,
-          }),
-        })
-        
-        if (cancelled) return
-        
-        const json = (await res.json().catch(() => null)) as any
-        if (res.ok && json) {
-          setData(json)
+        try {
+          const externalRef = externalReference || recentOrderId || undefined
+          const res = await fetch('/api/public/payment/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              paymentId,
+              preferenceId,
+              externalReference: externalRef,
+            }),
+          })
           
-          // Se aprovado, parar o polling e limpar localStorage
-          const approved = json?.status === 'PAGO' || json?.paymentStatus === 'APPROVED'
-          if (approved && interval) {
-            clearInterval(interval)
-            interval = null
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('vouali_recent_order_id')
+          if (cancelled) return
+          
+          let json: any = null
+          try {
+            json = await res.json()
+          } catch (parseError) {
+            if (!cancelled) {
+              setData({ ok: false, error: `Erro ao processar resposta do servidor (HTTP ${res.status})` })
             }
+            return
+          }
+          
+          if (res.ok && json) {
+            if (!cancelled) {
+              setData(json)
+            }
+            
+            // Se aprovado, parar o polling e limpar localStorage
+            const approved = json?.status === 'PAGO' || json?.paymentStatus === 'APPROVED'
+            if (approved && interval) {
+              clearInterval(interval)
+              interval = null
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('vouali_recent_order_id')
+              }
+            }
+          } else if (!res.ok && json) {
+            // Tratar erro do backend no polling também
+            if (!cancelled) {
+              setData(json || { ok: false, error: `Erro HTTP ${res.status}: ${res.statusText}` })
+            }
+          }
+        } catch (error) {
+          // Erro de rede ou outro erro
+          if (!cancelled) {
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            setData({ ok: false, error: `Erro ao sincronizar: ${errorMessage}` })
           }
         }
       }, 2000) // Polling a cada 2 segundos (mais rápido)
@@ -210,17 +246,13 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
             <div className="text-sm text-gray-700">
               <div>
                 <span className="font-semibold">Status:</span>{' '}
-                {data && (data as any).status ? (
-                  <span className={`font-bold ${
-                    (data as any).status === 'PAGO' ? 'text-green-600' : 
-                    (data as any).status === 'CANCELADO' ? 'text-red-600' : 
-                    'text-yellow-600'
-                  }`}>
-                    {(data as any).status}
-                  </span>
-                ) : (
-                  <span className="text-yellow-600">Verificando...</span>
-                )}
+                <span className={`font-bold ${
+                  (data as any)?.status === 'PAGO' ? 'text-green-600' : 
+                  (data as any)?.status === 'CANCELADO' ? 'text-red-600' : 
+                  'text-yellow-600'
+                }`}>
+                  {(data as any)?.status ?? 'Processando pagamento...'}
+                </span>
               </div>
               {data && (data as any).mpStatus ? (
                 <div className="text-xs text-gray-500 mt-1">
@@ -363,10 +395,17 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
 
           {data && (data as any).ok === false ? (
             <div className="mt-4 bg-red-50 border-2 border-red-200 rounded-lg p-4">
-              <p className="font-semibold text-red-700">Erro</p>
-              <p className="text-sm text-gray-700 mt-1">
-                {(data as any).error} {(data as any).details ? `— ${(data as any).details}` : ''}
+              <p className="font-semibold text-red-700">❌ Erro ao sincronizar pagamento</p>
+              <p className="text-sm text-gray-700 mt-1 font-medium">
+                {(data as any).error || 'Erro desconhecido'}
               </p>
+              {(data as any).details ? (
+                <p className="text-xs text-gray-600 mt-2 font-mono bg-gray-100 p-2 rounded break-all">
+                  {typeof (data as any).details === 'string' 
+                    ? (data as any).details 
+                    : JSON.stringify((data as any).details)}
+                </p>
+              ) : null}
             </div>
           ) : null}
         </div>

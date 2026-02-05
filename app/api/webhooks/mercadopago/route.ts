@@ -40,7 +40,9 @@ async function consultarPagamentoMP(paymentId: string) {
 
   if (!response.ok) {
     const text = await response.text().catch(() => '')
-    throw new Error(`Erro ao consultar pagamento: ${response.status} ${response.statusText} ${text}`)
+    const err = new Error(`Erro ao consultar pagamento: ${response.status} ${response.statusText} ${text}`) as Error & { status?: number }
+    err.status = response.status
+    throw err
   }
 
   return response.json()
@@ -84,7 +86,7 @@ export async function POST(request: NextRequest) {
   if (!paymentId && body?.id != null) paymentId = extractPaymentId(String(body.id))
   if (!paymentId && query['data.id']) paymentId = extractPaymentId(query['data.id'])
 
-  if (!paymentId) return quick200()
+  if (!paymentId || !/^\d+$/.test(paymentId)) return quick200()
 
   try {
     const payment = await consultarPagamentoMP(paymentId)

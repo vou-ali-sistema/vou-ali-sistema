@@ -36,7 +36,9 @@ async function mpFetchJson(url: string) {
 
   const text = await res.text().catch(() => '')
   if (!res.ok) {
-    throw new Error(`MP ${res.status} ${res.statusText} ${text}`)
+    const err = new Error(`MP ${res.status} ${res.statusText} ${text}`) as Error & { status?: number }
+    err.status = res.status
+    throw err
   }
   return text ? JSON.parse(text) : null
 }
@@ -88,7 +90,18 @@ export async function POST(request: NextRequest) {
 
     const externalReference = parsed.externalReference || undefined
     const preferenceId = parsed.preferenceId || undefined
-    const paymentId = parsed.paymentId || undefined
+    let paymentId = parsed.paymentId || undefined
+
+    // Validar payment_id quando enviado: deve ser numérico
+    if (paymentId != null && String(paymentId).trim() !== '') {
+      const pidStr = String(paymentId).trim()
+      if (isNaN(Number(pidStr)) || !/^\d+$/.test(pidStr)) {
+        return NextResponse.json({ ok: false, error: 'payment_id inválido' }, { status: 400 })
+      }
+      paymentId = pidStr
+    } else if (paymentId !== undefined) {
+      paymentId = undefined
+    }
 
     // Encontrar o pedido: por externalReference (id) ou por mpPreferenceId
     let order =
@@ -104,11 +117,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Pedido não encontrado' }, { status: 404 })
     }
 
-    const payment = await buscarPagamentoMP({
-      paymentId,
-      externalReference: order.externalReference || order.id,
-      preferenceId: preferenceId || order.mpPreferenceId || undefined,
-    })
+    let payment: any = null
+    try {
+      payment = await buscarPagamentoMP({
+        paymentId,
+        externalReference: order.externalReference || order.id,
+        preferenceId: preferenceId || order.mpPreferenceId || undefined,
+      })
+    } catch (mpError) {
+      const err = mpError as Error & { status?: number }
+      // Re-throw para ser capturado pelo catch externo que já trata 404/500
+      throw err
+    }
 
     if (!payment) {
       return NextResponse.json({
@@ -204,9 +224,18 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ ok: false, error: 'Dados inválidos', details: error.errors }, { status: 400 })
     }
+    const err = error as Error & { status?: number }
+    if (typeof err.status === 'number' && err.status === 404) {
+      return NextResponse.json(
+        { ok: false, error: 'Pagamento não encontrado no Mercado Pago' },
+        { status: 404 }
+      )
+    }
     console.error('Erro ao sync pagamento (public):', error)
-    const msg = error instanceof Error ? error.message : String(error)
-    return NextResponse.json({ ok: false, error: 'Erro ao sincronizar pagamento', details: msg }, { status: 500 })
+    return NextResponse.json(
+      { ok: false, error: 'Erro interno ao sincronizar pagamento' },
+      { status: 500 }
+    )
   }
 }
 
