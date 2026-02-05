@@ -7,10 +7,10 @@ import { z } from 'zod'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+/** Contrato: POST body { "payment_id": "13123456789" } */
 const schema = z.object({
-  externalReference: z.string().trim().optional(),
-  preferenceId: z.string().trim().optional(),
-  paymentId: z.string().trim().optional(),
+  payment_id: z.string().trim().optional(),
+  paymentId: z.string().trim().optional(), // aceita camelCase para compat
 })
 
 function maskEmail(email: string) {
@@ -47,40 +47,16 @@ function isNumericPaymentId(value: string): boolean {
   return /^\d+$/.test(value.trim())
 }
 
-async function buscarPagamentoMP(opts: { paymentId?: string; externalReference?: string; preferenceId?: string }) {
-  const pid = opts.paymentId?.trim()
-  const hasExternalRef = Boolean(opts.externalReference?.trim())
-  const preferenceIdForSearch = opts.preferenceId?.trim() || (pid && !isNumericPaymentId(pid) ? pid : undefined)
-  const hasPreferenceId = Boolean(preferenceIdForSearch)
-
-  // Só usar GET /v1/payments/{id} quando temos APENAS paymentId numérico (evita 404 por ID de outro ambiente ou preference_id)
-  if (pid && isNumericPaymentId(pid) && !hasExternalRef && !hasPreferenceId) {
-    return mpFetchJson(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(pid)}`)
+/**
+ * Consulta pagamento no Mercado Pago apenas por payment_id (id numérico).
+ * CORRETO: GET https://api.mercadopago.com/v1/payments/{payment_id}
+ * Não usar preference_id para sincronização.
+ */
+async function getPaymentById(paymentId: string): Promise<any> {
+  if (!paymentId || !isNumericPaymentId(paymentId)) {
+    return null
   }
-
-  const url = new URL('https://api.mercadopago.com/v1/payments/search')
-  url.searchParams.set('sort', 'date_created')
-  url.searchParams.set('criteria', 'desc')
-  if (opts.externalReference) url.searchParams.set('external_reference', opts.externalReference)
-  if (preferenceIdForSearch) url.searchParams.set('preference_id', preferenceIdForSearch)
-  url.searchParams.set('limit', '10')
-  const now = new Date()
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  url.searchParams.set('range', 'date_created')
-  url.searchParams.set('begin_date', thirtyDaysAgo.toISOString())
-  url.searchParams.set('end_date', now.toISOString())
-
-  const data = await mpFetchJson(url.toString())
-  const payments = Array.isArray(data?.results) ? data.results : []
-  
-  // Se temos externalReference, priorizar pagamentos com esse external_reference
-  if (opts.externalReference && payments.length > 0) {
-    const matching = payments.find((p: any) => p.external_reference === opts.externalReference)
-    if (matching) return matching
-  }
-  
-  // Retornar o mais recente
-  return payments.length > 0 ? payments[0] : null
+  return mpFetchJson(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`)
 }
 
 export async function POST(request: NextRequest) {
@@ -88,57 +64,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const parsed = schema.parse(body)
 
-    const externalReference = parsed.externalReference || undefined
-    const preferenceId = parsed.preferenceId || undefined
-    let paymentId = parsed.paymentId || undefined
+    const rawPaymentId = (parsed as any).payment_id ?? parsed.paymentId
+    const paymentIdStr = rawPaymentId != null ? String(rawPaymentId).trim() : ''
 
-    // payment_id só é usado em GET por ID quando for numérico; se vier UUID/preference_id, ignorar (evita 400 e deixa buscar por orderId/preferenceId)
-    if (paymentId != null && String(paymentId).trim() !== '') {
-      const pidStr = String(paymentId).trim()
-      if (isNaN(Number(pidStr)) || !/^\d+$/.test(pidStr)) {
-        paymentId = undefined
-      } else {
-        paymentId = pidStr
-      }
-    } else {
-      paymentId = undefined
-    }
-
-    // Encontrar o pedido: por externalReference (id) ou por mpPreferenceId
-    let order =
-      (externalReference
-        ? await prisma.order.findUnique({ where: { id: externalReference } })
-        : null) ||
-      (preferenceId
-        ? await prisma.order.findFirst({ where: { mpPreferenceId: preferenceId } })
-        : null) ||
-      (paymentId ? await prisma.order.findFirst({ where: { mpPaymentId: paymentId } }) : null)
-
-    if (!order) {
-      return NextResponse.json({ ok: false, error: 'Pedido não encontrado' }, { status: 404 })
+    if (!paymentIdStr || !isNumericPaymentId(paymentIdStr)) {
+      return NextResponse.json(
+        { error: 'payment_id inválido ou ausente. Envie { "payment_id": "13123456789" }.' },
+        { status: 400 }
+      )
     }
 
     let payment: any = null
     try {
-      payment = await buscarPagamentoMP({
-        paymentId,
-        externalReference: order.externalReference || order.id,
-        preferenceId: preferenceId || order.mpPreferenceId || undefined,
-      })
+      payment = await getPaymentById(paymentIdStr)
     } catch (mpError) {
       const err = mpError as Error & { status?: number }
-      // Re-throw para ser capturado pelo catch externo que já trata 404/500
       throw err
     }
 
     if (!payment) {
-      return NextResponse.json({
-        ok: true,
-        foundPayment: false,
-        orderId: order.id,
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-      })
+      return NextResponse.json(
+        { error: 'Pagamento não encontrado no Mercado Pago' },
+        { status: 404 }
+      )
+    }
+
+    const externalReference = payment.external_reference != null ? String(payment.external_reference).trim() : null
+    const order = externalReference
+      ? await prisma.order.findUnique({ where: { id: externalReference } })
+      : await prisma.order.findFirst({ where: { mpPaymentId: paymentIdStr } })
+
+    if (!order) {
+      return NextResponse.json({ ok: false, error: 'Pedido não encontrado' }, { status: 404 })
     }
 
     const mpStatus = String(payment.status || '')
