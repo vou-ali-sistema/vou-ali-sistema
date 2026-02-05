@@ -39,6 +39,8 @@ export default function ComprarPage() {
   // Estados separados para lotes masculino e feminino
   const [selectedLotIdMasculino, setSelectedLotIdMasculino] = useState<string | null>(null)
   const [selectedLotIdFeminino, setSelectedLotIdFeminino] = useState<string | null>(null)
+  // Rastrear qual foi o primeiro lote selecionado (para adicionar pulseira apenas nele)
+  const [primeiroLoteSelecionado, setPrimeiroLoteSelecionado] = useState<string | null>(null)
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
   const [purchaseEnabled, setPurchaseEnabled] = useState<boolean | null>(null)
@@ -151,29 +153,13 @@ export default function ComprarPage() {
           const lotMasculino = activeLots.find(l => getLotType(l.name) === 'MASCULINO')
           const lotFeminino = activeLots.find(l => getLotType(l.name) === 'FEMININO')
           
-          // Inicializar seleções e itens se ainda não foram selecionados
-          if (!selectedLotIdMasculino && !selectedLotIdFeminino) {
-            const novosItens: Item[] = []
-            
-            if (lotMasculino) {
-              setSelectedLotIdMasculino(lotMasculino.id)
-              novosItens.push(
-                { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lotMasculino.id },
-                { itemType: 'PULSEIRA_EXTRA', quantity: 1, lotId: lotMasculino.id }
-              )
-            }
-            
-            if (lotFeminino) {
-              setSelectedLotIdFeminino(lotFeminino.id)
-              novosItens.push(
-                { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lotFeminino.id },
-                { itemType: 'PULSEIRA_EXTRA', quantity: 1, lotId: lotFeminino.id }
-              )
-            }
-            
-            if (novosItens.length > 0) {
-              setItems(novosItens)
-            }
+          // NÃO adicionar itens automaticamente - o usuário deve escolher manualmente
+          // Apenas marcar os lotes como disponíveis se ainda não foram selecionados
+          if (!selectedLotIdMasculino && lotMasculino) {
+            // Não fazer nada - deixar o usuário escolher
+          }
+          if (!selectedLotIdFeminino && lotFeminino) {
+            // Não fazer nada - deixar o usuário escolher
           }
         }
 
@@ -215,7 +201,7 @@ export default function ComprarPage() {
     }])
   }
   
-  // Adicionar abadá extra de um lote específico
+  // Adicionar abadá de um lote específico
   function adicionarAbadaDoLote(lotId: string) {
     const lot = lots.find(l => l.id === lotId)
     if (!lot) return
@@ -228,142 +214,93 @@ export default function ComprarPage() {
     }])
   }
 
+  // Adicionar pulseira extra de um lote específico
+  function adicionarPulseiraDoLote(lotId: string) {
+    const lot = lots.find(l => l.id === lotId)
+    if (!lot) return
+    
+    setItems([...items, { 
+      itemType: 'PULSEIRA_EXTRA', 
+      quantity: 1,
+      lotId: lotId
+    }])
+  }
+
+  // Adicionar pulseira extra (não precisa de lote selecionado)
+  function adicionarPulseiraExtra() {
+    // Usar o primeiro lote disponível como referência para preço, mas não é obrigatório
+    const lotReferencia = lots.find(l => l.id === primeiroLoteSelecionado) || lots[0]
+    if (!lotReferencia) {
+      setError('Nenhum lote disponível para referência de preço')
+      return
+    }
+    
+    // Pulseira extra não precisa de lotId obrigatório, mas podemos usar o primeiro lote como referência
+    setItems([...items, { 
+      itemType: 'PULSEIRA_EXTRA', 
+      quantity: 1,
+      lotId: lotReferencia.id // Usar como referência, mas não é obrigatório
+    }])
+  }
+
   // Handler para mudança de lote masculino
+  // NÃO adiciona itens automaticamente - apenas marca o lote como selecionado
   function handleLoteMasculinoChange(lotId: string) {
     const lotAnterior = selectedLotIdMasculino
     
-    // Atualizar estado primeiro
-    setSelectedLotIdMasculino(lotId)
+    // Atualizar estado do lote selecionado
+    setSelectedLotIdMasculino(lotId || null)
     
-    // Usar setItems com função para garantir que a atualização seja atômica
-    setItems(prevItems => {
-      // Se não havia lote anterior, apenas adicionar itens do novo lote
-      if (!lotAnterior) {
-        if (!lotId) return prevItems
+    // Se desmarcou o lote, remover TODOS os itens deste lote
+    if (!lotId && lotAnterior) {
+      setItems(prevItems => {
+        const itemsRestantes = prevItems.filter(item => item.lotId !== lotAnterior)
         
-        const lot = lots.find(l => l.id === lotId)
-        if (!lot) return prevItems
-        
-        // Verificar se já existem itens deste lote
-        const jaExistemItensDesteLote = prevItems.some(item => item.lotId === lotId)
-        if (jaExistemItensDesteLote) return prevItems
-        
-        // Adicionar itens padrão do novo lote
-        return [
-          ...prevItems,
-          { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lotId },
-          { itemType: 'PULSEIRA_EXTRA', quantity: 1, lotId: lotId }
-        ]
-      }
-      
-      // Se havia lote anterior, substituir apenas os itens padrão e atualizar extras
-      if (!lotId) {
-        // Se desmarcou o lote, remover apenas os itens padrão (primeiro Abadá + primeira Pulseira)
-        const primeiroAbadaIdx = prevItems.findIndex(item => 
-          item.lotId === lotAnterior && item.itemType === 'ABADA'
-        )
-        const primeiraPulseiraIdx = prevItems.findIndex(item => 
-          item.lotId === lotAnterior && item.itemType === 'PULSEIRA_EXTRA'
-        )
-        
-        return prevItems.filter((item, idx) => 
-          idx !== primeiroAbadaIdx && idx !== primeiraPulseiraIdx
-        )
-      }
-      
-      // Trocar de lote: atualizar lotId dos itens do lote anterior para o novo lote
-      const lot = lots.find(l => l.id === lotId)
-      if (!lot) return prevItems
-      
-      // Verificar se já existem itens do novo lote
-      const jaExistemItensDoNovoLote = prevItems.some(item => item.lotId === lotId)
-      
-      return prevItems.map(item => {
-        // Atualizar lotId dos itens do lote anterior para o novo lote
-        if (item.lotId === lotAnterior) {
-          return { ...item, lotId: lotId }
+        // Se era o primeiro lote, atualizar para o próximo lote disponível
+        if (primeiroLoteSelecionado === lotAnterior) {
+          const proximoLote = selectedLotIdFeminino || null
+          setPrimeiroLoteSelecionado(proximoLote)
         }
-        return item
-      }).concat(
-        // Se não existem itens do novo lote, adicionar os padrão
-        jaExistemItensDoNovoLote ? [] : [
-          { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lotId },
-          { itemType: 'PULSEIRA_EXTRA', quantity: 1, lotId: lotId }
-        ]
-      )
-    })
+        
+        return itemsRestantes
+      })
+    } else if (lotId && !primeiroLoteSelecionado) {
+      // Se este é o primeiro lote selecionado, marcar como primeiro
+      setPrimeiroLoteSelecionado(lotId)
+    }
   }
 
   // Handler para mudança de lote feminino
+  // NÃO adiciona itens automaticamente - apenas marca o lote como selecionado
   function handleLoteFemininoChange(lotId: string) {
     const lotAnterior = selectedLotIdFeminino
     
-    // Atualizar estado primeiro
-    setSelectedLotIdFeminino(lotId)
+    // Atualizar estado do lote selecionado
+    setSelectedLotIdFeminino(lotId || null)
     
-    // Usar setItems com função para garantir que a atualização seja atômica
-    setItems(prevItems => {
-      // Se não havia lote anterior, apenas adicionar itens do novo lote
-      if (!lotAnterior) {
-        if (!lotId) return prevItems
+    // Se desmarcou o lote, remover TODOS os itens deste lote
+    if (!lotId && lotAnterior) {
+      setItems(prevItems => {
+        const itemsRestantes = prevItems.filter(item => item.lotId !== lotAnterior)
         
-        const lot = lots.find(l => l.id === lotId)
-        if (!lot) return prevItems
-        
-        // Verificar se já existem itens deste lote
-        const jaExistemItensDesteLote = prevItems.some(item => item.lotId === lotId)
-        if (jaExistemItensDesteLote) return prevItems
-        
-        // Adicionar itens padrão do novo lote
-        return [
-          ...prevItems,
-          { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lotId },
-          { itemType: 'PULSEIRA_EXTRA', quantity: 1, lotId: lotId }
-        ]
-      }
-      
-      // Se havia lote anterior, substituir apenas os itens padrão e atualizar extras
-      if (!lotId) {
-        // Se desmarcou o lote, remover apenas os itens padrão (primeiro Abadá + primeira Pulseira)
-        const primeiroAbadaIdx = prevItems.findIndex(item => 
-          item.lotId === lotAnterior && item.itemType === 'ABADA'
-        )
-        const primeiraPulseiraIdx = prevItems.findIndex(item => 
-          item.lotId === lotAnterior && item.itemType === 'PULSEIRA_EXTRA'
-        )
-        
-        return prevItems.filter((item, idx) => 
-          idx !== primeiroAbadaIdx && idx !== primeiraPulseiraIdx
-        )
-      }
-      
-      // Trocar de lote: atualizar lotId dos itens do lote anterior para o novo lote
-      const lot = lots.find(l => l.id === lotId)
-      if (!lot) return prevItems
-      
-      // Verificar se já existem itens do novo lote
-      const jaExistemItensDoNovoLote = prevItems.some(item => item.lotId === lotId)
-      
-      return prevItems.map(item => {
-        // Atualizar lotId dos itens do lote anterior para o novo lote
-        if (item.lotId === lotAnterior) {
-          return { ...item, lotId: lotId }
+        // Se era o primeiro lote, atualizar para o próximo lote disponível
+        if (primeiroLoteSelecionado === lotAnterior) {
+          const proximoLote = selectedLotIdMasculino || null
+          setPrimeiroLoteSelecionado(proximoLote)
         }
-        return item
-      }).concat(
-        // Se não existem itens do novo lote, adicionar os padrão
-        jaExistemItensDoNovoLote ? [] : [
-          { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lotId },
-          { itemType: 'PULSEIRA_EXTRA', quantity: 1, lotId: lotId }
-        ]
-      )
-    })
+        
+        return itemsRestantes
+      })
+    } else if (lotId && !primeiroLoteSelecionado) {
+      // Se este é o primeiro lote selecionado, marcar como primeiro
+      setPrimeiroLoteSelecionado(lotId)
+    }
   }
 
   function removerItem(index: number) {
-    if (items.length > 1) {
-      setItems(items.filter((_, i) => i !== index))
-    }
+    // Permitir remover qualquer item, mesmo que seja o único
+    // O usuário pode sempre adicionar novamente se necessário
+    setItems(items.filter((_, i) => i !== index))
   }
 
   function atualizarItem(index: number, campo: keyof Item, valor: any) {
@@ -650,14 +587,14 @@ export default function ComprarPage() {
                 
                 {/* Lote Masculino */}
                 {lotMasculino && (
-                  <div>
+                  <div className={`p-4 rounded-lg border-2 ${selectedLotIdMasculino ? 'bg-blue-50 border-blue-400' : 'bg-gray-50 border-gray-300'}`}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lote Masculino
+                      Lote Masculino {selectedLotIdMasculino && <span className="text-green-600 font-bold">✓ Selecionado</span>}
                     </label>
                     <select
                       value={selectedLotIdMasculino || ''}
                       onChange={(e) => handleLoteMasculinoChange(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-semibold bg-white"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold bg-white"
                     >
                       <option value="">-- Não selecionar --</option>
                       <option value={lotMasculino.id}>
@@ -669,14 +606,14 @@ export default function ComprarPage() {
                 
                 {/* Lote Feminino */}
                 {lotFeminino && (
-                  <div>
+                  <div className={`p-4 rounded-lg border-2 ${selectedLotIdFeminino ? 'bg-pink-50 border-pink-400' : 'bg-gray-50 border-gray-300'}`}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lote Feminino
+                      Lote Feminino {selectedLotIdFeminino && <span className="text-green-600 font-bold">✓ Selecionado</span>}
                     </label>
                     <select
                       value={selectedLotIdFeminino || ''}
                       onChange={(e) => handleLoteFemininoChange(e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-semibold bg-white"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-lg font-semibold bg-white"
                     >
                       <option value="">-- Não selecionar --</option>
                       <option value={lotFeminino.id}>
@@ -686,9 +623,15 @@ export default function ComprarPage() {
                   </div>
                 )}
                 
-                <p className="text-xs text-gray-500 mt-2">
-                  Você pode selecionar ambos os lotes para comprar masculino e feminino ao mesmo tempo. Cada lote inclui automaticamente: 1 Abadá + 1 Pulseira Extra. Você pode adicionar itens extras se necessário.
-                </p>
+                <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                  <p className="text-sm text-blue-800 font-semibold mb-1">
+                    💡 Selecione os lotes e escolha manualmente os itens que deseja comprar!
+                  </p>
+                  <p className="text-xs text-blue-700">
+                    Após selecionar um lote, use os botões abaixo para adicionar os itens que você deseja comprar.
+                    Você tem controle total sobre o que adicionar ao seu pedido.
+                  </p>
+                </div>
               </div>
             )
           })()}
@@ -744,34 +687,72 @@ export default function ComprarPage() {
             </div>
           </div>
 
+          {/* Escolha seus Itens */}
+          <div>
+            <h3 className="text-xl font-bold text-blue-900 mb-4">Escolha seus Itens</h3>
+            
+            {!selectedLotIdMasculino && !selectedLotIdFeminino ? (
+              <div className="bg-yellow-50 border-2 border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4">
+                Selecione pelo menos um lote acima para poder adicionar itens ao pedido.
+              </div>
+            ) : (
+              <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 mb-4">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Adicione os itens que deseja comprar:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {selectedLotIdMasculino && (() => {
+                    const lotMasculino = lots.find(l => l.id === selectedLotIdMasculino)
+                    return lotMasculino ? (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-blue-700">Lote Masculino:</p>
+                        <button
+                          type="button"
+                          onClick={() => adicionarAbadaDoLote(selectedLotIdMasculino)}
+                          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
+                        >
+                          + Abadá Masculino (R$ {(lotMasculino.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => adicionarPulseiraDoLote(selectedLotIdMasculino)}
+                          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
+                        >
+                          + Pulseira Extra Masculino (R$ {(lotMasculino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                        </button>
+                      </div>
+                    ) : null
+                  })()}
+                  
+                  {selectedLotIdFeminino && (() => {
+                    const lotFeminino = lots.find(l => l.id === selectedLotIdFeminino)
+                    return lotFeminino ? (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-pink-700">Lote Feminino:</p>
+                        <button
+                          type="button"
+                          onClick={() => adicionarAbadaDoLote(selectedLotIdFeminino)}
+                          className="w-full px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 font-semibold text-sm"
+                        >
+                          + Abadá Feminino (R$ {(lotFeminino.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => adicionarPulseiraDoLote(selectedLotIdFeminino)}
+                          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
+                        >
+                          + Pulseira Extra Feminino (R$ {(lotFeminino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                        </button>
+                      </div>
+                    ) : null
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Itens do Pedido */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-blue-900">Itens do Pedido</h3>
-              {(selectedLotIdMasculino || selectedLotIdFeminino) && (
-                <div className="flex gap-2">
-                  {selectedLotIdMasculino && (
-                    <button
-                      type="button"
-                      onClick={() => adicionarAbadaDoLote(selectedLotIdMasculino)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
-                      title="Adicionar mais um Abadá do lote masculino"
-                    >
-                      + Abadá Masculino
-                    </button>
-                  )}
-                  {selectedLotIdFeminino && (
-                    <button
-                      type="button"
-                      onClick={() => adicionarAbadaDoLote(selectedLotIdFeminino)}
-                      className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 font-semibold text-sm"
-                      title="Adicionar mais um Abadá do lote feminino"
-                    >
-                      + Abadá Feminino
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
 
             {!selectedLotIdMasculino && !selectedLotIdFeminino ? (
@@ -784,23 +765,52 @@ export default function ComprarPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {items.map((item, index) => {
-                  // Sempre buscar o lote correto do item - nunca usar fallback para lots[0]
-                  const itemLot = item.lotId ? lots.find(l => l.id === item.lotId) || null : null
-                  // Identificar itens do lote padrão: primeiro Abadá e primeira Pulseira de cada lote
-                  const lotIdDoItem = item.lotId
-                  const isPrimeiroAbadaDoLote = item.itemType === 'ABADA' && lotIdDoItem && 
-                    items.findIndex(i => i.itemType === 'ABADA' && i.lotId === lotIdDoItem) === index
-                  const isPrimeiraPulseiraDoLote = item.itemType === 'PULSEIRA_EXTRA' && lotIdDoItem &&
-                    items.findIndex(i => i.itemType === 'PULSEIRA_EXTRA' && i.lotId === lotIdDoItem) === index
-                  const isItemDoLote = isPrimeiroAbadaDoLote || isPrimeiraPulseiraDoLote
+                {/* Agrupar itens por lote para melhor visualização */}
+                {(() => {
+                  // Agrupar itens por lotId
+                  const itemsPorLote = items.reduce((acc, item, index) => {
+                    const lotId = item.lotId || 'sem-lote'
+                    if (!acc[lotId]) {
+                      acc[lotId] = []
+                    }
+                    acc[lotId].push({ item, index })
+                    return acc
+                  }, {} as Record<string, Array<{ item: Item; index: number }>>)
                   
-                  // Identificar o tipo do lote para exibição
-                  const lotType = itemLot ? getLotType(itemLot.name) : null
-                  const lotTypeLabel = lotType === 'MASCULINO' ? 'Masculino' : lotType === 'FEMININO' ? 'Feminino' : null
+                  // Renderizar grupos de itens por lote
+                  return Object.entries(itemsPorLote).map(([lotId, grupoItens]) => {
+                    const primeiroItem = grupoItens[0].item
+                    const itemLot = primeiroItem.lotId ? lots.find(l => l.id === primeiroItem.lotId) || null : null
+                    const lotType = itemLot ? getLotType(itemLot.name) : null
+                    const lotTypeLabel = lotType === 'MASCULINO' ? 'Masculino' : lotType === 'FEMININO' ? 'Feminino' : null
+                    const isMasculino = lotType === 'MASCULINO'
+                    
+                    return (
+                      <div key={lotId} className={`space-y-3 ${lotType ? 'p-4 rounded-lg border-2' : ''} ${isMasculino ? 'bg-blue-50 border-blue-300' : 'bg-pink-50 border-pink-300'}`}>
+                        {lotTypeLabel && (
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-sm font-bold px-3 py-1 rounded ${
+                              isMasculino 
+                                ? 'bg-blue-200 text-blue-900' 
+                                : 'bg-pink-200 text-pink-900'
+                            }`}>
+                              📦 Lote {lotTypeLabel}
+                            </span>
+                            <span className="text-xs text-gray-600">
+                              ({grupoItens.length} {grupoItens.length === 1 ? 'item' : 'itens'})
+                            </span>
+                          </div>
+                        )}
+                        {grupoItens.map(({ item, index: originalIndex }) => {
+                          // Identificar itens do lote padrão: primeiro Abadá e primeira Pulseira de cada lote
+                          const isPrimeiroAbadaDoLote = item.itemType === 'ABADA' && item.lotId && 
+                            items.findIndex(i => i.itemType === 'ABADA' && i.lotId === item.lotId) === originalIndex
+                          const isPrimeiraPulseiraDoLote = item.itemType === 'PULSEIRA_EXTRA' && item.lotId &&
+                            items.findIndex(i => i.itemType === 'PULSEIRA_EXTRA' && i.lotId === item.lotId) === originalIndex
+                          const isItemDoLote = isPrimeiroAbadaDoLote || isPrimeiraPulseiraDoLote
                   
                   return (
-                  <div key={index} className={`border-2 rounded-lg p-4 ${isItemDoLote ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-300'}`}>
+                  <div key={originalIndex} className={`border-2 rounded-lg p-4 ${isItemDoLote ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-300'}`}>
                     <div className="mb-2 flex items-center justify-between">
                       {isItemDoLote && (
                         <span className="text-xs font-semibold text-green-700">
@@ -837,19 +847,19 @@ export default function ComprarPage() {
                               const novosItems = [...items]
                               
                               if (value === 'PULSEIRA_EXTRA') {
-                                novosItems[index] = {
-                                  ...novosItems[index],
+                                novosItems[originalIndex] = {
+                                  ...novosItems[originalIndex],
                                   itemType: 'PULSEIRA_EXTRA',
                                   lotId: selectedLotIdMasculino || selectedLotIdFeminino || lots[0]?.id,
                                   size: undefined
                                 }
                               } else if (value.startsWith('ABADA_')) {
                                 const lotId = value.replace('ABADA_', '')
-                                novosItems[index] = {
-                                  ...novosItems[index],
+                                novosItems[originalIndex] = {
+                                  ...novosItems[originalIndex],
                                   itemType: 'ABADA',
                                   lotId: lotId,
-                                  size: novosItems[index].size || 'Tamanho Único'
+                                  size: novosItems[originalIndex].size || 'Tamanho Único'
                                 }
                               }
                               
@@ -879,7 +889,7 @@ export default function ComprarPage() {
                           <input
                             type="text"
                             value={item.size || 'Tamanho Único'}
-                            onChange={(e) => atualizarItem(index, 'size', e.target.value)}
+                            onChange={(e) => atualizarItem(originalIndex, 'size', e.target.value)}
                             className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                             placeholder="Tamanho Único"
                           />
@@ -893,7 +903,7 @@ export default function ComprarPage() {
                           type="number"
                           min="1"
                           value={item.quantity}
-                          onChange={(e) => atualizarItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                          onChange={(e) => atualizarItem(originalIndex, 'quantity', parseInt(e.target.value) || 1)}
                           required
                           className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         />
@@ -910,18 +920,25 @@ export default function ComprarPage() {
                       )}
                     </div>
 
-                    {!isItemDoLote && (
-                      <button
-                        type="button"
-                        onClick={() => removerItem(index)}
-                        className="mt-2 text-sm text-red-600 hover:text-red-900 font-semibold"
-                      >
-                        Remover Item Extra
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => removerItem(originalIndex)}
+                      className={`mt-2 text-sm font-semibold ${
+                        isItemDoLote 
+                          ? 'text-orange-600 hover:text-orange-900' 
+                          : 'text-red-600 hover:text-red-900'
+                      }`}
+                      title={isItemDoLote ? 'Remover item padrão do lote' : 'Remover item extra'}
+                    >
+                      {isItemDoLote ? '🗑️ Remover Item do Lote' : '🗑️ Remover Item Extra'}
+                    </button>
                   </div>
                   )
                 })}
+                      </div>
+                    )
+                  })
+                })()}
               </div>
             )}
           </div>
