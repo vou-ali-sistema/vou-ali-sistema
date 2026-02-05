@@ -21,10 +21,11 @@ export async function criarPreferenciaPedido(orderId: string) {
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { 
+    include: {
       items: true,
       lot: true,
-    }
+      customer: true,
+    },
   })
 
   if (!order) {
@@ -83,6 +84,15 @@ export async function criarPreferenciaPedido(orderId: string) {
     const preferenceBody: any = {
       items,
       external_reference: order.externalReference || orderId,
+    }
+
+    // Payer com e-mail é necessário para o Mercado Pago habilitar o botão "Criar Pix" no checkout
+    const payerEmail = order.customer?.email?.trim()
+    if (payerEmail) {
+      preferenceBody.payer = {
+        email: payerEmail,
+        ...(order.customer?.name?.trim() && { name: order.customer.name.trim() }),
+      }
     }
 
     // Se for localhost/HTTP, não adicionar back_urls e auto_return
