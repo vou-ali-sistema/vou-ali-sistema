@@ -100,15 +100,17 @@ export async function POST(request: NextRequest) {
       itemsWithPrices.push({ ...item, unitPriceCents })
     }
 
-    const temAbadaNoPedido = data.items.some((i: any) => i.itemType === 'ABADA')
-    const pulseirasVinculadas = data.items.filter((i: any) => {
-      if (i.itemType !== 'PULSEIRA_EXTRA' || !i.lotId) return false
-      const l = lotMap.get(String(i.lotId).trim())
-      return l && (l as any).allowPulseiraOnly === false
-    })
-    if (pulseirasVinculadas.length > 0 && !temAbadaNoPedido) {
+    const totalAbada = data.items.filter((i: any) => i.itemType === 'ABADA').reduce((s: number, i: any) => s + (i.quantity || 0), 0)
+    const totalPulseira = data.items.filter((i: any) => i.itemType === 'PULSEIRA_EXTRA').reduce((s: number, i: any) => s + (i.quantity || 0), 0)
+    if (totalPulseira > 0 && totalAbada === 0) {
       return NextResponse.json(
-        { error: 'A pulseira deste lote só pode ser vendida junto com um abadá. Adicione pelo menos um abadá ao pedido.' },
+        { error: 'A pulseira é bonificação: só pode ser adicionada junto com abadá. Adicione pelo menos um abadá ao pedido.' },
+        { status: 400 }
+      )
+    }
+    if (totalPulseira > totalAbada) {
+      return NextResponse.json(
+        { error: `Cada abadá dá direito a 1 pulseira (bonificação). Você tem ${totalAbada} abadá(s) e ${totalPulseira} pulseira(s). Remova pulseiras ou adicione mais abadás.` },
         { status: 400 }
       )
     }

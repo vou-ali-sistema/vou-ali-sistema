@@ -185,9 +185,18 @@ export default function ComprarPage() {
     }])
   }, [lots])
 
-  // Adicionar pulseira extra (usa um lote como referência para preço)
+  // Adicionar pulseira extra (bonificação: 1 por abadá)
   function adicionarPulseiraExtra() {
-    const temAbada = items.some(i => i.itemType === 'ABADA')
+    const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+    const totalPulseira = items.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+    if (totalAbada === 0) {
+      setError('A pulseira é bonificação: adicione pelo menos um abadá para incluir pulseira.')
+      return
+    }
+    if (totalPulseira >= totalAbada) {
+      setError('Cada abadá dá direito a 1 pulseira. Você já tem o máximo de pulseiras para este pedido.')
+      return
+    }
     const lotReferencia =
       (primeiroLoteSelecionado && lots.find(l => l.id === primeiroLoteSelecionado && l.pulseiraPriceCents)) ||
       (selectedLotIdMasculino && lots.find(l => l.id === selectedLotIdMasculino && l.pulseiraPriceCents)) ||
@@ -196,10 +205,6 @@ export default function ComprarPage() {
       lots.find(l => l.pulseiraPriceCents)
     if (!lotReferencia || !lotReferencia.pulseiraPriceCents) {
       setError('Nenhum lote com pulseira disponível.')
-      return
-    }
-    if (lotReferencia.allowPulseiraOnly === false && !temAbada) {
-      setError('Neste lote a pulseira só pode ser adicionada junto com um abadá. Adicione um abadá primeiro.')
       return
     }
     setItems([...items, {
@@ -777,8 +782,9 @@ export default function ComprarPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedLotIdMasculino && (() => {
                     const lotSelecionado = lots.find(l => l.id === selectedLotIdMasculino)
-                    const temAbada = items.some(i => i.itemType === 'ABADA')
-                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || temAbada)
+                    const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                    const totalPulseira = items.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || totalAbada > 0) && totalPulseira < totalAbada
                     return lotSelecionado ? (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-blue-700">{lotSelecionado.name}:</p>
@@ -799,7 +805,7 @@ export default function ComprarPage() {
                           </button>
                         )}
                         {lotSelecionado.pulseiraPriceCents && !podePulseira && (
-                          <p className="text-xs text-gray-500">Adicione um abadá para incluir pulseira neste lote.</p>
+                          <p className="text-xs text-gray-500">{totalAbada === 0 ? 'Adicione um abadá para incluir pulseira (bonificação).' : 'Máximo de pulseiras atingido (1 por abadá).'}</p>
                         )}
                       </div>
                     ) : null
@@ -807,8 +813,9 @@ export default function ComprarPage() {
                   
                   {selectedLotIdFeminino && (() => {
                     const lotSelecionado = lots.find(l => l.id === selectedLotIdFeminino)
-                    const temAbada = items.some(i => i.itemType === 'ABADA')
-                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || temAbada)
+                    const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                    const totalPulseira = items.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || totalAbada > 0) && totalPulseira < totalAbada
                     return lotSelecionado ? (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-pink-700">{lotSelecionado.name}:</p>
@@ -829,7 +836,7 @@ export default function ComprarPage() {
                           </button>
                         )}
                         {lotSelecionado.pulseiraPriceCents && !podePulseira && (
-                          <p className="text-xs text-gray-500">Adicione um abadá para incluir pulseira neste lote.</p>
+                          <p className="text-xs text-gray-500">{totalAbada === 0 ? 'Adicione um abadá para incluir pulseira (bonificação).' : 'Máximo de pulseiras atingido (1 por abadá).'}</p>
                         )}
                       </div>
                     ) : null
@@ -837,8 +844,9 @@ export default function ComprarPage() {
                   
                   {selectedLotesGenericos.map((lotId) => {
                     const lotSelecionado = lots.find(l => l.id === lotId)
-                    const temAbada = items.some(i => i.itemType === 'ABADA')
-                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || temAbada)
+                    const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                    const totalPulseira = items.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || totalAbada > 0) && totalPulseira < totalAbada
                     return lotSelecionado ? (
                       <div key={lotId} className="space-y-2">
                         <p className="text-xs font-semibold text-green-700">{lotSelecionado.name}:</p>
@@ -859,7 +867,7 @@ export default function ComprarPage() {
                           </button>
                         )}
                         {lotSelecionado.pulseiraPriceCents && !podePulseira && (
-                          <p className="text-xs text-gray-500">Adicione um abadá para incluir pulseira neste lote.</p>
+                          <p className="text-xs text-gray-500">{totalAbada === 0 ? 'Adicione um abadá para incluir pulseira (bonificação).' : 'Máximo de pulseiras atingido (1 por abadá).'}</p>
                         )}
                       </div>
                     ) : null
@@ -981,7 +989,8 @@ export default function ComprarPage() {
                                   ...novosItems[originalIndex],
                                   itemType: 'PULSEIRA_EXTRA',
                                   lotId: selectedLotIdMasculino || selectedLotIdFeminino || selectedLotesGenericos[0] || lots[0]?.id,
-                                  size: undefined
+                                  size: undefined,
+                                  quantity: 1
                                 }
                               } else if (value.startsWith('ABADA_')) {
                                 const lotId = value.replace('ABADA_', '')
@@ -1003,11 +1012,17 @@ export default function ComprarPage() {
                                 {lot.name} - R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
                               </option>
                             ))}
-                            {lots.length > 0 && lots[0].pulseiraPriceCents && (
-                              <option value="PULSEIRA_EXTRA">
-                                {lots[0].pulseiraName || 'Pulseira Extra'} - R$ {(lots[0].pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
-                              </option>
-                            )}
+                            {lots.length > 0 && lots[0].pulseiraPriceCents && (() => {
+                              const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                              const totalPulseira = items.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                              const aoMudarParaPulseira = item.itemType === 'ABADA' ? 1 : 0
+                              const cabePulseira = totalAbada > 0 && totalPulseira + aoMudarParaPulseira <= totalAbada
+                              return cabePulseira ? (
+                                <option value="PULSEIRA_EXTRA">
+                                  {lots[0].pulseiraName || 'Pulseira (bonificação 1 por abadá)'} - R$ {(lots[0].pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                                </option>
+                              ) : null
+                            })()}
                           </select>
                         )}
                       </div>
@@ -1027,13 +1042,33 @@ export default function ComprarPage() {
                       )}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Quantidade *
+                          Quantidade * {item.itemType === 'PULSEIRA_EXTRA' && (() => {
+                            const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                            const pulseiraOutros = items.filter((_, i) => i !== originalIndex).filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                            const maxEste = Math.max(0, totalAbada - pulseiraOutros)
+                            return maxEste < totalAbada ? <span className="text-gray-500 font-normal">(máx. {maxEste} — 1 por abadá)</span> : null
+                          })()}
                         </label>
                         <input
                           type="number"
                           min="1"
+                          max={item.itemType === 'PULSEIRA_EXTRA' ? (() => {
+                            const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                            const pulseiraOutros = items.filter((_, i) => i !== originalIndex).filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                            return Math.max(1, totalAbada - pulseiraOutros)
+                          })() : undefined}
                           value={item.quantity}
-                          onChange={(e) => atualizarItem(originalIndex, 'quantity', parseInt(e.target.value) || 1)}
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value) || 1
+                            if (item.itemType === 'PULSEIRA_EXTRA') {
+                              const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
+                              const pulseiraOutros = items.filter((_, i) => i !== originalIndex).filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
+                              const max = Math.max(1, totalAbada - pulseiraOutros)
+                              atualizarItem(originalIndex, 'quantity', Math.min(Math.max(1, v), max))
+                            } else {
+                              atualizarItem(originalIndex, 'quantity', Math.max(1, v))
+                            }
+                          }}
                           required
                           className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         />

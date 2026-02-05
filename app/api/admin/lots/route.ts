@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         abadaPriceCents: data.abadaPriceCents,
         pulseiraPriceCents: data.pulseiraPriceCents ?? null,
         pulseiraName: data.pulseiraName ?? null,
-        allowPulseiraOnly: data.allowPulseiraOnly ?? true,
+        allowPulseiraOnly: data.allowPulseiraOnly ?? false,
         abadaProducedQty: data.abadaProducedQty ?? 0,
         pulseiraProducedQty: data.pulseiraProducedQty ?? 0,
         active: false,

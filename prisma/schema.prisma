@@ -92,7 +92,7 @@ model Lot {
   abadaPriceCents    Int
   pulseiraPriceCents Int?     // Opcional - pulseira como item extra
   pulseiraName       String?  // Nome/descrição da pulseira (ex: "Pulseira do After")
-  allowPulseiraOnly  Boolean  @default(true) // true = pode vender só pulseira; false = pulseira só junto com abadá
+  allowPulseiraOnly  Boolean  @default(false) // false = pulseira é bonificação (só junto com abadá, 1 por abadá)
   abadaProducedQty   Int      @default(0)
   pulseiraProducedQty Int     @default(0)
   active             Boolean  @default(false)
