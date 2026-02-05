@@ -10,8 +10,9 @@ export const dynamic = 'force-dynamic'
 const criarLotSchema = z.object({
   name: z.string().min(1),
   abadaPriceCents: z.number().int().positive(),
-  pulseiraPriceCents: z.number().int().positive().optional().nullable(), // Opcional - apenas primeiro lote tem pulseira
-  pulseiraName: z.string().optional().nullable(), // Nome/descrição da pulseira
+  pulseiraPriceCents: z.number().int().positive().optional().nullable(),
+  pulseiraName: z.string().optional().nullable(),
+  allowPulseiraOnly: z.boolean().optional(),
   abadaProducedQty: z.number().int().min(0).optional(),
   pulseiraProducedQty: z.number().int().min(0).optional(),
   startsAt: z.string().datetime().optional().nullable(),
@@ -56,11 +57,12 @@ export async function POST(request: NextRequest) {
       data: {
         name: data.name,
         abadaPriceCents: data.abadaPriceCents,
-        pulseiraPriceCents: data.pulseiraPriceCents ?? null, // Opcional - pode ser null
-        pulseiraName: data.pulseiraName ?? null, // Nome da pulseira (opcional)
+        pulseiraPriceCents: data.pulseiraPriceCents ?? null,
+        pulseiraName: data.pulseiraName ?? null,
+        allowPulseiraOnly: data.allowPulseiraOnly ?? true,
         abadaProducedQty: data.abadaProducedQty ?? 0,
         pulseiraProducedQty: data.pulseiraProducedQty ?? 0,
-        active: false, // Sempre criar como inativo
+        active: false,
         startsAt: data.startsAt ? new Date(data.startsAt) : null,
         endsAt: data.endsAt ? new Date(data.endsAt) : null,
       },

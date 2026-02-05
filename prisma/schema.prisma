@@ -87,18 +87,19 @@ model Customer {
 }
 
 model Lot {
-  id                String   @id @default(cuid())
-  name              String
-  abadaPriceCents   Int
-  pulseiraPriceCents Int?    // Opcional - apenas primeiro lote tem pulseira como bonificação
-  pulseiraName      String?  // Nome/descrição da pulseira (ex: "Pulseira do After")
-  abadaProducedQty  Int      @default(0)
-  pulseiraProducedQty Int    @default(0)
-  active            Boolean  @default(false)
-  startsAt          DateTime?
-  endsAt            DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  abadaPriceCents    Int
+  pulseiraPriceCents Int?     // Opcional - pulseira como item extra
+  pulseiraName       String?  // Nome/descrição da pulseira (ex: "Pulseira do After")
+  allowPulseiraOnly  Boolean  @default(true) // true = pode vender só pulseira; false = pulseira só junto com abadá
+  abadaProducedQty   Int      @default(0)
+  pulseiraProducedQty Int     @default(0)
+  active             Boolean  @default(false)
+  startsAt           DateTime?
+  endsAt             DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   orders Order[]
 

@@ -15,8 +15,9 @@ interface Lot {
   id: string
   name: string
   abadaPriceCents: number
-  pulseiraPriceCents: number | null // Opcional - apenas primeiro lote tem pulseira
-  pulseiraName: string | null // Nome/descrição da pulseira (ex: "Pulseira do After")
+  pulseiraPriceCents: number | null
+  pulseiraName: string | null
+  allowPulseiraOnly?: boolean // true = pode vender só pulseira; false = pulseira só junto com abadá
 }
 
 interface PromoCard {
@@ -184,27 +185,27 @@ export default function ComprarPage() {
     }])
   }, [lots])
 
-  // Adicionar pulseira extra (não precisa de lote selecionado)
+  // Adicionar pulseira extra (usa um lote como referência para preço)
   function adicionarPulseiraExtra() {
-    // Usar o primeiro lote disponível que tenha pulseira como referência para preço
-    // Priorizar: primeiro lote selecionado > lote masculino > lote feminino > primeiro lote genérico > qualquer lote com pulseira
-    const lotReferencia = 
+    const temAbada = items.some(i => i.itemType === 'ABADA')
+    const lotReferencia =
       (primeiroLoteSelecionado && lots.find(l => l.id === primeiroLoteSelecionado && l.pulseiraPriceCents)) ||
       (selectedLotIdMasculino && lots.find(l => l.id === selectedLotIdMasculino && l.pulseiraPriceCents)) ||
       (selectedLotIdFeminino && lots.find(l => l.id === selectedLotIdFeminino && l.pulseiraPriceCents)) ||
       (selectedLotesGenericos[0] && lots.find(l => l.id === selectedLotesGenericos[0] && l.pulseiraPriceCents)) ||
       lots.find(l => l.pulseiraPriceCents)
-    
     if (!lotReferencia || !lotReferencia.pulseiraPriceCents) {
-      setError('Nenhum lote com pulseira disponível. A pulseira só está disponível no primeiro lote como bonificação.')
+      setError('Nenhum lote com pulseira disponível.')
       return
     }
-    
-    // Pulseira extra não precisa de lotId obrigatório, mas podemos usar o primeiro lote como referência
-    setItems([...items, { 
-      itemType: 'PULSEIRA_EXTRA', 
+    if (lotReferencia.allowPulseiraOnly === false && !temAbada) {
+      setError('Neste lote a pulseira só pode ser adicionada junto com um abadá. Adicione um abadá primeiro.')
+      return
+    }
+    setItems([...items, {
+      itemType: 'PULSEIRA_EXTRA',
       quantity: 1,
-      lotId: lotReferencia.id // Usar como referência, mas não é obrigatório
+      lotId: lotReferencia.id,
     }])
   }
 
@@ -776,6 +777,8 @@ export default function ComprarPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedLotIdMasculino && (() => {
                     const lotSelecionado = lots.find(l => l.id === selectedLotIdMasculino)
+                    const temAbada = items.some(i => i.itemType === 'ABADA')
+                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || temAbada)
                     return lotSelecionado ? (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-blue-700">{lotSelecionado.name}:</p>
@@ -786,14 +789,17 @@ export default function ComprarPage() {
                         >
                           + Abadá (R$ {(lotSelecionado.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        {lotSelecionado.pulseiraPriceCents && (
+                        {podePulseira && (
                           <button
                             type="button"
                             onClick={() => adicionarPulseiraDoLote(selectedLotIdMasculino)}
                             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
                           >
-                            + {lotSelecionado.pulseiraName || 'Pulseira Extra'} (R$ {(lotSelecionado.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                            + {lotSelecionado.pulseiraName || 'Pulseira Extra'} (R$ {(lotSelecionado.pulseiraPriceCents! / 100).toFixed(2).replace('.', ',')})
                           </button>
+                        )}
+                        {lotSelecionado.pulseiraPriceCents && !podePulseira && (
+                          <p className="text-xs text-gray-500">Adicione um abadá para incluir pulseira neste lote.</p>
                         )}
                       </div>
                     ) : null
@@ -801,6 +807,8 @@ export default function ComprarPage() {
                   
                   {selectedLotIdFeminino && (() => {
                     const lotSelecionado = lots.find(l => l.id === selectedLotIdFeminino)
+                    const temAbada = items.some(i => i.itemType === 'ABADA')
+                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || temAbada)
                     return lotSelecionado ? (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-pink-700">{lotSelecionado.name}:</p>
@@ -811,22 +819,26 @@ export default function ComprarPage() {
                         >
                           + Abadá (R$ {(lotSelecionado.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        {lotSelecionado.pulseiraPriceCents && (
+                        {podePulseira && (
                           <button
                             type="button"
                             onClick={() => adicionarPulseiraDoLote(selectedLotIdFeminino)}
                             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
                           >
-                            + {lotSelecionado.pulseiraName || 'Pulseira Extra'} (R$ {(lotSelecionado.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                            + {lotSelecionado.pulseiraName || 'Pulseira Extra'} (R$ {(lotSelecionado.pulseiraPriceCents! / 100).toFixed(2).replace('.', ',')})
                           </button>
+                        )}
+                        {lotSelecionado.pulseiraPriceCents && !podePulseira && (
+                          <p className="text-xs text-gray-500">Adicione um abadá para incluir pulseira neste lote.</p>
                         )}
                       </div>
                     ) : null
                   })()}
                   
-                  {/* Botões para lotes genéricos selecionados */}
                   {selectedLotesGenericos.map((lotId) => {
                     const lotSelecionado = lots.find(l => l.id === lotId)
+                    const temAbada = items.some(i => i.itemType === 'ABADA')
+                    const podePulseira = lotSelecionado?.pulseiraPriceCents && (lotSelecionado.allowPulseiraOnly !== false || temAbada)
                     return lotSelecionado ? (
                       <div key={lotId} className="space-y-2">
                         <p className="text-xs font-semibold text-green-700">{lotSelecionado.name}:</p>
@@ -837,14 +849,17 @@ export default function ComprarPage() {
                         >
                           + Abadá (R$ {(lotSelecionado.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        {lotSelecionado.pulseiraPriceCents && (
+                        {podePulseira && (
                           <button
                             type="button"
                             onClick={() => adicionarPulseiraDoLote(lotId)}
                             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
                           >
-                            + {lotSelecionado.pulseiraName || 'Pulseira Extra'} (R$ {(lotSelecionado.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                            + {lotSelecionado.pulseiraName || 'Pulseira Extra'} (R$ {(lotSelecionado.pulseiraPriceCents! / 100).toFixed(2).replace('.', ',')})
                           </button>
+                        )}
+                        {lotSelecionado.pulseiraPriceCents && !podePulseira && (
+                          <p className="text-xs text-gray-500">Adicione um abadá para incluir pulseira neste lote.</p>
                         )}
                       </div>
                     ) : null

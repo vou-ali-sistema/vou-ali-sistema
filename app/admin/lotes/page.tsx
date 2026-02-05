@@ -6,8 +6,9 @@ interface Lot {
   id: string
   name: string
   abadaPriceCents: number
-  pulseiraPriceCents: number | null // Pode ser null
-  pulseiraName: string | null // Nome/descrição da pulseira
+  pulseiraPriceCents: number | null
+  pulseiraName: string | null
+  allowPulseiraOnly: boolean // true = pode vender só pulseira; false = pulseira só junto com abadá
   abadaProducedQty: number
   pulseiraProducedQty: number
   active: boolean
@@ -214,6 +215,9 @@ export default function LotesPage() {
                       <div className="space-y-1">
                         <div className="font-medium text-gray-900 leading-tight">{lote.pulseiraName || 'Pulseira Extra'}</div>
                         <div className="text-xs text-gray-500">R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}</div>
+                        {lote.allowPulseiraOnly === false && (
+                          <span className="text-xs text-amber-600 font-medium">Só junto com abadá</span>
+                        )}
                       </div>
                     )
                     : <span className="text-gray-400">-</span>
@@ -279,6 +283,7 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
   const [abadaPriceCents, setAbadaPriceCents] = useState(lot?.abadaPriceCents ? (lot.abadaPriceCents / 100).toString() : '')
   const [pulseiraPriceCents, setPulseiraPriceCents] = useState(lot?.pulseiraPriceCents ? (lot.pulseiraPriceCents / 100).toString() : '')
   const [pulseiraName, setPulseiraName] = useState(lot?.pulseiraName || '')
+  const [allowPulseiraOnly, setAllowPulseiraOnly] = useState(lot?.allowPulseiraOnly ?? true)
   const [abadaProducedQty, setAbadaProducedQty] = useState(lot?.abadaProducedQty?.toString() || '0')
   const [pulseiraProducedQty, setPulseiraProducedQty] = useState(lot?.pulseiraProducedQty?.toString() || '0')
   const [loading, setLoading] = useState(false)
@@ -310,7 +315,8 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
         name: name.trim(),
         abadaPriceCents: Math.round(abadaPrice * 100),
         pulseiraPriceCents: pulseiraPrice && pulseiraPriceCents.trim() !== '' ? Math.round(pulseiraPrice * 100) : null,
-        pulseiraName: pulseiraName.trim() || null, // Nome da pulseira (opcional)
+        pulseiraName: pulseiraName.trim() || null,
+        allowPulseiraOnly,
         abadaProducedQty: Math.max(0, parseInt(abadaProducedQty || '0', 10) || 0),
         pulseiraProducedQty: Math.max(0, parseInt(pulseiraProducedQty || '0', 10) || 0),
       }
@@ -421,6 +427,22 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
                 Nome ou descrição da pulseira para que os clientes saibam para que serve (bonificação do after).
               </p>
             </div>
+
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <input
+                type="checkbox"
+                id="allowPulseiraOnly"
+                checked={allowPulseiraOnly}
+                onChange={(e) => setAllowPulseiraOnly(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <label htmlFor="allowPulseiraOnly" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Permitir venda só de pulseira (sem precisar comprar abadá)
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 -mt-2">
+              Se desmarcar, a pulseira só poderá ser adicionada junto com pelo menos um abadá do mesmo lote.
+            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
