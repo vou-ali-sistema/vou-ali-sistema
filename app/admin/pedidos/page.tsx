@@ -2,8 +2,11 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import PedidosToolbar from './PedidosToolbar'
 import DeleteOrderButton from './DeleteOrderButton'
+import FilterStatus from './FilterStatus'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 function paymentStatusLabel(status?: string | null) {
   switch (status) {
@@ -23,8 +26,10 @@ function paymentStatusLabel(status?: string | null) {
 async function getOrders(params: { q?: string; status?: string; archived?: string }) {
   try {
     const q = (params.q || '').trim()
-    const status = (params.status || '').trim()
+    const statusParam = (params.status || '').trim()
     const archived = (params.archived || '').trim()
+
+    console.log('[getOrders] Parâmetros recebidos (RAW):', { q, statusParam, archived })
 
     // Construir condições de forma explícita
     const conditions: any[] = []
@@ -35,17 +40,30 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
     }
 
     // Aplicar filtro de status (só se não estiver vazio e for um valor válido)
-    if (status && status !== '' && status.trim() !== '') {
-      // Validar que o status é um dos valores válidos
+    if (statusParam && statusParam !== '' && statusParam.trim() !== '') {
+      // Normalizar status para maiúsculas
+      const cleanStatus = statusParam.toUpperCase().trim()
       const validStatuses = ['PENDENTE', 'PAGO', 'RETIRADO', 'CANCELADO']
-      const cleanStatus = status.trim().toUpperCase()
+      
+      console.log('[getOrders] Status recebido:', statusParam)
+      console.log('[getOrders] Status normalizado:', cleanStatus)
+      console.log('[getOrders] Status válidos:', validStatuses.join(', '))
+      
       if (validStatuses.includes(cleanStatus)) {
-        conditions.push({ status: cleanStatus as 'PENDENTE' | 'PAGO' | 'RETIRADO' | 'CANCELADO' })
+        // Adicionar condição de status
+        conditions.push({ status: cleanStatus })
+        console.log('[getOrders] ✅✅✅ FILTRO DE STATUS APLICADO COM SUCESSO:', cleanStatus)
+        console.log('[getOrders] Condição adicionada:', { status: cleanStatus })
+      } else {
+        console.log('[getOrders] ❌❌❌ Status INVÁLIDO:', cleanStatus)
+        console.log('[getOrders] Status válidos são:', validStatuses.join(', '))
       }
+    } else {
+      console.log('[getOrders] ⚠️ Status vazio ou não fornecido. statusParam:', statusParam)
     }
 
-    // Aplicar busca
-    if (q) {
+    // Aplicar busca (só se não estiver vazio)
+    if (q && q.trim() !== '') {
       conditions.push({
         OR: [
           { id: { contains: q, mode: 'insensitive' } },
@@ -59,75 +77,161 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
       })
     }
 
-    // Construir where clause
-    let where: any
+    // Construir where clause - SEMPRE usar AND quando houver múltiplas condições
+    let where: any = {}
+    
     if (conditions.length === 0) {
       // Sem condições, mas ainda precisa filtrar arquivados se necessário
-      where = archived !== '1' ? { archivedAt: null } : {}
+      if (archived !== '1') {
+        where = { archivedAt: null }
+      } else {
+        where = {}
+      }
     } else if (conditions.length === 1) {
       // Uma única condição, aplicar diretamente
       where = conditions[0]
     } else {
-      // Múltiplas condições, usar AND
+      // Múltiplas condições, SEMPRE usar AND
       where = { AND: conditions }
     }
 
-    const orders = await prisma.order.findMany({
-      where,
-      select: {
-        id: true,
-        status: true,
-        paymentStatus: true,
-        totalValueCents: true,
-        createdAt: true,
-        items: {
-          select: {
-            id: true,
-            itemType: true,
-            quantity: true,
-          },
-        },
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            phone: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    })
+    console.log('[getOrders] ==========================================')
+    console.log('[getOrders] Número de condições:', conditions.length)
+    console.log('[getOrders] Condições:', JSON.stringify(conditions, null, 2))
+    console.log('[getOrders] Where clause final:', JSON.stringify(where, null, 2))
+    console.log('[getOrders] ==========================================')
 
-    return { orders }
+    // Buscar pedidos e contagem total
+    const [orders, totalCount] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        select: {
+          id: true,
+          status: true,
+          paymentStatus: true,
+          totalValueCents: true,
+          createdAt: true,
+          items: {
+            select: {
+              id: true,
+              itemType: true,
+              quantity: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1000, // Aumentar limite para suportar muitos pedidos
+      }),
+      prisma.order.count({ where }),
+    ])
+
+    console.log('[getOrders] ✅ Query executada!')
+    console.log('[getOrders] Pedidos retornados:', orders.length)
+    console.log('[getOrders] Total no banco (com filtro):', totalCount)
+    if (orders.length > 0) {
+      const statuses = [...new Set(orders.map((o: any) => o.status))]
+      console.log('[getOrders] Status únicos nos resultados:', statuses.join(', '))
+      if (statusParam && statusParam !== '') {
+        const expectedStatus = statusParam.toUpperCase().trim()
+        const hasExpectedStatus = statuses.includes(expectedStatus)
+        console.log('[getOrders] Status esperado:', expectedStatus, '| Encontrado nos resultados?', hasExpectedStatus)
+      }
+    } else {
+      console.log('[getOrders] ⚠️ NENHUM pedido encontrado com os filtros aplicados!')
+    }
+
+    return { orders, totalCount }
   } catch (error) {
     console.error('getOrders - Erro:', error)
-    return { orders: [] as any[] }
+    return { orders: [] as any[], totalCount: 0 }
   }
 }
 
 export default async function PedidosPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; status?: string; archived?: string }>
+  searchParams?: Promise<{ q?: string | string[]; status?: string | string[]; archived?: string | string[] }>
 }) {
   const params = await (searchParams || Promise.resolve({}))
   
-  // Garantir que os valores sejam strings e não arrays
-  const q = Array.isArray(params.q) ? params.q[0] || '' : (params.q || '')
-  const status = Array.isArray(params.status) ? params.status[0] || '' : (params.status || '')
-  const archived = Array.isArray(params.archived) ? params.archived[0] || '' : (params.archived || '')
+  // Extrair parâmetros de forma mais robusta
+  let qRaw: string | undefined = undefined
+  let statusRaw: string | undefined = undefined
+  let archivedRaw: string | undefined = undefined
+  
+  if (params.q) {
+    qRaw = Array.isArray(params.q) ? params.q[0] : params.q
+  }
+  if (params.status) {
+    statusRaw = Array.isArray(params.status) ? params.status[0] : params.status
+  }
+  if (params.archived) {
+    archivedRaw = Array.isArray(params.archived) ? params.archived[0] : params.archived
+  }
+  
+  const q = (qRaw && qRaw !== '' && qRaw !== 'undefined') ? String(qRaw).trim() : ''
+  const status = (statusRaw && statusRaw !== '' && statusRaw !== 'undefined') ? String(statusRaw).trim() : ''
+  const archived = (archivedRaw && archivedRaw !== '' && archivedRaw !== 'undefined') ? String(archivedRaw).trim() : ''
 
-  const { orders } = await getOrders({ q, status, archived })
+  // Debug: log dos parâmetros recebidos
+  console.log('[PedidosPage] ==========================================')
+  console.log('[PedidosPage] Parâmetros RAW do Next.js:', params)
+  console.log('[PedidosPage] Parâmetros extraídos:', { qRaw, statusRaw, archivedRaw })
+  console.log('[PedidosPage] Parâmetros processados:', { q, status, archived })
+  console.log('[PedidosPage] ==========================================')
+
+  const { orders, totalCount } = await getOrders({ q, status, archived })
+  
+  // Debug: log do resultado
+  console.log('[PedidosPage] Pedidos encontrados:', orders.length, 'de', totalCount)
 
   return (
     <div className="px-4 py-6">
+      <FilterStatus />
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h1 className="text-3xl font-bold text-blue-900">Pedidos</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-blue-900">Pedidos</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {totalCount > 0 ? (
+              <>
+                Mostrando <strong>{orders.length}</strong> de <strong>{totalCount}</strong> pedido{totalCount !== 1 ? 's' : ''}
+                {status && (
+                  <span> com status <strong>{status}</strong></span>
+                )}
+              </>
+            ) : (
+              'Nenhum pedido encontrado'
+            )}
+          </p>
+        </div>
       </div>
 
       <PedidosToolbar q={q} status={status} archived={archived} />
+
+      {/* Debug: mostrar filtros aplicados */}
+      {(q || status) && (
+        <div className="mb-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+          <p className="text-sm text-blue-800">
+            <strong>Filtros ativos:</strong>
+            {status && <span className="ml-2">Status: <strong>{status}</strong></span>}
+            {q && <span className="ml-2">Busca: <strong>{q}</strong></span>}
+            <button
+              onClick={() => window.location.href = '/admin/pedidos'}
+              className="ml-3 text-blue-600 hover:text-blue-800 underline text-xs"
+            >
+              Limpar filtros
+            </button>
+          </p>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-green-600">
         <div className="overflow-x-auto">
@@ -161,7 +265,18 @@ export default async function PedidosPage({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order: any) => (
+            {orders.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                  <div className="text-4xl mb-2">📭</div>
+                  <p className="text-lg font-semibold">Nenhum pedido encontrado</p>
+                  <p className="text-sm mt-1">
+                    {status ? `Não há pedidos com status "${status}"` : 'Tente ajustar os filtros de busca'}
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              orders.map((order: any) => (
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {order.id.substring(0, 8)}...
@@ -208,7 +323,8 @@ export default async function PedidosPage({
                   </div>
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
           </table>
         </div>

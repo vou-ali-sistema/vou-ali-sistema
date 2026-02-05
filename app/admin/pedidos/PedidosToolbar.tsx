@@ -76,20 +76,32 @@ export default function PedidosToolbar({
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    const q = formData.get('q')?.toString() || ''
-    const status = formData.get('status')?.toString() || ''
-    const archived = formData.get('archived') ? '1' : ''
+    const qValue = formData.get('q')?.toString() || ''
+    const statusValue = formData.get('status')?.toString() || ''
+    const archivedValue = formData.get('archived') ? '1' : ''
+    
+    console.log('[PedidosToolbar] Valores do formulário:', { qValue, statusValue, archivedValue })
     
     const params = new URLSearchParams()
-    if (q.trim()) params.set('q', q.trim())
-    if (status.trim()) params.set('status', status.trim())
-    if (archived === '1') params.set('archived', '1')
+    // Só adicionar parâmetros se tiverem valor (não adicionar q= vazio)
+    if (qValue && qValue.trim()) {
+      params.set('q', qValue.trim())
+    }
+    if (statusValue && statusValue.trim()) {
+      // Garantir que o status está em maiúsculas
+      params.set('status', statusValue.trim().toUpperCase())
+    }
+    if (archivedValue === '1') {
+      params.set('archived', '1')
+    }
     
     const queryString = params.toString()
     const url = `/admin/pedidos${queryString ? `?${queryString}` : ''}`
     
+    console.log('[PedidosToolbar] URL final:', url)
+    console.log('[PedidosToolbar] Query string:', queryString)
+    
     // Usar window.location para garantir que a página seja recarregada completamente
-    // Isso garante que os searchParams sejam atualizados corretamente
     window.location.href = url
   }
 
@@ -113,7 +125,8 @@ export default function PedidosToolbar({
           <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
           <select
             name="status"
-            defaultValue={status}
+            key={`status-select-${status}`}
+            defaultValue={status || ''}
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="">Todos</option>
