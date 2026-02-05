@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
@@ -456,6 +456,10 @@ export default function ComprarPage() {
         localStorage.setItem('vouali_recent_order_id', data.orderId)
       }
       setRedirectingToPayment(data.paymentLink)
+      // Abrir uma única aba aqui (evita duas abas por useEffect/Strict Mode)
+      if (typeof window !== 'undefined' && data.paymentLink) {
+        window.open(data.paymentLink, '_blank', 'noopener,noreferrer')
+      }
     } catch (err: any) {
       setError(err.message || 'Erro ao processar pedido')
     } finally {
@@ -463,19 +467,7 @@ export default function ComprarPage() {
     }
   }, [name, phone, email, items, selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos])
 
-  // Abrir checkout do Mercado Pago em nova aba (apenas uma vez; evita duas abas por Strict Mode ou re-render)
-  const paymentLinkOpenedRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (!redirectingToPayment) return
-    if (paymentLinkOpenedRef.current === redirectingToPayment) return
-    paymentLinkOpenedRef.current = redirectingToPayment
-    const opened = window.open(redirectingToPayment, '_blank', 'noopener,noreferrer')
-    if (!opened) {
-      const t = setTimeout(() => { window.location.href = redirectingToPayment }, 1000)
-      return () => clearTimeout(t)
-    }
-  }, [redirectingToPayment])
-
+  // Não abrir aba no useEffect (já abrimos uma vez no submit); esta tela só mostra o link caso o pop-up tenha sido bloqueado
   if (redirectingToPayment) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400 py-8 px-4">
