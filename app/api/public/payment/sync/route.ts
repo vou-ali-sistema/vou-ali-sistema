@@ -54,11 +54,19 @@ async function buscarPagamentoMP(opts: { paymentId?: string; externalReference?:
   if (opts.preferenceId) url.searchParams.set('preference_id', opts.preferenceId)
   url.searchParams.set('sort', 'date_created')
   url.searchParams.set('criteria', 'desc')
-  url.searchParams.set('limit', '1')
+  url.searchParams.set('limit', '5') // Buscar mais resultados para ter mais chances de encontrar
 
   const data = await mpFetchJson(url.toString())
-  const payment = Array.isArray(data?.results) && data.results.length > 0 ? data.results[0] : null
-  return payment
+  const payments = Array.isArray(data?.results) ? data.results : []
+  
+  // Se temos externalReference, priorizar pagamentos com esse external_reference
+  if (opts.externalReference && payments.length > 0) {
+    const matching = payments.find((p: any) => p.external_reference === opts.externalReference)
+    if (matching) return matching
+  }
+  
+  // Retornar o mais recente
+  return payments.length > 0 ? payments[0] : null
 }
 
 export async function POST(request: NextRequest) {

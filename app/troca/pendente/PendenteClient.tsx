@@ -80,28 +80,44 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
   }
 
   useEffect(() => {
-    if (!canSync) {
-      // Se não há parâmetros, tentar buscar pedido recente do localStorage
-      if (recentOrderId && !tryingRecentOrder) {
-        setTryingRecentOrder(true)
-        syncNow(true).finally(() => setTryingRecentOrder(false))
-      }
-      return
-    }
-    
     let cancelled = false
     let interval: any = null
+    let attempts = 0
+    const maxAttempts = 120 // Máximo de 4 minutos (120 * 2s)
 
     ;(async () => {
       // Primeira sincronização imediata
-      await syncNow()
+      if (canSync) {
+        await syncNow()
+      } else if (recentOrderId && !tryingRecentOrder) {
+        // Se não há parâmetros mas temos orderId recente, tentar sincronizar
+        setTryingRecentOrder(true)
+        await syncNow(true)
+        setTryingRecentOrder(false)
+      }
+      
       if (cancelled) return
 
-      // Polling a cada 3 segundos para verificação mais rápida
+      // Polling mais agressivo: a cada 2 segundos (ao invés de 3)
+      // Continuar mesmo sem parâmetros se tivermos orderId recente
+      const shouldPoll = canSync || recentOrderId
+      
+      if (!shouldPoll) return
+
       interval = setInterval(async () => {
         if (cancelled) return
+        attempts++
         
-        // Buscar dados atualizados antes de verificar
+        // Se já tentou muitas vezes sem sucesso, parar
+        if (attempts > maxAttempts) {
+          if (interval) {
+            clearInterval(interval)
+            interval = null
+          }
+          return
+        }
+        
+        // Buscar dados atualizados
         const externalRef = externalReference || recentOrderId || undefined
         const res = await fetch('/api/public/payment/sync', {
           method: 'POST',
@@ -129,7 +145,7 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
             }
           }
         }
-      }, 3000)
+      }, 2000) // Polling a cada 2 segundos (mais rápido)
     })()
 
     return () => {
@@ -144,13 +160,13 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
 
   return (
     <div className="mt-6">
-      {!canSync && !tryingRecentOrder ? (
+      {!canSync && !tryingRecentOrder && !recentOrderId ? (
         <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 text-left">
           <p className="text-sm text-gray-700 mb-2">
             <strong>⚠️ Não recebemos parâmetros do Mercado Pago.</strong>
           </p>
           <p className="text-sm text-gray-700 mb-3">
-            Se você já pagou, verifique seu email! O token de troca foi enviado para o endereço cadastrado.
+            Estamos verificando automaticamente se seu pagamento foi aprovado. Isso pode levar alguns segundos após o pagamento.
           </p>
           <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mt-3">
             <p className="text-sm text-blue-800 font-semibold mb-1">📧 Verifique seu email:</p>
@@ -161,42 +177,75 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
             </ul>
           </div>
           <p className="text-xs text-gray-600 mt-3">
-            Se não recebeu o email, entre em contato conosco ou acesse o admin para sincronizar manualmente.
+            <strong>💡 Dica:</strong> Se você acabou de pagar, aguarde alguns segundos. A confirmação aparece automaticamente aqui!
           </p>
         </div>
       ) : null}
       
-      {tryingRecentOrder && !data ? (
+      {(tryingRecentOrder || (recentOrderId && !data && !canSync)) ? (
         <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
-          <p className="text-sm text-blue-700">
-            🔍 Buscando informações do seu pedido recente...
+          <p className="text-sm text-blue-700 mb-2">
+            🔍 Verificando status do pagamento...
+          </p>
+          <p className="text-xs text-blue-600">
+            Aguarde alguns segundos. Estamos sincronizando com o Mercado Pago automaticamente.
+          </p>
+        </div>
+      ) : null}
+      
+      {canSync && !data && !busy ? (
+        <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-center">
+          <p className="text-sm text-gray-700">
+            ⏳ Aguardando confirmação do pagamento...
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            Verificando a cada 2 segundos. Isso pode levar alguns instantes após o pagamento.
           </p>
         </div>
       ) : null}
 
       {canSync ? (
         <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-left">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <div className="text-sm text-gray-700">
               <div>
                 <span className="font-semibold">Status:</span>{' '}
-                {data && (data as any).status ? (data as any).status : 'Verificando...'}
+                {data && (data as any).status ? (
+                  <span className={`font-bold ${
+                    (data as any).status === 'PAGO' ? 'text-green-600' : 
+                    (data as any).status === 'CANCELADO' ? 'text-red-600' : 
+                    'text-yellow-600'
+                  }`}>
+                    {(data as any).status}
+                  </span>
+                ) : (
+                  <span className="text-yellow-600">Verificando...</span>
+                )}
               </div>
               {data && (data as any).mpStatus ? (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-500 mt-1">
                   Mercado Pago: <span className="font-mono">{(data as any).mpStatus}</span>
                 </div>
               ) : null}
             </div>
             <button
               type="button"
-              onClick={syncNow}
+              onClick={() => syncNow()}
               disabled={busy}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {busy ? 'Atualizando...' : 'Atualizar agora'}
+              {busy ? '⏳ Atualizando...' : '🔄 Atualizar agora'}
             </button>
           </div>
+          
+          {!data || ((data as any).status !== 'PAGO' && (data as any).status !== 'CANCELADO') ? (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3 mt-3">
+              <p className="text-xs text-blue-800">
+                <strong>⏱️ Tempo de processamento:</strong> Pagamentos Pix geralmente são confirmados em <strong>10-30 segundos</strong> após o pagamento. 
+                Estamos verificando automaticamente a cada 2 segundos.
+              </p>
+            </div>
+          ) : null}
 
           {approved && (data as any).exchangeToken ? (
             <div className="mt-4 bg-gradient-to-br from-green-50 to-green-100 border-4 border-green-500 rounded-xl p-6 shadow-lg">
