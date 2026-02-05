@@ -422,6 +422,21 @@ export default function ComprarPage() {
         return
       }
 
+      const totalAbadaPedido = itemsComTamanho.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + (i.quantity || 0), 0)
+      const totalPulseiraPedido = itemsComTamanho.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + (i.quantity || 0), 0)
+      if (totalPulseiraPedido > totalAbadaPedido) {
+        setError(`Cada abadá dá direito a 1 pulseira (bonificação). Você tem ${totalAbadaPedido} abadá(s) e ${totalPulseiraPedido} pulseira(s). Remova pulseira(s) ou adicione mais abadás.`)
+        setSubmitting(false)
+        submitEmAndamentoRef.current = false
+        return
+      }
+      if (totalPulseiraPedido > 0 && totalAbadaPedido === 0) {
+        setError('A pulseira é bonificação e só pode ser adicionada junto com abadá. Adicione pelo menos um abadá.')
+        setSubmitting(false)
+        submitEmAndamentoRef.current = false
+        return
+      }
+
       // Um único pedido com todos os itens; cada item envia seu lotId para o backend usar o preço do lote correto (feminino vs masculino)
       const payloadItems = itemsComTamanho.map(item => {
         const lotId = item.lotId != null ? String(item.lotId).trim() : ''
@@ -1015,8 +1030,10 @@ export default function ComprarPage() {
                             {lots.length > 0 && lots[0].pulseiraPriceCents && (() => {
                               const totalAbada = items.filter(i => i.itemType === 'ABADA').reduce((s, i) => s + i.quantity, 0)
                               const totalPulseira = items.filter(i => i.itemType === 'PULSEIRA_EXTRA').reduce((s, i) => s + i.quantity, 0)
-                              const aoMudarParaPulseira = item.itemType === 'ABADA' ? 1 : 0
-                              const cabePulseira = totalAbada > 0 && totalPulseira + aoMudarParaPulseira <= totalAbada
+                              const qtyEste = item.itemType === 'ABADA' ? (item.quantity || 0) : 0
+                              const abadaApos = totalAbada - qtyEste
+                              const pulseiraApos = totalPulseira + (item.itemType === 'ABADA' ? qtyEste : 0)
+                              const cabePulseira = abadaApos > 0 && pulseiraApos <= abadaApos
                               return cabePulseira ? (
                                 <option value="PULSEIRA_EXTRA">
                                   {lots[0].pulseiraName || 'Pulseira (bonificação 1 por abadá)'} - R$ {(lots[0].pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
