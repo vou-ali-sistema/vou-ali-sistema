@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Log para debug
-console.log('[activate route] Route handler loaded')
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,8 +24,7 @@ export async function POST(
     }
 
     const { id } = await params
-    console.log('[activate route] Received ID:', id)
-    
+
     if (!id || typeof id !== 'string') {
       console.error('[activate route] Invalid ID:', id)
       return NextResponse.json(
@@ -45,8 +41,6 @@ export async function POST(
       select: { id: true, name: true },
     })
 
-    console.log('[activate route] Lot exists check:', lotExists ? `Sim - ${lotExists.name}` : 'Não')
-
     if (!lotExists) {
       return NextResponse.json(
         { error: 'Lote não encontrado', details: `ID procurado: ${id}` },
@@ -58,8 +52,6 @@ export async function POST(
     const lotNameUpper = lotExists.name.toUpperCase()
     const isFeminino = lotNameUpper.includes('FEMININO')
     const isMasculino = lotNameUpper.includes('MASCULINO')
-    
-    console.log('[activate route] Lot type detection:', { isFeminino, isMasculino, name: lotExists.name })
 
     // Ativar o lote solicitado - SEM desativar outros automaticamente
     // O usuário tem controle total sobre quais lotes ativar/desativar

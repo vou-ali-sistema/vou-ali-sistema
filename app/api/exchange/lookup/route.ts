@@ -21,12 +21,8 @@ export async function POST(request: NextRequest) {
       // Se falhar, usar o token original
     }
     
-    // Remover espaços e caracteres especiais
     const cleanToken = token.replace(/\s+/g, '').replace(/[^\w-]/g, '')
-    
-    console.log('API Lookup - Token original:', data.token)
-    console.log('API Lookup - Token limpo:', cleanToken)
-    
+
     // Tentar buscar com token limpo primeiro
     let order = await prisma.order.findUnique({
       where: { exchangeToken: cleanToken },

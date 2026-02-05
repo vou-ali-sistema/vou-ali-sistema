@@ -62,7 +62,7 @@ export async function criarPreferenciaPedido(orderId: string) {
     baseUrl = baseUrl.replace(/\/$/, '')
     const isProd = process.env.VERCEL === '1' || (baseUrl.startsWith('https://') && !baseUrl.includes('localhost'))
     const tokenHint = token ? `${token.slice(0, 19)}...${token.slice(-6)}` : 'vazio'
-    if (isProd) {
+    if (process.env.NODE_ENV !== 'production' && isProd) {
       console.log('[MP_CREATE] Ambiente produção: token', tokenHint, 'baseUrl', baseUrl)
     }
 
@@ -77,13 +77,9 @@ export async function criarPreferenciaPedido(orderId: string) {
     const pendingUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
     const notificationUrl = `${baseUrl}/api/webhooks/mercadopago`
 
-    console.log('[MP_CREATE] URLs:', {
-      orderId,
-      baseUrl,
-      notification: notificationUrl,
-      isLocalhost,
-      notificationSent: isHttps,
-    })
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[MP_CREATE] URLs:', { orderId, baseUrl, notification: notificationUrl, isLocalhost, notificationSent: isHttps })
+    }
 
     const preferenceBody: any = {
       items,
@@ -131,13 +127,10 @@ export async function criarPreferenciaPedido(orderId: string) {
     const rawSandboxPoint = (preference as any).sandbox_init_point ?? null
 
     if (isProd) {
-      // Produção (Vercel): usar SOMENTE init_point. Token de teste retorna só sandbox_init_point.
       if (rawInitPoint && !rawInitPoint.includes('sandbox')) {
-        console.log('[MP_CREATE] Produção: usando init_point', {
-          orderId,
-          tokenHint,
-          urlPreview: rawInitPoint.slice(0, 60) + '...',
-        })
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[MP_CREATE] Produção: usando init_point', { orderId, tokenHint, urlPreview: rawInitPoint.slice(0, 60) + '...' })
+        }
       } else if (rawSandboxPoint || (rawInitPoint && rawInitPoint.includes('sandbox'))) {
         const url = rawSandboxPoint || rawInitPoint
         console.error('[MP_CREATE] ERRO PRODUÇÃO: token de teste detectado. URL de checkout é sandbox.', {
@@ -160,16 +153,11 @@ export async function criarPreferenciaPedido(orderId: string) {
       throw new Error('Mercado Pago não retornou URL de pagamento. Verifique as credenciais (teste vs produção).')
     }
 
-    const preferenceId = (preference as any).id ?? null
-    const externalRef = order.externalReference || orderId
-    console.log('[MP_CREATE]', {
-      orderId,
-      preferenceId,
-      init_point: paymentUrl.slice(0, 80) + (paymentUrl.length > 80 ? '...' : ''),
-      external_reference: externalRef,
-      tokenHint,
-      isProduction: isProd,
-    })
+    if (process.env.NODE_ENV !== 'production') {
+      const preferenceId = (preference as any).id ?? null
+      const externalRef = order.externalReference || orderId
+      console.log('[MP_CREATE]', { orderId, preferenceId, init_point: paymentUrl.slice(0, 80) + (paymentUrl.length > 80 ? '...' : ''), external_reference: externalRef, tokenHint, isProduction: isProd })
+    }
 
     return { ...preference, init_point: paymentUrl }
   } catch (error: any) {

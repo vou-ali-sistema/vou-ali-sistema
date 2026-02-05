@@ -163,13 +163,6 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      console.log('[MP_CREATE]', {
-        orderId: order.id,
-        preferenceId,
-        init_point: initPoint ? `${initPoint.substring(0, 80)}...` : null,
-        external_reference: order.id,
-      })
-
       return NextResponse.json({
         orderId: order.id,
         paymentLink: initPoint,

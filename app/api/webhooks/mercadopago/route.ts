@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
   } catch {
     /* ignore */
   }
-  console.log('[MP_WEBHOOK] GET (ping?):', query)
   return NextResponse.json({ received: true })
 }
 
@@ -77,23 +76,6 @@ export async function POST(request: NextRequest) {
     /* ignore */
   }
 
-  const headersLog = {
-    'x-signature': request.headers.get('x-signature') ?? undefined,
-    'x-request-id': request.headers.get('x-request-id') ?? undefined,
-    'content-type': request.headers.get('content-type') ?? undefined,
-  }
-
-  const isProduction = process.env.VERCEL === '1'
-  console.log('[MP_WEBHOOK]', {
-    method: request.method,
-    url: url?.slice(0, 80),
-    query,
-    headers: headersLog,
-    bodyKeys: Object.keys(body),
-    body: JSON.stringify(body).slice(0, 400),
-    production: isProduction,
-  })
-
   let paymentId: string | null = null
   if (body?.data?.id != null) {
     paymentId = extractPaymentId(String(body.data.id))
@@ -102,10 +84,7 @@ export async function POST(request: NextRequest) {
   if (!paymentId && body?.id != null) paymentId = extractPaymentId(String(body.id))
   if (!paymentId && query['data.id']) paymentId = extractPaymentId(query['data.id'])
 
-  if (!paymentId) {
-    console.log('[MP_WEBHOOK] Sem paymentId, ignorando.')
-    return quick200()
-  }
+  if (!paymentId) return quick200()
 
   try {
     const payment = await consultarPagamentoMP(paymentId)
@@ -114,19 +93,13 @@ export async function POST(request: NextRequest) {
         ? String(payment.external_reference).trim()
         : null
 
-    if (!externalReference) {
-      console.log('[MP_WEBHOOK] Pagamento sem external_reference, paymentId:', paymentId)
-      return quick200()
-    }
+    if (!externalReference) return quick200()
 
     const order = await prisma.order.findUnique({
       where: { id: externalReference },
     })
 
-    if (!order) {
-      console.log('[MP_WEBHOOK] Pedido não encontrado:', externalReference)
-      return quick200()
-    }
+    if (!order) return quick200()
 
     const statusAntigo = order.status
     if (payment.status === 'approved') {
@@ -143,8 +116,6 @@ export async function POST(request: NextRequest) {
           exchangeToken,
         },
       })
-
-      console.log('[MP_UPDATE]', { orderId: externalReference, statusAntigo, statusNovo: 'PAGO', paymentId })
 
       const orderWithCustomer = await prisma.order.findUnique({
         where: { id: externalReference },
@@ -170,7 +141,6 @@ export async function POST(request: NextRequest) {
           mpPaymentId: paymentId,
         },
       })
-      console.log('[MP_UPDATE]', { orderId: externalReference, statusAntigo, statusNovo: 'CANCELADO', paymentId })
     } else if (payment.status === 'refunded') {
       await prisma.order.update({
         where: { id: externalReference },
@@ -179,7 +149,6 @@ export async function POST(request: NextRequest) {
           mpPaymentId: paymentId,
         },
       })
-      console.log('[MP_UPDATE]', { orderId: externalReference, statusAntigo, statusNovo: 'REFUNDED', paymentId })
     }
 
     return quick200()

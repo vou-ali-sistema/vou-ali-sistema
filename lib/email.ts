@@ -131,7 +131,6 @@ Bloco Vou Ali - Sistema de Vendas
       html: htmlContent,
     })
 
-    console.log('Email enviado:', info.messageId)
     return { success: true, messageId: info.messageId }
   } catch (error) {
     console.error('Erro ao enviar email:', error)

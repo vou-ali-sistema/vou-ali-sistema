@@ -68,42 +68,6 @@ export default function ComprarPage() {
     return null
   }
 
-  // Função para adicionar itens de um lote ao carrinho (sem remover itens de outros lotes)
-  // NOTA: Esta função não é mais usada diretamente - os handlers fazem isso diretamente
-  const adicionarItensDoLote = (lotId: string) => {
-    const lot = lots.find(l => l.id === lotId)
-    if (!lot) return
-
-    // Verificar se já existem itens padrão deste lote no carrinho
-    const existingItemsFromLot = items.filter(item => item.lotId === lotId)
-    
-    // Se já existem itens deste lote, não adicionar novamente
-    if (existingItemsFromLot.length > 0) return
-
-    // Um lote sempre contém: 1 Abadá + 1 Pulseira Extra
-    const novosItens: Item[] = [
-      {
-        itemType: 'ABADA',
-        size: 'Tamanho Único',
-        quantity: 1,
-        lotId: lotId
-      },
-      {
-        itemType: 'PULSEIRA_EXTRA',
-        quantity: 1,
-        lotId: lotId
-      }
-    ]
-    // Adicionar ao invés de substituir
-    setItems(prevItems => [...prevItems, ...novosItens])
-  }
-
-  // Função para remover itens de um lote específico
-  // NOTA: Esta função não é mais usada diretamente - os handlers fazem isso diretamente
-  const removerItensDoLote = (lotId: string) => {
-    setItems(prevItems => prevItems.filter(item => item.lotId !== lotId))
-  }
-
   // Buscar lote ativo, preços e cards de divulgação em paralelo para melhor performance
   useEffect(() => {
     let cancelled = false
@@ -149,33 +113,10 @@ export default function ComprarPage() {
         }
         
         const lotData = await lotRes.json()
-        // Pode ser objeto único ou array (múltiplos lotes ativos)
         const activeLots = Array.isArray(lotData) ? lotData : [lotData]
-        
-        // Debug: log dos lotes carregados
-        console.log('Lotes carregados da API:', activeLots)
-        console.log('Quantidade de lotes:', activeLots.length)
-        
+
         if (!cancelled && activeLots.length > 0) {
           setLots(activeLots)
-          
-          // Separar lotes por tipo
-          const lotMasculino = activeLots.find(l => getLotType(l.name) === 'MASCULINO')
-          const lotFeminino = activeLots.find(l => getLotType(l.name) === 'FEMININO')
-          
-          // Debug: log dos tipos encontrados
-          console.log('Lote masculino encontrado:', lotMasculino?.name)
-          console.log('Lote feminino encontrado:', lotFeminino?.name)
-          console.log('Lotes genéricos:', activeLots.filter(l => getLotType(l.name) === null).map(l => l.name))
-          
-          // NÃO adicionar itens automaticamente - o usuário deve escolher manualmente
-          // Apenas marcar os lotes como disponíveis se ainda não foram selecionados
-          if (!selectedLotIdMasculino && lotMasculino) {
-            // Não fazer nada - deixar o usuário escolher
-          }
-          if (!selectedLotIdFeminino && lotFeminino) {
-            // Não fazer nada - deixar o usuário escolher
-          }
         }
 
         // Processar cards de divulgação (não bloqueia se falhar; garantir array)
@@ -691,13 +632,7 @@ export default function ComprarPage() {
               const tipo = getLotType(l.name)
               return tipo !== 'MASCULINO' && tipo !== 'FEMININO'
             })
-            
-            // Debug: verificar se há lotes
-            console.log('Lotes carregados:', lots.length)
-            console.log('Lote masculino:', lotMasculino?.name)
-            console.log('Lote feminino:', lotFeminino?.name)
-            console.log('Lotes genéricos:', outrosLotes.map(l => l.name))
-            
+
             return (
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-blue-900 mb-4">Selecione os Lotes</h3>

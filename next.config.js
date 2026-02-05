@@ -1,13 +1,13 @@
 /** @type {import('next').NextConfig} */
 
-// CSP para rotas de checkout (Mercado Pago): mais permissiva para scripts/frames do MP.
+// CSP mínima para rotas de checkout: Mercado Pago + inline controlado (apenas nessas rotas).
 const cspCheckout =
   "default-src 'self'; " +
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.mercadopago.com https://*.mercadopago.com.br https://sdk.mercadopago.com https://www.mercadopago.com https://www.mercadopago.com.br; " +
-  "frame-src 'self' https://*.mercadopago.com.br https://*.mercadopago.com https://www.mercadopago.com.br https://www.mercadopago.com; " +
-  "connect-src 'self' https://*.mercadopago.com https://*.mercadopago.com.br https://api.mercadopago.com https://sandbox.mercadopago.com.br https://sandbox.mercadopago.com; " +
+  "script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://www.mercadopago.com.br https://sandbox.mercadopago.com.br; " +
+  "connect-src 'self' https://api.mercadopago.com https://sandbox.mercadopago.com.br; " +
+  "frame-src 'self' https://www.mercadopago.com.br https://sandbox.mercadopago.com.br; " +
   "img-src 'self' data: blob: https:; " +
-  "style-src 'self' 'unsafe-inline' https://*.mercadopago.com https://*.mercadopago.com.br; " +
+  "style-src 'self' 'unsafe-inline'; " +
   "font-src 'self' data:; " +
   "object-src 'none'; base-uri 'self'; form-action 'self';"
 

@@ -29,41 +29,21 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
     const statusParam = (params.status || '').trim()
     const archived = (params.archived || '').trim()
 
-    console.log('[getOrders] Parâmetros recebidos (RAW):', { q, statusParam, archived })
-
-    // Construir condições de forma explícita
     const conditions: any[] = []
 
-    // Por padrão, esconder arquivados
     if (archived !== '1') {
       conditions.push({ archivedAt: null })
     }
 
-    // Aplicar filtro de status (só se não estiver vazio e for um valor válido)
-    if (statusParam && statusParam !== '' && statusParam.trim() !== '') {
-      // Normalizar status para maiúsculas
-      const cleanStatus = statusParam.toUpperCase().trim()
-      const validStatuses = ['PENDENTE', 'PAGO', 'RETIRADO', 'CANCELADO']
-      
-      console.log('[getOrders] Status recebido:', statusParam)
-      console.log('[getOrders] Status normalizado:', cleanStatus)
-      console.log('[getOrders] Status válidos:', validStatuses.join(', '))
-      
+    const validStatuses = ['PENDENTE', 'PAGO', 'RETIRADO', 'CANCELADO']
+    if (statusParam) {
+      const cleanStatus = statusParam.toUpperCase()
       if (validStatuses.includes(cleanStatus)) {
-        // Adicionar condição de status
         conditions.push({ status: cleanStatus })
-        console.log('[getOrders] ✅✅✅ FILTRO DE STATUS APLICADO COM SUCESSO:', cleanStatus)
-        console.log('[getOrders] Condição adicionada:', { status: cleanStatus })
-      } else {
-        console.log('[getOrders] ❌❌❌ Status INVÁLIDO:', cleanStatus)
-        console.log('[getOrders] Status válidos são:', validStatuses.join(', '))
       }
-    } else {
-      console.log('[getOrders] ⚠️ Status vazio ou não fornecido. statusParam:', statusParam)
     }
 
-    // Aplicar busca (só se não estiver vazio)
-    if (q && q.trim() !== '') {
+    if (q) {
       conditions.push({
         OR: [
           { id: { contains: q, mode: 'insensitive' } },
@@ -91,15 +71,8 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
       // Uma única condição, aplicar diretamente
       where = conditions[0]
     } else {
-      // Múltiplas condições, SEMPRE usar AND
       where = { AND: conditions }
     }
-
-    console.log('[getOrders] ==========================================')
-    console.log('[getOrders] Número de condições:', conditions.length)
-    console.log('[getOrders] Condições:', JSON.stringify(conditions, null, 2))
-    console.log('[getOrders] Where clause final:', JSON.stringify(where, null, 2))
-    console.log('[getOrders] ==========================================')
 
     // Buscar pedidos e contagem total
     const [orders, totalCount] = await Promise.all([
@@ -132,21 +105,6 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
       }),
       prisma.order.count({ where }),
     ])
-
-    console.log('[getOrders] ✅ Query executada!')
-    console.log('[getOrders] Pedidos retornados:', orders.length)
-    console.log('[getOrders] Total no banco (com filtro):', totalCount)
-    if (orders.length > 0) {
-      const statuses = [...new Set(orders.map((o: any) => o.status))]
-      console.log('[getOrders] Status únicos nos resultados:', statuses.join(', '))
-      if (statusParam && statusParam !== '') {
-        const expectedStatus = statusParam.toUpperCase().trim()
-        const hasExpectedStatus = statuses.includes(expectedStatus)
-        console.log('[getOrders] Status esperado:', expectedStatus, '| Encontrado nos resultados?', hasExpectedStatus)
-      }
-    } else {
-      console.log('[getOrders] ⚠️ NENHUM pedido encontrado com os filtros aplicados!')
-    }
 
     return { orders, totalCount }
   } catch (error) {
@@ -183,17 +141,7 @@ export default async function PedidosPage({
   const status = (statusRaw && statusRaw !== '' && statusRaw !== 'undefined') ? String(statusRaw).trim() : ''
   const archived = (archivedRaw && archivedRaw !== '' && archivedRaw !== 'undefined') ? String(archivedRaw).trim() : ''
 
-  // Debug: log dos parâmetros recebidos
-  console.log('[PedidosPage] ==========================================')
-  console.log('[PedidosPage] Parâmetros RAW do Next.js:', params)
-  console.log('[PedidosPage] Parâmetros extraídos:', { qRaw, statusRaw, archivedRaw })
-  console.log('[PedidosPage] Parâmetros processados:', { q, status, archived })
-  console.log('[PedidosPage] ==========================================')
-
   const { orders, totalCount } = await getOrders({ q, status, archived })
-  
-  // Debug: log do resultado
-  console.log('[PedidosPage] Pedidos encontrados:', orders.length, 'de', totalCount)
 
   return (
     <div className="px-4 py-6">

@@ -16,23 +16,15 @@ async function getDataByToken(token: string) {
     decodedToken = token
   }
   
-  // Limpar o token: remover espaços, quebras de linha e caracteres especiais que podem vir do email
   const cleanToken = decodedToken.trim().replace(/\s+/g, '').replace(/[^\w-]/g, '')
-  
-  // Debug: log para verificar o token recebido e limpo
-  console.log('Token recebido (original):', token)
-  console.log('Token decodificado:', decodedToken)
-  console.log('Token limpo:', cleanToken)
-  console.log('Comprimento do token limpo:', cleanToken.length)
-  
-  // Lista de variações do token para tentar buscar
+
   const tokenVariations = [
-    cleanToken,           // Token limpo
-    decodedToken,         // Token decodificado
-    token,                // Token original
-    cleanToken.toLowerCase(), // Token em minúsculas
-    cleanToken.toUpperCase(), // Token em maiúsculas
-  ].filter((t, index, self) => self.indexOf(t) === index) // Remover duplicatas
+    cleanToken,
+    decodedToken,
+    token,
+    cleanToken.toLowerCase(),
+    cleanToken.toUpperCase(),
+  ].filter((t, index, self) => self.indexOf(t) === index)
   
   // Tentar buscar Order com cada variação
   let order = null
@@ -44,10 +36,7 @@ async function getDataByToken(token: string) {
         customer: true,
       }
     })
-    if (order) {
-      console.log('Pedido encontrado com variação:', tokenVar)
-      break
-    }
+    if (order) break
   }
 
   if (order) {
@@ -66,10 +55,7 @@ async function getDataByToken(token: string) {
         items: true,
       }
     })
-    if (courtesy) {
-      console.log('Cortesia encontrada com variação:', tokenVar)
-      break
-    }
+    if (courtesy) break
   }
 
   if (courtesy) {
@@ -79,11 +65,8 @@ async function getDataByToken(token: string) {
     }
   }
 
-  // Se o token tem pelo menos 16 caracteres, tentar busca por prefixo (caso tenha sido truncado)
   if (cleanToken.length >= 16) {
     const prefix = cleanToken.substring(0, 16)
-    console.log('Tentando busca por prefixo:', prefix)
-    
     const ordersByPrefix = await prisma.order.findMany({
       where: {
         exchangeToken: {
@@ -99,8 +82,6 @@ async function getDataByToken(token: string) {
     })
     
     if (ordersByPrefix.length === 1) {
-      // Se encontrou exatamente um pedido com esse prefixo, usar ele
-      console.log('Encontrado pedido único por prefixo:', ordersByPrefix[0].exchangeToken)
       const foundOrder = await prisma.order.findUnique({
         where: { id: ordersByPrefix[0].id },
         include: {
@@ -114,29 +95,7 @@ async function getDataByToken(token: string) {
           data: foundOrder,
         }
       }
-    } else if (ordersByPrefix.length > 1) {
-      console.log('Múltiplos pedidos encontrados com prefixo:', ordersByPrefix.length)
     }
-  }
-
-  // Debug: verificar se há algum pedido com token similar (para diagnóstico)
-  const similarOrders = await prisma.order.findMany({
-    where: {
-      exchangeToken: {
-        contains: cleanToken.substring(0, Math.min(10, cleanToken.length)),
-      }
-    },
-    select: {
-      id: true,
-      exchangeToken: true,
-      status: true,
-    },
-    take: 5,
-  })
-  
-  console.log('Pedidos com token similar encontrados:', similarOrders.length)
-  if (similarOrders.length > 0) {
-    console.log('Tokens similares:', similarOrders.map(o => o.exchangeToken))
   }
 
   return null
