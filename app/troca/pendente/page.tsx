@@ -70,12 +70,14 @@ async function getOrderById(orderId: string) {
   }
 }
 
+type ParamsRecord = Record<string, string | string[] | undefined>
+
 export default async function TrocaPendentePage({
   searchParams,
 }: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>
+  searchParams?: Promise<ParamsRecord>
 }) {
-  const params = await (searchParams || Promise.resolve({}))
+  const params: ParamsRecord = await (searchParams ?? Promise.resolve({} as ParamsRecord))
   
   const getParam = (key: string) => {
     const v = params[key]
