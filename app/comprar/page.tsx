@@ -39,6 +39,8 @@ export default function ComprarPage() {
   // Estados separados para lotes masculino e feminino
   const [selectedLotIdMasculino, setSelectedLotIdMasculino] = useState<string | null>(null)
   const [selectedLotIdFeminino, setSelectedLotIdFeminino] = useState<string | null>(null)
+  // Lotes genéricos selecionados (sem distinção de gênero)
+  const [selectedLotesGenericos, setSelectedLotesGenericos] = useState<string[]>([])
   // Rastrear qual foi o primeiro lote selecionado (para adicionar pulseira apenas nele)
   const [primeiroLoteSelecionado, setPrimeiroLoteSelecionado] = useState<string | null>(null)
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
@@ -229,7 +231,14 @@ export default function ComprarPage() {
   // Adicionar pulseira extra (não precisa de lote selecionado)
   function adicionarPulseiraExtra() {
     // Usar o primeiro lote disponível que tenha pulseira como referência para preço
-    const lotReferencia = lots.find(l => l.pulseiraPriceCents && (l.id === primeiroLoteSelecionado || l.pulseiraPriceCents)) || lots.find(l => l.pulseiraPriceCents)
+    // Priorizar: primeiro lote selecionado > lote masculino > lote feminino > primeiro lote genérico > qualquer lote com pulseira
+    const lotReferencia = 
+      (primeiroLoteSelecionado && lots.find(l => l.id === primeiroLoteSelecionado && l.pulseiraPriceCents)) ||
+      (selectedLotIdMasculino && lots.find(l => l.id === selectedLotIdMasculino && l.pulseiraPriceCents)) ||
+      (selectedLotIdFeminino && lots.find(l => l.id === selectedLotIdFeminino && l.pulseiraPriceCents)) ||
+      (selectedLotesGenericos[0] && lots.find(l => l.id === selectedLotesGenericos[0] && l.pulseiraPriceCents)) ||
+      lots.find(l => l.pulseiraPriceCents)
+    
     if (!lotReferencia || !lotReferencia.pulseiraPriceCents) {
       setError('Nenhum lote com pulseira disponível. A pulseira só está disponível no primeiro lote como bonificação.')
       return
@@ -258,7 +267,7 @@ export default function ComprarPage() {
         
         // Se era o primeiro lote, atualizar para o próximo lote disponível
         if (primeiroLoteSelecionado === lotAnterior) {
-          const proximoLote = selectedLotIdFeminino || null
+          const proximoLote = selectedLotIdFeminino || selectedLotesGenericos[0] || null
           setPrimeiroLoteSelecionado(proximoLote)
         }
         
@@ -285,7 +294,7 @@ export default function ComprarPage() {
         
         // Se era o primeiro lote, atualizar para o próximo lote disponível
         if (primeiroLoteSelecionado === lotAnterior) {
-          const proximoLote = selectedLotIdMasculino || null
+          const proximoLote = selectedLotIdMasculino || selectedLotesGenericos[0] || null
           setPrimeiroLoteSelecionado(proximoLote)
         }
         
@@ -294,6 +303,35 @@ export default function ComprarPage() {
     } else if (lotId && !primeiroLoteSelecionado) {
       // Se este é o primeiro lote selecionado, marcar como primeiro
       setPrimeiroLoteSelecionado(lotId)
+    }
+  }
+
+  // Handler para mudança de lote genérico (sem distinção de gênero)
+  function handleLoteGenericoChange(lotId: string, isSelected: boolean) {
+    if (isSelected) {
+      // Adicionar lote aos selecionados
+      setSelectedLotesGenericos(prev => [...prev, lotId])
+      
+      // Se é o primeiro lote selecionado, marcar como primeiro
+      if (!primeiroLoteSelecionado) {
+        setPrimeiroLoteSelecionado(lotId)
+      }
+    } else {
+      // Remover lote dos selecionados
+      setSelectedLotesGenericos(prev => prev.filter(id => id !== lotId))
+      
+      // Remover todos os itens deste lote
+      setItems(prevItems => {
+        const itemsRestantes = prevItems.filter(item => item.lotId !== lotId)
+        
+        // Se era o primeiro lote, atualizar para o próximo disponível
+        if (primeiroLoteSelecionado === lotId) {
+          const proximoLote = selectedLotIdMasculino || selectedLotIdFeminino || selectedLotesGenericos.find(id => id !== lotId) || null
+          setPrimeiroLoteSelecionado(proximoLote)
+        }
+        
+        return itemsRestantes
+      })
     }
   }
 
@@ -377,8 +415,8 @@ export default function ComprarPage() {
 
     try {
       // Validar que pelo menos um lote foi selecionado
-      if (!selectedLotIdMasculino && !selectedLotIdFeminino) {
-        setError('Selecione pelo menos um lote (masculino ou feminino) para continuar')
+      if (!selectedLotIdMasculino && !selectedLotIdFeminino && selectedLotesGenericos.length === 0) {
+        setError('Selecione pelo menos um lote para continuar')
         setSubmitting(false)
         return
       }
@@ -577,9 +615,13 @@ export default function ComprarPage() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
           {/* Seletores de Lote - Masculino e Feminino */}
-          {lots.length > 0 && (() => {
+          {lots.length > 0 ? (() => {
             const lotMasculino = lots.find(l => getLotType(l.name) === 'MASCULINO')
             const lotFeminino = lots.find(l => getLotType(l.name) === 'FEMININO')
+            const outrosLotes = lots.filter(l => {
+              const tipo = getLotType(l.name)
+              return tipo !== 'MASCULINO' && tipo !== 'FEMININO'
+            })
             
             return (
               <div className="space-y-4">
@@ -623,6 +665,42 @@ export default function ComprarPage() {
                   </div>
                 )}
                 
+                {/* Lotes Genéricos (sem distinção de gênero) */}
+                {outrosLotes.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-lg font-semibold text-gray-700">Lotes Disponíveis (Sem distinção de gênero)</h4>
+                    {outrosLotes.map((lote) => {
+                      const isSelected = selectedLotesGenericos.includes(lote.id)
+                      return (
+                        <div key={lote.id} className={`p-4 rounded-lg border-2 ${isSelected ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-300'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              {lote.name} {isSelected && <span className="text-green-600 font-bold">✓ Selecionado</span>}
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => handleLoteGenericoChange(lote.id, !isSelected)}
+                              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                isSelected 
+                                  ? 'bg-red-500 hover:bg-red-600 text-white' 
+                                  : 'bg-green-500 hover:bg-green-600 text-white'
+                              }`}
+                            >
+                              {isSelected ? 'Desmarcar' : 'Selecionar'}
+                            </button>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <p>Abadá: R$ {(lote.abadaPriceCents / 100).toFixed(2).replace('.', ',')}</p>
+                            {lote.pulseiraPriceCents && (
+                              <p>Pulseira: R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}</p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                
                 <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
                   <p className="text-sm text-blue-800 font-semibold mb-1">
                     💡 Selecione os lotes e escolha manualmente os itens que deseja comprar!
@@ -634,7 +712,11 @@ export default function ComprarPage() {
                 </div>
               </div>
             )
-          })()}
+          })() : (
+            <div className="bg-yellow-50 border-2 border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
+              Nenhum lote ativo encontrado. As vendas estão temporariamente indisponíveis.
+            </div>
+          )}
 
           {/* Dados do Cliente */}
           <div>
@@ -691,7 +773,7 @@ export default function ComprarPage() {
           <div>
             <h3 className="text-xl font-bold text-blue-900 mb-4">Escolha seus Itens</h3>
             
-            {!selectedLotIdMasculino && !selectedLotIdFeminino ? (
+            {!selectedLotIdMasculino && !selectedLotIdFeminino && selectedLotesGenericos.length === 0 ? (
               <div className="bg-yellow-50 border-2 border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4">
                 Selecione pelo menos um lote acima para poder adicionar itens ao pedido.
               </div>
@@ -700,24 +782,24 @@ export default function ComprarPage() {
                 <p className="text-sm font-semibold text-gray-700 mb-3">Adicione os itens que deseja comprar:</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedLotIdMasculino && (() => {
-                    const lotMasculino = lots.find(l => l.id === selectedLotIdMasculino)
-                    return lotMasculino ? (
+                    const lotSelecionado = lots.find(l => l.id === selectedLotIdMasculino)
+                    return lotSelecionado ? (
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold text-blue-700">Lote Masculino:</p>
+                        <p className="text-xs font-semibold text-blue-700">{lotSelecionado.name}:</p>
                         <button
                           type="button"
                           onClick={() => adicionarAbadaDoLote(selectedLotIdMasculino)}
                           className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
                         >
-                          + Abadá Masculino (R$ {(lotMasculino.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
+                          + Abadá (R$ {(lotSelecionado.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        {lotMasculino.pulseiraPriceCents && (
+                        {lotSelecionado.pulseiraPriceCents && (
                           <button
                             type="button"
                             onClick={() => adicionarPulseiraDoLote(selectedLotIdMasculino)}
                             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
                           >
-                            + Pulseira Extra Masculino (R$ {(lotMasculino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                            + Pulseira Extra (R$ {(lotSelecionado.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
                           </button>
                         )}
                       </div>
@@ -725,29 +807,55 @@ export default function ComprarPage() {
                   })()}
                   
                   {selectedLotIdFeminino && (() => {
-                    const lotFeminino = lots.find(l => l.id === selectedLotIdFeminino)
-                    return lotFeminino ? (
+                    const lotSelecionado = lots.find(l => l.id === selectedLotIdFeminino)
+                    return lotSelecionado ? (
                       <div className="space-y-2">
-                        <p className="text-xs font-semibold text-pink-700">Lote Feminino:</p>
+                        <p className="text-xs font-semibold text-pink-700">{lotSelecionado.name}:</p>
                         <button
                           type="button"
                           onClick={() => adicionarAbadaDoLote(selectedLotIdFeminino)}
                           className="w-full px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 font-semibold text-sm"
                         >
-                          + Abadá Feminino (R$ {(lotFeminino.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
+                          + Abadá (R$ {(lotSelecionado.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        {lotFeminino.pulseiraPriceCents && (
+                        {lotSelecionado.pulseiraPriceCents && (
                           <button
                             type="button"
                             onClick={() => adicionarPulseiraDoLote(selectedLotIdFeminino)}
                             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
                           >
-                            + Pulseira Extra Feminino (R$ {(lotFeminino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                            + Pulseira Extra (R$ {(lotSelecionado.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
                           </button>
                         )}
                       </div>
                     ) : null
                   })()}
+                  
+                  {/* Botões para lotes genéricos selecionados */}
+                  {selectedLotesGenericos.map((lotId) => {
+                    const lotSelecionado = lots.find(l => l.id === lotId)
+                    return lotSelecionado ? (
+                      <div key={lotId} className="space-y-2">
+                        <p className="text-xs font-semibold text-green-700">{lotSelecionado.name}:</p>
+                        <button
+                          type="button"
+                          onClick={() => adicionarAbadaDoLote(lotId)}
+                          className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-sm"
+                        >
+                          + Abadá (R$ {(lotSelecionado.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
+                        </button>
+                        {lotSelecionado.pulseiraPriceCents && (
+                          <button
+                            type="button"
+                            onClick={() => adicionarPulseiraDoLote(lotId)}
+                            className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
+                          >
+                            + Pulseira Extra (R$ {(lotSelecionado.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                          </button>
+                        )}
+                      </div>
+                    ) : null
+                  })}
                 </div>
               </div>
             )}
@@ -759,9 +867,9 @@ export default function ComprarPage() {
               <h3 className="text-xl font-bold text-blue-900">Itens do Pedido</h3>
             </div>
 
-            {!selectedLotIdMasculino && !selectedLotIdFeminino ? (
+            {!selectedLotIdMasculino && !selectedLotIdFeminino && selectedLotesGenericos.length === 0 ? (
               <div className="bg-yellow-50 border-2 border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
-                Selecione pelo menos um lote (masculino ou feminino) acima para ver os itens do pedido.
+                Selecione pelo menos um lote acima para ver os itens do pedido.
               </div>
             ) : items.length === 0 ? (
               <div className="bg-gray-50 border-2 border-gray-200 text-gray-600 px-4 py-3 rounded-lg">
@@ -864,7 +972,7 @@ export default function ComprarPage() {
                                 novosItems[originalIndex] = {
                                   ...novosItems[originalIndex],
                                   itemType: 'PULSEIRA_EXTRA',
-                                  lotId: selectedLotIdMasculino || selectedLotIdFeminino || lots[0]?.id,
+                                  lotId: selectedLotIdMasculino || selectedLotIdFeminino || selectedLotesGenericos[0] || lots[0]?.id,
                                   size: undefined
                                 }
                               } else if (value.startsWith('ABADA_')) {

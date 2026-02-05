@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Log para debug
-console.log('[activate route] Route handler loaded')
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +15,7 @@ export async function POST(
       const { authOptions } = await import('@/lib/auth')
       session = await getServerSession(authOptions)
     } catch (authErr) {
-      console.error('activate lot: auth error', authErr)
+      console.error('deactivate lot: auth error', authErr)
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
@@ -27,60 +24,44 @@ export async function POST(
     }
 
     const { id } = await params
-    console.log('[activate route] Received ID:', id)
     
     if (!id || typeof id !== 'string') {
-      console.error('[activate route] Invalid ID:', id)
       return NextResponse.json(
-        { error: 'ID do lote inválido', details: `ID recebido: ${id}` },
+        { error: 'ID do lote inválido' },
         { status: 400 }
       )
     }
 
     const { prisma } = await import('@/lib/prisma')
     
-    // Verificar se o lote existe antes de tentar ativar
+    // Verificar se o lote existe
     const lotExists = await prisma.lot.findUnique({
       where: { id },
       select: { id: true, name: true },
     })
 
-    console.log('[activate route] Lot exists check:', lotExists ? `Sim - ${lotExists.name}` : 'Não')
-
     if (!lotExists) {
       return NextResponse.json(
-        { error: 'Lote não encontrado', details: `ID procurado: ${id}` },
+        { error: 'Lote não encontrado' },
         { status: 404 }
       )
     }
 
-    // Detectar tipo do lote (FEMININO ou MASCULINO) pelo nome
-    const lotNameUpper = lotExists.name.toUpperCase()
-    const isFeminino = lotNameUpper.includes('FEMININO')
-    const isMasculino = lotNameUpper.includes('MASCULINO')
-    
-    console.log('[activate route] Lot type detection:', { isFeminino, isMasculino, name: lotExists.name })
-
-    // Ativar o lote solicitado - SEM desativar outros automaticamente
-    // O usuário tem controle total sobre quais lotes ativar/desativar
-    const activatedLot = await prisma.lot.update({
+    // Desativar o lote
+    const deactivatedLot = await prisma.lot.update({
       where: { id },
-      data: { active: true },
+      data: { active: false },
     })
 
-    const activeCount = await prisma.lot.count({ where: { active: true } })
-    const result = { activatedLot, activeCount }
-
-    return NextResponse.json(result, {
+    return NextResponse.json({ deactivatedLot }, {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
     })
   } catch (error) {
-    console.error('Erro ao ativar lote:', error)
+    console.error('Erro ao desativar lote:', error)
     const errorMessage = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { error: 'Erro ao ativar lote', details: errorMessage },
+      { error: 'Erro ao desativar lote', details: errorMessage },
       { status: 500 }
     )
   }
 }
-

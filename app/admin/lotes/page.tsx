@@ -6,7 +6,7 @@ interface Lot {
   id: string
   name: string
   abadaPriceCents: number
-  pulseiraPriceCents: number
+  pulseiraPriceCents: number | null // Pode ser null
   abadaProducedQty: number
   pulseiraProducedQty: number
   active: boolean
@@ -72,6 +72,46 @@ export default function LotesPage() {
       console.error('Erro ao ativar lote:', error)
       const errorMessage = error instanceof Error ? error.message : String(error)
       alert(`Erro ao ativar lote: ${errorMessage}`)
+    }
+  }
+
+  async function handleDeactivate(id: string) {
+    if (!id) {
+      alert('Erro: ID do lote não fornecido')
+      return
+    }
+
+    if (!window.confirm('Tem certeza que deseja desativar este lote?')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/lots/${id}/deactivate`, {
+        method: 'POST',
+      })
+
+      if (res.ok) {
+        await fetchLotes()
+        alert('Lote desativado com sucesso!')
+      } else {
+        let errorMsg = `Erro ${res.status} ao desativar lote`
+        try {
+          const data = await res.json()
+          errorMsg = data.error || errorMsg
+          if (data.details) {
+            errorMsg += `\n\nDetalhes: ${data.details}`
+          }
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) errorMsg += `\n\nResposta: ${text}`
+        }
+        alert(errorMsg)
+        console.error('Erro ao desativar lote:', { status: res.status, id })
+      }
+    } catch (error) {
+      console.error('Erro ao desativar lote:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      alert(`Erro ao desativar lote: ${errorMessage}`)
     }
   }
 
@@ -164,7 +204,10 @@ export default function LotesPage() {
                   R$ {(lote.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                  {lote.pulseiraPriceCents !== null 
+                    ? `R$ ${(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}`
+                    : <span className="text-gray-400">-</span>
+                  }
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                   {lote.abadaProducedQty ?? 0} / {lote.pulseiraProducedQty ?? 0}
@@ -179,7 +222,14 @@ export default function LotesPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  {!lote.active && (
+                  {lote.active ? (
+                    <button
+                      onClick={() => handleDeactivate(lote.id)}
+                      className="text-orange-600 hover:text-orange-900 font-semibold"
+                    >
+                      Desativar
+                    </button>
+                  ) : (
                     <button
                       onClick={() => handleActivate(lote.id)}
                       className="text-green-600 hover:text-green-900 font-semibold"
