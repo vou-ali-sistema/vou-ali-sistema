@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
@@ -35,7 +34,6 @@ interface PromoCard {
 }
 
 export default function ComprarPage() {
-  const router = useRouter()
   const [lot, setLot] = useState<Lot | null>(null)
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -97,8 +95,11 @@ export default function ComprarPage() {
           }
         }
         
-        const activeLot = await lotRes.json()
-        if (!cancelled) setLot(activeLot)
+        const lotData = await lotRes.json()
+        // Pode ser objeto único ou array (múltiplos lotes ativos)
+        // Se for array, usar o primeiro (mais recente)
+        const activeLot = Array.isArray(lotData) ? lotData[0] : lotData
+        if (!cancelled && activeLot) setLot(activeLot)
 
         // Processar cards de divulgação (não bloqueia se falhar; garantir array)
         if (cardsRes.ok) {
