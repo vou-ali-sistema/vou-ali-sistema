@@ -83,7 +83,7 @@ export default async function TrocaPendentePage({
   // Priorizar orderId se disponível
   const orderId = getParam('orderId')
   const paymentId = getParam('payment_id') || getParam('collection_id')
-  const preferenceId = getParam('preference_id')
+  const preferenceId = getParam('preference_id') || getParam('preference-id') // MP envia preference-id (com hífen) na URL
   const externalReference = getParam('external_reference') || orderId // Usar orderId como fallback
 
   // Tentar buscar o pedido se tivermos orderId

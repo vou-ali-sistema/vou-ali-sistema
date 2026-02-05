@@ -1,5 +1,13 @@
 # Aviso: Erros no Console durante o Checkout do Mercado Pago
 
+## URL de review do Mercado Pago
+
+Durante o pagamento você pode ver uma URL como:
+
+`https://www.mercadopago.com.br/checkout/v1/payment/redirect/{...}/review/?preference-id=44054480-...&router-request-id=...&p=...`
+
+Isso é **normal**: é a tela de revisão do próprio Mercado Pago. Qualquer erro que apareça no console **nessa aba** (enquanto a URL é do domínio `mercadopago.com.br`) vem do site do MP, não do nosso sistema. Após concluir o pagamento, o MP redireciona para a nossa página (`/troca/pendente?orderId=...`).
+
 ## Erros que podem aparecer
 
 1. **Favicon 400/404**  
