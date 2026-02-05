@@ -102,14 +102,15 @@ export default function ComprarPage() {
         if (!cancelled && activeLots.length > 0) {
           setLots(activeLots)
           // Atualizar lotId dos itens que não têm lote definido (apenas uma vez)
+          // E garantir que itemType seja 'ABADA' se não estiver definido
           setItems(prev => {
-            const needsUpdate = prev.some(item => !item.lotId || (item.itemType === 'ABADA' && !item.lotId))
-            if (!needsUpdate) return prev // Evitar atualização desnecessária
+            const needsUpdate = prev.some(item => !item.lotId || !item.itemType)
+            if (!needsUpdate && prev.every(item => item.lotId && item.itemType)) return prev // Evitar atualização desnecessária
             return prev.map(item => ({
               ...item,
-              // Se for ABADA e não tiver lotId, definir o primeiro lote
-              // Se for PULSEIRA_EXTRA, também precisa de um lotId para cálculo de preço
-              lotId: item.lotId || activeLots[0].id
+              itemType: item.itemType || 'ABADA',
+              lotId: item.lotId || activeLots[0].id,
+              size: item.size || (item.itemType === 'ABADA' ? 'Tamanho Único' : undefined)
             }))
           })
         }
@@ -515,7 +516,6 @@ export default function ComprarPage() {
                         className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         required
                       >
-                        <option value="">Selecione...</option>
                         {/* Mostrar todos os lotes ativos com seus nomes completos */}
                         {lots.map((lot) => (
                           <option key={`ABADA_${lot.id}`} value={`ABADA_${lot.id}`}>
