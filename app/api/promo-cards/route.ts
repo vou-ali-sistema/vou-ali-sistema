@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
-// Cache por 60 segundos para melhorar performance (dados públicos que não mudam frequentemente)
-export const revalidate = 60
+// Rota dinâmica obrigatória porque usa searchParams
+export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 // GET público - Listar apenas cards ativos
 export async function GET(request: NextRequest) {
   try {
+    const { prisma } = await import('@/lib/prisma')
     const placement = request.nextUrl.searchParams.get('placement') // HOME | COMPRAR | APOIO
 
     const wherePlacement =
