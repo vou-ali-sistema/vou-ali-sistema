@@ -8,6 +8,7 @@ interface Item {
   itemType: 'ABADA' | 'PULSEIRA_EXTRA'
   size?: string
   quantity: number
+  lotId?: string // ID do lote selecionado para este item
 }
 
 interface Lot {
@@ -49,11 +50,8 @@ export default function ComprarPage() {
   
   // Itens do pedido
   const [items, setItems] = useState<Item[]>([
-    { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1 }
+    { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lots[0]?.id }
   ])
-
-  // Lote selecionado (derivado do selectedLotId)
-  const selectedLot = lots.find(l => l.id === selectedLotId) || lots[0] || null
 
   // Buscar lote ativo, preços e cards de divulgação em paralelo para melhor performance
   useEffect(() => {
@@ -104,8 +102,11 @@ export default function ComprarPage() {
         const activeLots = Array.isArray(lotData) ? lotData : [lotData]
         if (!cancelled && activeLots.length > 0) {
           setLots(activeLots)
-          // Selecionar o primeiro lote por padrão se ainda não houver seleção
-          setSelectedLotId(prev => prev || activeLots[0].id)
+          // Atualizar lotId dos itens que não têm lote definido
+          setItems(prev => prev.map(item => ({
+            ...item,
+            lotId: item.lotId || activeLots[0].id
+          })))
         }
 
         // Processar cards de divulgação (não bloqueia se falhar; garantir array)
@@ -128,7 +129,8 @@ export default function ComprarPage() {
   }, [])
 
   function adicionarItem() {
-    setItems([...items, { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1 }])
+    const defaultLotId = lots[0]?.id || null
+    setItems([...items, { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: defaultLotId }])
   }
 
   function removerItem(index: number) {
@@ -155,15 +157,17 @@ export default function ComprarPage() {
   }
 
   // Memoizar cálculo do total para evitar re-execução a cada render
+  // Cada item pode ter seu próprio lote
   const total = useMemo(() => {
-    if (!selectedLot) return 0
     return items.reduce((sum, item) => {
+      const itemLot = lots.find(l => l.id === item.lotId) || lots[0]
+      if (!itemLot) return sum
       const precoUnitario = item.itemType === 'ABADA' 
-        ? selectedLot.abadaPriceCents 
-        : selectedLot.pulseiraPriceCents
+        ? itemLot.abadaPriceCents 
+        : itemLot.pulseiraPriceCents
       return sum + (precoUnitario * item.quantity)
     }, 0) / 100
-  }, [selectedLot, items])
+  }, [lots, items])
 
   // Memoizar filtros de cards para evitar re-execução a cada render
   // IMPORTANTE: hooks devem ser chamados antes de qualquer return condicional
@@ -206,53 +210,71 @@ export default function ComprarPage() {
     }
 
     try {
-      // Garantir que todos os abadás tenham tamanho único
-      const itemsToSend = items.map(item => {
-        if (item.itemType === 'ABADA' && !item.size) {
-          return { ...item, size: 'Tamanho Único' }
+      // Validar que todos os itens têm lote selecionado
+      for (const item of items) {
+        if (!item.lotId) {
+          setError('Todos os itens devem ter um lote selecionado')
+          setSubmitting(false)
+          return
         }
-        return {
+      }
+
+      // Agrupar itens por lote e criar um pedido por lote
+      const itemsByLot = items.reduce((acc, item) => {
+        const lotId = item.lotId!
+        if (!acc[lotId]) {
+          acc[lotId] = []
+        }
+        acc[lotId].push({
           itemType: item.itemType,
           size: item.itemType === 'ABADA' ? (item.size || 'Tamanho Único') : undefined,
           quantity: item.quantity,
-        }
-      })
+        })
+        return acc
+      }, {} as Record<string, any[]>)
 
-      if (!selectedLot) {
-        setError('Selecione um lote para continuar')
+      // Criar pedidos para cada lote (ou agrupar em um único pedido se todos forem do mesmo lote)
+      const lotIds = Object.keys(itemsByLot)
+      
+      if (lotIds.length === 1) {
+        // Todos os itens são do mesmo lote - criar um único pedido
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer: {
+              name: name.trim(),
+              phone: phone.trim(),
+              email: email.trim(),
+            },
+            items: itemsByLot[lotIds[0]],
+            lotId: lotIds[0],
+          }),
+        })
+
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Erro ao criar pedido')
+        }
+
+        const data = await res.json()
+        
+        // Redirecionar para o link de pagamento do Mercado Pago
+        if (data.paymentLink) {
+          window.location.href = data.paymentLink
+        } else if (data.warning) {
+          const errorMsg = data.warning + (data.details ? `\n\nDetalhes: ${data.details}` : '')
+          setError(errorMsg)
+        } else {
+          setError('Erro ao gerar link de pagamento. Verifique se o Mercado Pago está configurado.')
+        }
+      } else {
+        // Múltiplos lotes - criar um pedido por lote
+        // Por enquanto, vamos criar apenas o primeiro e avisar o usuário
+        // (ou podemos criar múltiplos pedidos e redirecionar para o primeiro)
+        setError('Por favor, faça pedidos separados para lotes diferentes (Feminino e Masculino).')
         setSubmitting(false)
         return
-      }
-
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer: {
-            name: name.trim(),
-            phone: phone.trim(),
-            email: email.trim(),
-          },
-          items: itemsToSend,
-          lotId: selectedLot.id, // Enviar o ID do lote selecionado
-        }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao criar pedido')
-      }
-
-      const data = await res.json()
-      
-      // Redirecionar para o link de pagamento do Mercado Pago
-      if (data.paymentLink) {
-        window.location.href = data.paymentLink
-      } else if (data.warning) {
-        const errorMsg = data.warning + (data.details ? `\n\nDetalhes: ${data.details}` : '')
-        setError(errorMsg)
-      } else {
-        setError('Erro ao gerar link de pagamento. Verifique se o Mercado Pago está configurado.')
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao processar pedido')
@@ -349,30 +371,6 @@ export default function ComprarPage() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
-          {/* Seletor de Lote */}
-          {lots.length > 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecione o Lote *
-              </label>
-              <select
-                value={selectedLotId || ''}
-                onChange={(e) => setSelectedLotId(e.target.value)}
-                required
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-semibold bg-white"
-              >
-                {lots.map((lot) => (
-                  <option key={lot.id} value={lot.id}>
-                    {lot.name} - Abadá: R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')} | Pulseira: R$ {(lot.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Escolha o lote desejado (Feminino ou Masculino)
-              </p>
-            </div>
-          )}
-
           {/* Dados do Cliente */}
           <div>
             <h3 className="text-xl font-bold text-blue-900 mb-4">Seus Dados</h3>
@@ -438,9 +436,30 @@ export default function ComprarPage() {
             </div>
 
             <div className="space-y-4">
-              {items.map((item, index) => (
+              {items.map((item, index) => {
+                const itemLot = lots.find(l => l.id === item.lotId) || lots[0] || null
+                return (
                 <div key={index} className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {lots.length > 1 && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Lote *
+                        </label>
+                        <select
+                          value={item.lotId || ''}
+                          onChange={(e) => atualizarItem(index, 'lotId', e.target.value)}
+                          required
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          {lots.map((lot) => (
+                            <option key={lot.id} value={lot.id}>
+                              {lot.name.includes('FEMININO') ? 'Feminino' : lot.name.includes('MASCULINO') ? 'Masculino' : lot.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Tipo *
@@ -454,8 +473,20 @@ export default function ComprarPage() {
                         <option value="PULSEIRA_EXTRA">Pulseira Extra</option>
                       </select>
                     </div>
-
-
+                    {item.itemType === 'ABADA' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tamanho *
+                        </label>
+                        <input
+                          type="text"
+                          value={item.size || 'Tamanho Único'}
+                          onChange={(e) => atualizarItem(index, 'size', e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="Tamanho Único"
+                        />
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Quantidade *
@@ -472,7 +503,13 @@ export default function ComprarPage() {
                   </div>
 
                   <div className="mt-2 text-sm text-gray-600">
-                    Preço unitário: R$ {selectedLot ? ((item.itemType === 'ABADA' ? selectedLot.abadaPriceCents : selectedLot.pulseiraPriceCents) / 100).toFixed(2).replace('.', ',') : '0,00'}
+                    {itemLot && (
+                      <>
+                        Preço unitário: R$ {((item.itemType === 'ABADA' ? itemLot.abadaPriceCents : itemLot.pulseiraPriceCents) / 100).toFixed(2).replace('.', ',')}
+                        {' | '}
+                        Subtotal: R$ {((item.itemType === 'ABADA' ? itemLot.abadaPriceCents : itemLot.pulseiraPriceCents) * item.quantity / 100).toFixed(2).replace('.', ',')}
+                      </>
+                    )}
                   </div>
 
                   {items.length > 1 && (
@@ -485,7 +522,8 @@ export default function ComprarPage() {
                     </button>
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
