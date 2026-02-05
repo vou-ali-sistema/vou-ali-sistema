@@ -11,7 +11,8 @@ Isso é **normal**: é a tela de revisão do próprio Mercado Pago. Qualquer err
 ## Erros que podem aparecer
 
 1. **Favicon 400/404**  
-   `GET https://www.mercadopago.com.br/favicon.ico` ou `https://sandbox.mercadopago.com.br/favicon.ico 404`
+   - **No nosso site:** Se aparecer `GET .../favicon.ico 400` no **blocovouali.com**, o projeto está configurado para redirecionar `/favicon.ico` → `/icon.ico` e o layout usa `icon: '/icon.ico'`. Faça deploy e recarregue.  
+   - **No Mercado Pago:** `GET https://www.mercadopago.com.br/favicon.ico` ou `sandbox.mercadopago.com.br/favicon.ico 404` — vem do site do MP, pode ignorar.
 
 2. **Content Security Policy (CSP)**  
    `Executing inline script violates the following Content Security Policy directive 'script-src 'nonce-...' 'strict-dynamic' ...'`  
@@ -19,6 +20,13 @@ Isso é **normal**: é a tela de revisão do próprio Mercado Pago. Qualquer err
 
 3. **404 em URLs do Mercado Pago**  
    `GET https://sandbox.mercadopago.com.br/jms/lgz/background/session/... 404 (Not Found)`
+
+4. **Tracking Prevention blocked access to storage for &lt;URL&gt;**  
+   Aparece na **página do Mercado Pago** (URL tipo `mercadopago.com.br/checkout/.../review/`). O navegador (Safari, Firefox ou Edge com “Prevenção de rastreamento”) bloqueia acesso a armazenamento (cookies/localStorage) de domínios terceiros (mlstatic.com, gstatic.com/reCAPTCHA, etc.). **Não é erro do nosso sistema.** Em geral o pagamento segue funcionando; se o checkout travar, teste em outro navegador ou aba sem bloqueios (Chrome normal, ou aba anônima) ou relaxe a “Prevenção de rastreamento” para o site do MP.
+
+## Produção (Vercel)
+
+O sistema está em **produção** no Vercel e usa **credenciais de produção** do Mercado Pago. Não usamos modo teste/sandbox em produção: o `MERCADOPAGO_ACCESS_TOKEN` no Vercel deve ser o Access Token de **produção**; o código em `lib/mercado-pago.ts` recusa checkout em sandbox quando detecta produção (Vercel).
 
 ## Conclusão da análise
 

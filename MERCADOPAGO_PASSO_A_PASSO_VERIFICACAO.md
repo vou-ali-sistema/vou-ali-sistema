@@ -2,6 +2,8 @@
 
 Use este guia para conferir tudo no Mercado Pago e garantir que as vendas e o checkout funcionem.
 
+**Produção no Vercel:** O sistema está em **produção** e usa **apenas credenciais de produção**. Não há uso de modo teste/sandbox em produção: no Vercel configure só `MERCADOPAGO_ACCESS_TOKEN` com o **Access Token de produção**. O código recusa checkout em sandbox quando detecta produção (Vercel).
+
 ---
 
 ## 1. Acessar o painel do Mercado Pago (Desenvolvedores)

@@ -330,6 +330,10 @@ export default function HomePage() {
                               alt={card.title}
                               className="h-full w-full object-contain"
                               loading="lazy"
+                              onError={(e) => {
+                                const t = e.currentTarget
+                                if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+                              }}
                             />
                           </div>
                         </div>
@@ -463,6 +467,10 @@ export default function HomePage() {
                         alt="Galeria"
                         className="h-full w-full object-contain"
                         loading="lazy"
+                        onError={(e) => {
+                          const t = e.currentTarget
+                          if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+                        }}
                       />
                     </div>
                   </Link>
@@ -480,6 +488,10 @@ export default function HomePage() {
                         alt="Galeria"
                         className="h-full w-full object-contain"
                         loading="lazy"
+                        onError={(e) => {
+                          const t = e.currentTarget
+                          if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+                        }}
                       />
                     </div>
                   </div>
@@ -563,6 +575,10 @@ export default function HomePage() {
                       alt={percursoCard.title}
                       className="h-full w-full object-contain"
                       loading="lazy"
+                      onError={(e) => {
+                        const t = e.currentTarget
+                        if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+                      }}
                     />
                   </div>
                 </div>
@@ -632,6 +648,10 @@ export default function HomePage() {
                         alt={apoio.title || 'Apoiador'}
                         className="max-h-full max-w-full w-auto h-auto object-contain"
                         loading="lazy"
+                        onError={(e) => {
+                          const t = e.currentTarget
+                          if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+                        }}
                       />
                     </div>
                     {showTitle && (

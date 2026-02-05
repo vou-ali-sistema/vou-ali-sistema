@@ -33,6 +33,12 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // Favicon: garantir que /favicon.ico seja servido (evita 400 no console)
+      {
+        source: '/favicon.ico',
+        destination: '/icon.ico',
+        permanent: false,
+      },
       // Canonicalizar domínio: redirecionar sem www -> com www
       {
         source: '/:path*',

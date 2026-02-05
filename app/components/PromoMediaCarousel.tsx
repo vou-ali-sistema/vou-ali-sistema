@@ -86,6 +86,10 @@ export default function PromoMediaCarousel({
                 .filter(Boolean)
                 .join(' ')}
               loading="lazy"
+              onError={(e) => {
+                const t = e.currentTarget
+                if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+              }}
             />
           )}
         </div>

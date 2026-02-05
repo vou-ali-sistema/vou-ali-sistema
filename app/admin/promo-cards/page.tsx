@@ -788,7 +788,15 @@ export default function PromoCardsPage() {
                   {imageMedia.map((m) => (
                       <div key={m.id} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                         <div className="aspect-square bg-[#f8f9fa]">
-                          <img src={m.mediaUrl} alt="Foto do carrossel" className="h-full w-full object-cover" />
+                          <img
+                          src={m.mediaUrl}
+                          alt="Foto do carrossel"
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            const t = e.currentTarget
+                            if (t.src && !t.src.includes('placeholder')) t.src = '/apoios/placeholder.svg'
+                          }}
+                        />
                         </div>
                         <div className="p-2 flex items-center justify-between gap-2">
                           <span className="text-[11px] text-gray-600">Ordem: {m.displayOrder}</span>

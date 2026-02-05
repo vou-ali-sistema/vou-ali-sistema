@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: 'Bloco Vou Ali',
   description: 'Bloco Vou Ali – 11 anos de história e energia de Carnaval.',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.ico',
   },
   openGraph: {
     title: 'Bloco Vou Ali',
