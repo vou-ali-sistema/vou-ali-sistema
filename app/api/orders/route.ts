@@ -100,19 +100,31 @@ export async function POST(request: NextRequest) {
       itemsWithPrices.push({ ...item, unitPriceCents })
     }
 
-    const totalAbada = data.items.filter((i: any) => i.itemType === 'ABADA').reduce((s: number, i: any) => s + (i.quantity || 0), 0)
-    const totalPulseira = data.items.filter((i: any) => i.itemType === 'PULSEIRA_EXTRA').reduce((s: number, i: any) => s + (i.quantity || 0), 0)
-    if (totalPulseira > 0 && totalAbada === 0) {
-      return NextResponse.json(
-        { error: 'A pulseira é bonificação: só pode ser adicionada junto com abadá. Adicione pelo menos um abadá ao pedido.' },
-        { status: 400 }
-      )
+    // Regra por lote: cada lote pode ter no máximo 1 pulseira por abadá do MESMO lote (não misturar feminino com masculino)
+    const abadaPorLote = new Map<string, number>()
+    const pulseiraPorLote = new Map<string, number>()
+    const defaultId = defaultLot?.id ?? ''
+    for (const item of data.items) {
+      const lid = (item.lotId != null && String(item.lotId).trim()) ? String(item.lotId).trim() : defaultId
+      if (!lid) continue
+      const q = item.quantity || 0
+      if (item.itemType === 'ABADA') abadaPorLote.set(lid, (abadaPorLote.get(lid) || 0) + q)
+      if (item.itemType === 'PULSEIRA_EXTRA') pulseiraPorLote.set(lid, (pulseiraPorLote.get(lid) || 0) + q)
     }
-    if (totalPulseira > totalAbada) {
-      return NextResponse.json(
-        { error: `Cada abadá dá direito a 1 pulseira (bonificação). Você tem ${totalAbada} abadá(s) e ${totalPulseira} pulseira(s). Remova pulseiras ou adicione mais abadás.` },
-        { status: 400 }
-      )
+    for (const [lotId, pulseiraQty] of pulseiraPorLote) {
+      const abadaQty = abadaPorLote.get(lotId) || 0
+      if (pulseiraQty > 0 && abadaQty === 0) {
+        return NextResponse.json(
+          { error: 'A pulseira é bonificação e só pode ser do mesmo lote do abadá. Você tem pulseira de um lote sem abadá desse lote.' },
+          { status: 400 }
+        )
+      }
+      if (pulseiraQty > abadaQty) {
+        return NextResponse.json(
+          { error: `Cada abadá dá direito a 1 pulseira do mesmo lote. Em um dos lotes você tem mais pulseiras do que abadás. Ajuste as quantidades por lote.` },
+          { status: 400 }
+        )
+      }
     }
 
     const primaryLotId = defaultLot.id
