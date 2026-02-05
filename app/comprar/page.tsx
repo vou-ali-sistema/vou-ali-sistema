@@ -103,10 +103,12 @@ export default function ComprarPage() {
           setLots(activeLots)
           // Atualizar lotId dos itens que não têm lote definido (apenas uma vez)
           setItems(prev => {
-            const needsUpdate = prev.some(item => !item.lotId)
+            const needsUpdate = prev.some(item => !item.lotId || (item.itemType === 'ABADA' && !item.lotId))
             if (!needsUpdate) return prev // Evitar atualização desnecessária
             return prev.map(item => ({
               ...item,
+              // Se for ABADA e não tiver lotId, definir o primeiro lote
+              // Se for PULSEIRA_EXTRA, também precisa de um lotId para cálculo de preço
               lotId: item.lotId || activeLots[0].id
             }))
           })
@@ -220,16 +222,30 @@ export default function ComprarPage() {
     }
 
     try {
-      // Validar que todos os itens têm lote selecionado
-      for (const item of items) {
-        if (!item.lotId) {
-          setError('Todos os itens devem ter um lote selecionado')
-          setSubmitting(false)
-          return
-        }
+      // Validar que há pelo menos um item
+      if (items.length === 0) {
+        setError('Adicione pelo menos um item ao pedido')
+        setSubmitting(false)
+        return
       }
 
-      // Agrupar itens por lote e criar um pedido por lote
+      // Validar que todos os itens têm lote selecionado
+      const itemsSemLote = items.filter(item => !item.lotId)
+      if (itemsSemLote.length > 0) {
+        setError('Todos os itens devem ter um lote selecionado. Selecione um lote no campo "Tipo" de cada item.')
+        setSubmitting(false)
+        return
+      }
+
+      // Validar que todos os itens têm tipo válido
+      const itemsSemTipo = items.filter(item => !item.itemType)
+      if (itemsSemTipo.length > 0) {
+        setError('Todos os itens devem ter um tipo selecionado')
+        setSubmitting(false)
+        return
+      }
+
+      // Agrupar itens por lote
       const itemsByLot = items.reduce((acc, item) => {
         const lotId = item.lotId!
         if (!acc[lotId]) {
@@ -245,6 +261,12 @@ export default function ComprarPage() {
 
       // Criar pedidos para cada lote (ou agrupar em um único pedido se todos forem do mesmo lote)
       const lotIds = Object.keys(itemsByLot)
+      
+      if (lotIds.length === 0) {
+        setError('Nenhum item válido encontrado. Verifique se selecionou um lote para cada item.')
+        setSubmitting(false)
+        return
+      }
       
       if (lotIds.length === 1) {
         // Todos os itens são do mesmo lote - criar um único pedido
@@ -263,8 +285,18 @@ export default function ComprarPage() {
         })
 
         if (!res.ok) {
-          const data = await res.json()
-          throw new Error(data.error || 'Erro ao criar pedido')
+          let errorMsg = `Erro ${res.status} ao criar pedido`
+          try {
+            const errorData = await res.json()
+            errorMsg = errorData.error || errorMsg
+            if (errorData.details) {
+              errorMsg += `\n\nDetalhes: ${typeof errorData.details === 'string' ? errorData.details : JSON.stringify(errorData.details)}`
+            }
+          } catch {
+            const text = await res.text().catch(() => '')
+            if (text) errorMsg += `\n\nResposta: ${text}`
+          }
+          throw new Error(errorMsg)
         }
 
         const data = await res.json()
@@ -281,8 +313,7 @@ export default function ComprarPage() {
       } else {
         // Múltiplos lotes - criar um pedido por lote
         // Por enquanto, vamos criar apenas o primeiro e avisar o usuário
-        // (ou podemos criar múltiplos pedidos e redirecionar para o primeiro)
-        setError('Por favor, faça pedidos separados para lotes diferentes (Feminino e Masculino).')
+        setError('Por favor, faça pedidos separados para lotes diferentes. Cada pedido deve conter itens de apenas um lote.')
         setSubmitting(false)
         return
       }
@@ -460,17 +491,26 @@ export default function ComprarPage() {
                         value={item.itemType === 'ABADA' && item.lotId ? `ABADA_${item.lotId}` : (item.itemType === 'PULSEIRA_EXTRA' ? 'PULSEIRA_EXTRA' : '')}
                         onChange={(e) => {
                           const value = e.target.value
+                          const novosItems = [...items]
+                          
                           if (value === 'PULSEIRA_EXTRA') {
-                            atualizarItem(index, 'itemType', 'PULSEIRA_EXTRA')
-                            // Pulseira não precisa de lote específico, usar o primeiro disponível
-                            if (lots.length > 0) {
-                              atualizarItem(index, 'lotId', lots[0].id)
+                            novosItems[index] = {
+                              ...novosItems[index],
+                              itemType: 'PULSEIRA_EXTRA',
+                              lotId: lots[0]?.id || novosItems[index].lotId,
+                              size: undefined
                             }
                           } else if (value.startsWith('ABADA_')) {
                             const lotId = value.replace('ABADA_', '')
-                            atualizarItem(index, 'itemType', 'ABADA')
-                            atualizarItem(index, 'lotId', lotId)
+                            novosItems[index] = {
+                              ...novosItems[index],
+                              itemType: 'ABADA',
+                              lotId: lotId,
+                              size: novosItems[index].size || 'Tamanho Único'
+                            }
                           }
+                          
+                          setItems(novosItems)
                         }}
                         className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         required
