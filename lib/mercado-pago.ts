@@ -45,12 +45,13 @@ export async function criarPreferenciaPedido(orderId: string) {
     } else {
       title = `Pulseira Extra ${lotName ? `- ${lotName}` : ''}`
     }
-    
+    const unitPrice = Math.max(0.01, item.unitPriceCents / 100) // MP exige valor mínimo
     return {
       id: item.id,
       title,
       quantity: item.quantity,
-      unit_price: item.unitPriceCents / 100, // Usar preço congelado do pedido
+      unit_price: unitPrice,
+      currency_id: 'BRL',
     }
   })
 
@@ -83,15 +84,22 @@ export async function criarPreferenciaPedido(orderId: string) {
     const preferenceBody: any = {
       items,
       external_reference: order.externalReference || orderId,
+      // Liberar TODAS as formas de pagamento: Pix, cartão crédito/débito, boleto, etc.
+      payment_methods: {
+        excluded_payment_methods: [],
+        excluded_payment_types: [],
+        installments: 12,
+      },
     }
 
-    // Mercado Pago exige payer.email para habilitar o botão "Criar Pix" e exibir opções de pagamento
+    // Mercado Pago EXIGE payer.email para exibir Pix, cartão e outras opções de pagamento
     const email = order.customer?.email?.trim()
-    if (email) {
-      preferenceBody.payer = { email }
-      if (order.customer?.name?.trim()) {
-        preferenceBody.payer.name = order.customer.name.trim()
-      }
+    if (!email) {
+      throw new Error('Email do cliente é obrigatório para exibir opções de pagamento no Mercado Pago. Verifique se o pedido inclui o email do cliente.')
+    }
+    preferenceBody.payer = {
+      email,
+      name: order.customer?.name?.trim() || undefined,
     }
 
     // Se for localhost/HTTP, não adicionar back_urls e auto_return
@@ -115,7 +123,13 @@ export async function criarPreferenciaPedido(orderId: string) {
       body: preferenceBody,
     })
 
-    return preference
+    // Token de teste retorna sandbox_init_point; produção retorna init_point
+    const paymentUrl = (preference as any).sandbox_init_point || (preference as any).init_point
+    if (!paymentUrl) {
+      throw new Error('Mercado Pago não retornou URL de pagamento. Verifique as credenciais (teste vs produção).')
+    }
+
+    return { ...preference, init_point: paymentUrl }
   } catch (error: any) {
     console.error('Erro detalhado ao criar preferência:', error)
     
