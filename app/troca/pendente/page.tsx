@@ -34,13 +34,13 @@ export default async function TrocaPendentePage({
             Processando Pagamento
           </h3>
           <p className="text-gray-600">
-            Aguarde a confirmação do pagamento. Você receberá um email quando o pagamento for aprovado.
+            Aguarde a confirmação do pagamento. Assim que for aprovado, seu QR code e token aparecerão aqui automaticamente!
           </p>
         </div>
 
         <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
           <p className="text-sm text-gray-700">
-            <strong>Importante:</strong> Após a confirmação do pagamento, você receberá um token de troca para retirar seus itens.
+            <strong>💡 Importante:</strong> Assim que o pagamento for confirmado, você verá seu QR code e token de troca nesta página. Você também receberá um email com essas informações.
           </p>
         </div>
 

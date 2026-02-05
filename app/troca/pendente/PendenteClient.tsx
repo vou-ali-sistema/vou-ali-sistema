@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { QRCodeSVG } from 'qrcode.react'
 
 type Props = {
   paymentId?: string
@@ -68,7 +69,7 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
       await syncNow()
       if (cancelled) return
 
-      // Polling a cada 6 segundos
+      // Polling a cada 3 segundos para verificação mais rápida
       interval = setInterval(async () => {
         if (cancelled) return
         
@@ -96,7 +97,7 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
             interval = null
           }
         }
-      }, 6000)
+      }, 3000)
     })()
 
     return () => {
@@ -145,25 +146,73 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
           </div>
 
           {approved && (data as any).exchangeToken ? (
-            <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-lg p-4">
-              <p className="font-semibold text-green-800">Pagamento aprovado!</p>
-              <p className="text-sm text-gray-700 mt-1">
-                Seu token de troca é: <span className="font-mono break-all">{(data as any).exchangeToken}</span>
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
+            <div className="mt-4 bg-gradient-to-br from-green-50 to-green-100 border-4 border-green-500 rounded-xl p-6 shadow-lg">
+              <div className="text-center mb-4">
+                <div className="text-5xl mb-2">✅</div>
+                <h3 className="text-2xl font-bold text-green-800 mb-1">Pagamento Aprovado!</h3>
+                <p className="text-green-700">Seu ingresso está pronto para retirada</p>
+              </div>
+              
+              {/* QR Code */}
+              {(data as any).trocaUrl && (
+                <div className="bg-white rounded-xl p-4 mb-4 border-2 border-green-300">
+                  <p className="text-sm font-semibold text-gray-700 mb-3 text-center">QR Code para Retirada</p>
+                  <div className="flex justify-center">
+                    <div className="border-4 border-green-600 rounded-xl p-3 bg-white">
+                      <QRCodeSVG
+                        value={(data as any).trocaUrl}
+                        size={200}
+                        level="H"
+                        includeMargin={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Token */}
+              <div className="bg-white rounded-lg p-4 mb-4 border-2 border-green-300">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Token de Troca:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-gradient-to-r from-green-100 to-blue-100 px-4 py-3 rounded-lg border-2 border-green-600 text-blue-900 font-mono text-sm break-all">
+                    {(data as any).exchangeToken}
+                  </code>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText((data as any).exchangeToken)
+                      alert('Token copiado!')
+                    }}
+                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold whitespace-nowrap"
+                    title="Copiar token"
+                  >
+                    📋 Copiar
+                  </button>
+                </div>
+              </div>
+              
+              {/* Botões de ação */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
                 <Link
                   href={(data as any).trocaUrl || '/'}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-center text-lg shadow-lg"
                 >
-                  Abrir página de troca
+                  🎫 Ver Meu Ingresso Completo
                 </Link>
               </div>
-              <div className="mt-3 text-xs text-gray-600">
-                Email:{' '}
-                {(data as any).email
-                  ? `${(data as any).email} (${(data as any).emailSent ? 'enviado' : 'não enviado'})`
-                  : 'não cadastrado'}
-                {(data as any).emailError ? ` — erro: ${(data as any).emailError}` : ''}
+              
+              {/* Info do email */}
+              <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-gray-200">
+                <p className="font-semibold mb-1">Informações:</p>
+                <p>
+                  Email:{' '}
+                  {(data as any).email
+                    ? `${(data as any).email} (${(data as any).emailSent ? '✅ enviado' : '⏳ enviando...'})`
+                    : 'não cadastrado'}
+                  {(data as any).emailError ? ` — erro: ${(data as any).emailError}` : ''}
+                </p>
+                <p className="mt-1 text-gray-500">
+                  💡 Guarde este QR code ou token. Você precisará dele para retirar seus itens!
+                </p>
               </div>
             </div>
           ) : null}

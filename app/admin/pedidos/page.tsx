@@ -26,29 +26,45 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
     const status = (params.status || '').trim()
     const archived = (params.archived || '').trim()
 
-    const where: any = {}
+    // Construir condições de forma explícita
+    const conditions: any[] = []
 
     // Por padrão, esconder arquivados
     if (archived !== '1') {
-      where.archivedAt = null
+      conditions.push({ archivedAt: null })
     }
 
     // Aplicar filtro de status
     if (status) {
-      where.status = status
+      conditions.push({ status })
     }
 
-    // Aplicar busca (combinada com outros filtros usando AND implícito do Prisma)
+    // Aplicar busca
     if (q) {
-      where.OR = [
-        { id: { contains: q, mode: 'insensitive' } },
-        { externalReference: { contains: q, mode: 'insensitive' } },
-        { mpPaymentId: { contains: q, mode: 'insensitive' } },
-        { mpPreferenceId: { contains: q, mode: 'insensitive' } },
-        { customer: { name: { contains: q, mode: 'insensitive' } } },
-        { customer: { phone: { contains: q, mode: 'insensitive' } } },
-        { customer: { email: { contains: q, mode: 'insensitive' } } },
-      ]
+      conditions.push({
+        OR: [
+          { id: { contains: q, mode: 'insensitive' } },
+          { externalReference: { contains: q, mode: 'insensitive' } },
+          { mpPaymentId: { contains: q, mode: 'insensitive' } },
+          { mpPreferenceId: { contains: q, mode: 'insensitive' } },
+          { customer: { name: { contains: q, mode: 'insensitive' } } },
+          { customer: { phone: { contains: q, mode: 'insensitive' } } },
+          { customer: { email: { contains: q, mode: 'insensitive' } } },
+        ],
+      })
+    }
+
+    // Construir where clause
+    let where: any
+    if (conditions.length === 0) {
+      // Sem condições, mas ainda precisa filtrar arquivados se necessário
+      where = archived !== '1' ? { archivedAt: null } : {}
+    } else if (conditions.length === 1) {
+      // Uma única condição, aplicar diretamente
+      where = conditions[0]
+    } else {
+      // Múltiplas condições, usar AND
+      where = { AND: conditions }
     }
 
     const orders = await prisma.order.findMany({
