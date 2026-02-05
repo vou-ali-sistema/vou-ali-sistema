@@ -49,7 +49,9 @@ export default function ComprarPage() {
   const [purchaseEnabled, setPurchaseEnabled] = useState<boolean | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
-  
+  /** Link de pagamento quando estamos na tela "Redirecionando para o Mercado Pago" (permite abrir em nova aba) */
+  const [redirectingToPayment, setRedirectingToPayment] = useState<string | null>(null)
+
   // Dados do cliente
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -531,16 +533,14 @@ export default function ComprarPage() {
         }
       }
 
-      // Se pelo menos um pedido foi criado com sucesso, salvar orderId e redirecionar
+      // Se pelo menos um pedido foi criado com sucesso, salvar orderId e mostrar tela de redirecionamento
       if (pedidosCriados.length > 0) {
         // Salvar o orderId no localStorage para recuperar depois se necessário
         if (pedidosCriados[0].orderId && typeof window !== 'undefined') {
           localStorage.setItem('vouali_recent_order_id', pedidosCriados[0].orderId)
         }
-        
-        // Se houver múltiplos pedidos, redirecionar para o primeiro
-        // O usuário poderá pagar os outros pedidos depois através do email
-        window.location.href = pedidosCriados[0].paymentLink
+        // Mostrar tela "Redirecionando..." com opção de abrir em nova aba (contorna erros de CSP/404 na página do MP)
+        setRedirectingToPayment(pedidosCriados[0].paymentLink)
       } else {
         // Se nenhum pedido foi criado, mostrar erro
         throw new Error(primeiroErro || 'Erro ao criar pedidos. Nenhum pedido foi criado com sucesso.')
@@ -551,6 +551,49 @@ export default function ComprarPage() {
       setSubmitting(false)
     }
   }, [name, phone, email, items, selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos])
+
+  // Redirecionar automaticamente após 2s quando na tela "Redirecionando para o Mercado Pago"
+  useEffect(() => {
+    if (!redirectingToPayment) return
+    const t = setTimeout(() => {
+      window.location.href = redirectingToPayment
+    }, 2000)
+    return () => clearTimeout(t)
+  }, [redirectingToPayment])
+
+  if (redirectingToPayment) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400 py-8 px-4">
+        <div className="text-center bg-white rounded-2xl shadow-2xl p-10 max-w-md mx-4">
+          <div className="mb-6">
+            <Logo size="large" showSubtitle={false} />
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium mb-2">Redirecionando para o Mercado Pago...</p>
+          <p className="text-gray-600 text-sm mb-6">
+            Se a página do Mercado Pago não abrir ou aparecer erro no navegador, use o botão abaixo para abrir em nova aba.
+          </p>
+          <div className="flex flex-col gap-3">
+            <a
+              href={redirectingToPayment}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 transition"
+            >
+              Abrir pagamento em nova aba
+            </a>
+            <button
+              type="button"
+              onClick={() => setRedirectingToPayment(null)}
+              className="text-gray-500 hover:text-gray-700 text-sm"
+            >
+              Voltar ao formulário
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (

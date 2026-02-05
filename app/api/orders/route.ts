@@ -163,11 +163,11 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Checklist: logar orderId, preferenceId e init_point para rastreio
-      console.log('[MP] Preferência criada:', {
+      console.log('[MP_CREATE]', {
         orderId: order.id,
         preferenceId,
-        init_point: initPoint ? `${initPoint.substring(0, 60)}...` : null,
+        init_point: initPoint ? `${initPoint.substring(0, 80)}...` : null,
+        external_reference: order.id,
       })
 
       return NextResponse.json({

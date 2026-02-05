@@ -45,5 +45,23 @@ Execute: testar-conexao.bat
 
 Se funcionar, voce esta pronto para usar o sistema!
 
+
+MERCADO PAGO EM PRODUCAO (VERCEL):
+----------------------------------
+Para o checkout ir para producao (pagamentos reais) e o webhook confirmar compras:
+
+1. No Vercel: Settings > Environment Variables
+   - MERCADOPAGO_ACCESS_TOKEN = Access Token de PRODUCAO (comeca com APP_USR-...)
+     Nao use o token de "Credenciais de teste" no Vercel.
+   - APP_BASE_URL = https://www.seudominio.com (sem barra no final)
+     Usado em notification_url e back_urls.
+
+2. No Mercado Pago (painel do app):
+   - Webhooks: configurar URL https://www.seudominio.com/api/webhooks/mercadopago
+   - Usar credenciais de PRODUCAO no Vercel.
+
+3. Se aparecer erro "token de teste detectado" no deploy: troque MERCADOPAGO_ACCESS_TOKEN
+   no Vercel pelo Access Token de producao (Credenciais de producao no MP).
+
 ================================================================================
 

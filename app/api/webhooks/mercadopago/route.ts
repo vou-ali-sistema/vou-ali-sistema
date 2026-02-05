@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   } catch {
     /* ignore */
   }
-  console.log('[Webhook MP] GET recebido (ping?):', query)
+  console.log('[MP_WEBHOOK] GET (ping?):', query)
   return NextResponse.json({ received: true })
 }
 
@@ -83,12 +83,15 @@ export async function POST(request: NextRequest) {
     'content-type': request.headers.get('content-type') ?? undefined,
   }
 
-  console.log('[Webhook MP] Recebido:', {
+  const isProduction = process.env.VERCEL === '1'
+  console.log('[MP_WEBHOOK]', {
     method: request.method,
+    url: url?.slice(0, 80),
     query,
     headers: headersLog,
     bodyKeys: Object.keys(body),
-    body: JSON.stringify(body).slice(0, 500),
+    body: JSON.stringify(body).slice(0, 400),
+    production: isProduction,
   })
 
   let paymentId: string | null = null
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
   if (!paymentId && query['data.id']) paymentId = extractPaymentId(query['data.id'])
 
   if (!paymentId) {
-    console.log('[Webhook MP] Sem paymentId, ignorando. body:', body)
+    console.log('[MP_WEBHOOK] Sem paymentId, ignorando.')
     return quick200()
   }
 
@@ -112,7 +115,7 @@ export async function POST(request: NextRequest) {
         : null
 
     if (!externalReference) {
-      console.log('[Webhook MP] Pagamento sem external_reference:', paymentId, 'payment keys:', Object.keys(payment))
+      console.log('[MP_WEBHOOK] Pagamento sem external_reference, paymentId:', paymentId)
       return quick200()
     }
 
@@ -121,10 +124,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!order) {
-      console.log('[Webhook MP] Pedido não encontrado:', externalReference)
+      console.log('[MP_WEBHOOK] Pedido não encontrado:', externalReference)
       return quick200()
     }
 
+    const statusAntigo = order.status
     if (payment.status === 'approved') {
       let exchangeToken = order.exchangeToken
       if (!exchangeToken) exchangeToken = gerarTokenTroca()
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      console.log('[Webhook MP] Pedido atualizado PAGO:', externalReference)
+      console.log('[MP_UPDATE]', { orderId: externalReference, statusAntigo, statusNovo: 'PAGO', paymentId })
 
       const orderWithCustomer = await prisma.order.findUnique({
         where: { id: externalReference },
@@ -154,7 +158,7 @@ export async function POST(request: NextRequest) {
           orderId: externalReference,
           mpPaymentId: paymentId,
         }).catch((emailError) => {
-          console.error('[Webhook MP] Erro ao enviar email:', emailError)
+          console.error('[MP_WEBHOOK] Erro ao enviar email:', emailError)
         })
       }
     } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
@@ -166,7 +170,7 @@ export async function POST(request: NextRequest) {
           mpPaymentId: paymentId,
         },
       })
-      console.log('[Webhook MP] Pedido atualizado CANCELADO:', externalReference)
+      console.log('[MP_UPDATE]', { orderId: externalReference, statusAntigo, statusNovo: 'CANCELADO', paymentId })
     } else if (payment.status === 'refunded') {
       await prisma.order.update({
         where: { id: externalReference },
@@ -175,12 +179,12 @@ export async function POST(request: NextRequest) {
           mpPaymentId: paymentId,
         },
       })
-      console.log('[Webhook MP] Pedido atualizado REFUNDED:', externalReference)
+      console.log('[MP_UPDATE]', { orderId: externalReference, statusAntigo, statusNovo: 'REFUNDED', paymentId })
     }
 
     return quick200()
   } catch (error) {
-    console.error('[Webhook MP] Erro ao processar:', error)
+    console.error('[MP_WEBHOOK] Erro ao processar:', error)
     return quick200()
   }
 }

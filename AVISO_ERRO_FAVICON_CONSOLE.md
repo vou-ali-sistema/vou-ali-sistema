@@ -36,6 +36,12 @@
 
 ### Se o pagamento realmente travar
 
-- Confirme se o bloqueio ocorre **na tela do MP** (antes de voltar para o nosso site) ou **na nossa página** `/troca/pendente`.
-- Se for na tela do MP: use outro navegador ou desative extensões; em último caso, reporte ao suporte do Mercado Pago.
-- Se for na nossa página: aí podemos checar redirecionamento e parâmetros da URL.
+1. **Use a opção “Abrir em nova aba”**  
+   Depois de clicar em “Finalizar compra”, aparece a tela “Redirecionando para o Mercado Pago…”. Se a página do MP não abrir ou der erro (CSP / 404), clique em **“Abrir pagamento em nova aba”**. Isso abre o checkout em outra aba e costuma contornar problemas de script/segurança.
+
+2. **Confirme onde trava**  
+   - Se for **na tela do MP** (URL tipo `sandbox.mercadopago.com.br` ou `mercadopago.com.br`): use outro navegador, aba anônima ou desative extensões (bloqueadores, privacidade). Em último caso, reporte ao suporte do Mercado Pago.  
+   - Se for **na nossa página** `/troca/pendente`: aí podemos checar redirecionamento e parâmetros da URL.
+
+3. **Sobre os 404**  
+   Os `GET .../jms/lgz/background/session/... 404` são do próprio Mercado Pago (telemetria). Não vêm do nosso código e em geral não impedem o pagamento; podem ser ignorados.

@@ -56,12 +56,15 @@ export async function criarPreferenciaPedido(orderId: string) {
   })
 
   try {
-    // Garantir que temos uma URL base válida (APP_BASE_URL primeiro em produção para webhook bater no domínio certo)
+    // Em produção (Vercel): use APP_BASE_URL = https://seu-dominio.com para notification_url e back_urls
     let baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    
-    // Remover barra final se houver
     baseUrl = baseUrl.replace(/\/$/, '')
-    
+    const isProductionEnv = process.env.VERCEL === '1' || (baseUrl.startsWith('https://') && !baseUrl.includes('localhost'))
+    const tokenHint = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').slice(0, 19) + '...'
+    if (isProductionEnv) {
+      console.log('[MP_CREATE] Ambiente produção: token', tokenHint, 'baseUrl', baseUrl)
+    }
+
     // IMPORTANTE: Mercado Pago não aceita mais URLs HTTP (apenas HTTPS)
     // Para desenvolvimento local, você precisa usar ngrok ou similar
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.startsWith('http://')
@@ -73,12 +76,9 @@ export async function criarPreferenciaPedido(orderId: string) {
     const pendingUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
     const notificationUrl = `${baseUrl}/api/webhooks/mercadopago`
 
-    console.log('[MP] Criando preferência com URLs:', {
+    console.log('[MP_CREATE] URLs:', {
       orderId,
       baseUrl,
-      success: successUrl,
-      failure: failureUrl,
-      pending: pendingUrl,
       notification: notificationUrl,
       isLocalhost,
       notificationSent: isHttps,
@@ -126,11 +126,51 @@ export async function criarPreferenciaPedido(orderId: string) {
       body: preferenceBody,
     })
 
-    // Token de teste retorna sandbox_init_point; produção retorna init_point
-    const paymentUrl = (preference as any).sandbox_init_point || (preference as any).init_point
+    const rawInitPoint = (preference as any).init_point ?? null
+    const rawSandboxPoint = (preference as any).sandbox_init_point ?? null
+    const token = process.env.MERCADOPAGO_ACCESS_TOKEN || ''
+    const tokenHint = token ? `${token.slice(0, 19)}...${token.slice(-6)}` : 'vazio'
+
+    if (isProductionEnv) {
+      // Produção (Vercel): usar SOMENTE init_point. Token de teste retorna só sandbox_init_point.
+      if (rawInitPoint && !rawInitPoint.includes('sandbox')) {
+        console.log('[MP_CREATE] Produção: usando init_point', {
+          orderId,
+          tokenHint,
+          urlPreview: rawInitPoint.slice(0, 60) + '...',
+        })
+      } else if (rawSandboxPoint || (rawInitPoint && rawInitPoint.includes('sandbox'))) {
+        const url = rawSandboxPoint || rawInitPoint
+        console.error('[MP_CREATE] ERRO PRODUÇÃO: token de teste detectado. URL de checkout é sandbox.', {
+          orderId,
+          tokenHint,
+          urlPreview: url?.slice(0, 60),
+        })
+        throw new Error(
+          'Em produção (Vercel) o checkout está indo para sandbox. Configure MERCADOPAGO_ACCESS_TOKEN com o Access Token de PRODUÇÃO no Vercel (Settings > Environment Variables). Use as credenciais de produção do app no Mercado Pago.'
+        )
+      } else {
+        throw new Error('Mercado Pago não retornou URL de pagamento. Verifique MERCADOPAGO_ACCESS_TOKEN (use token de produção no Vercel).')
+      }
+    }
+
+    const paymentUrl = rawInitPoint && !String(rawInitPoint).includes('sandbox')
+      ? rawInitPoint
+      : (rawSandboxPoint || rawInitPoint)
     if (!paymentUrl) {
       throw new Error('Mercado Pago não retornou URL de pagamento. Verifique as credenciais (teste vs produção).')
     }
+
+    const preferenceId = (preference as any).id ?? null
+    const externalRef = order.externalReference || orderId
+    console.log('[MP_CREATE]', {
+      orderId,
+      preferenceId,
+      init_point: paymentUrl.slice(0, 80) + (paymentUrl.length > 80 ? '...' : ''),
+      external_reference: externalRef,
+      tokenHint,
+      isProduction: isProductionEnv,
+    })
 
     return { ...preference, init_point: paymentUrl }
   } catch (error: any) {
