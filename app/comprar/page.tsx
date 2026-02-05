@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Logo from '@/app/components/Logo'
 import PromoMediaCarousel, { PromoCardMedia } from '@/app/components/PromoMediaCarousel'
 
@@ -51,6 +51,8 @@ export default function ComprarPage() {
   const [error, setError] = useState('')
   /** Link de pagamento quando estamos na tela "Redirecionando para o Mercado Pago" (permite abrir em nova aba) */
   const [redirectingToPayment, setRedirectingToPayment] = useState<string | null>(null)
+  /** Trava: evita processar o submit duas vezes (duplo clique / dois eventos) e abrir duas abas */
+  const submitEmAndamentoRef = useRef(false)
 
   // Dados do cliente
   const [name, setName] = useState('')
@@ -345,6 +347,8 @@ export default function ComprarPage() {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitEmAndamentoRef.current) return
+    submitEmAndamentoRef.current = true
     setError('')
     setSubmitting(true)
 
@@ -354,18 +358,21 @@ export default function ComprarPage() {
     if (!name.trim()) {
       setError('Nome é obrigatório')
       setSubmitting(false)
+      submitEmAndamentoRef.current = false
       return
     }
 
     if (!phone.trim()) {
       setError('Telefone é obrigatório')
       setSubmitting(false)
+      submitEmAndamentoRef.current = false
       return
     }
 
     if (!email.trim()) {
       setError('Email é obrigatório para receber o token de troca')
       setSubmitting(false)
+      submitEmAndamentoRef.current = false
       return
     }
 
@@ -382,29 +389,30 @@ export default function ComprarPage() {
       if (!selectedLotIdMasculino && !selectedLotIdFeminino && selectedLotesGenericos.length === 0) {
         setError('Selecione pelo menos um lote para continuar')
         setSubmitting(false)
+        submitEmAndamentoRef.current = false
         return
       }
 
-      // Validar que há pelo menos um item
       if (itemsComTamanho.length === 0) {
         setError('Nenhum item encontrado. Selecione um lote para adicionar itens ao pedido.')
         setSubmitting(false)
+        submitEmAndamentoRef.current = false
         return
       }
 
-      // Validar que todos os itens têm lote selecionado
       const itemsSemLote = itemsComTamanho.filter(item => !item.lotId)
       if (itemsSemLote.length > 0) {
         setError('Alguns itens não têm lote associado. Recarregue a página e tente novamente.')
         setSubmitting(false)
+        submitEmAndamentoRef.current = false
         return
       }
 
-      // Validar que todos os itens têm tipo válido
       const itemsSemTipo = itemsComTamanho.filter(item => !item.itemType)
       if (itemsSemTipo.length > 0) {
         setError('Alguns itens não têm tipo definido. Recarregue a página e tente novamente.')
         setSubmitting(false)
+        submitEmAndamentoRef.current = false
         return
       }
 
@@ -462,8 +470,10 @@ export default function ComprarPage() {
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao processar pedido')
+      submitEmAndamentoRef.current = false
     } finally {
       setSubmitting(false)
+      // Em caso de sucesso não resetamos o ref: evita reabrir aba se algo reexecutar
     }
   }, [name, phone, email, items, selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos])
 
