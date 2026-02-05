@@ -448,10 +448,6 @@ export default function ComprarPage() {
             <div className="space-y-4">
               {items.map((item, index) => {
                 const itemLot = lots.find(l => l.id === item.lotId) || lots[0] || null
-                // Separar lotes por tipo (feminino/masculino)
-                const lotesFemininos = lots.filter(l => l.name.toUpperCase().includes('FEMININO'))
-                const lotesMasculinos = lots.filter(l => l.name.toUpperCase().includes('MASCULINO'))
-                const outrosLotes = lots.filter(l => !l.name.toUpperCase().includes('FEMININO') && !l.name.toUpperCase().includes('MASCULINO'))
                 
                 return (
                 <div key={index} className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
@@ -461,7 +457,7 @@ export default function ComprarPage() {
                         Tipo *
                       </label>
                       <select
-                        value={item.itemType === 'ABADA' && item.lotId ? `ABADA_${item.lotId}` : (item.itemType || '')}
+                        value={item.itemType === 'ABADA' && item.lotId ? `ABADA_${item.lotId}` : (item.itemType === 'PULSEIRA_EXTRA' ? 'PULSEIRA_EXTRA' : '')}
                         onChange={(e) => {
                           const value = e.target.value
                           if (value === 'PULSEIRA_EXTRA') {
@@ -480,26 +476,18 @@ export default function ComprarPage() {
                         required
                       >
                         <option value="">Selecione...</option>
-                        {/* Opções de Abadá por lote */}
-                        {lotesFemininos.map((lot) => (
+                        {/* Mostrar todos os lotes ativos com seus nomes completos */}
+                        {lots.map((lot) => (
                           <option key={`ABADA_${lot.id}`} value={`ABADA_${lot.id}`}>
-                            Abadá Feminino - R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
-                          </option>
-                        ))}
-                        {lotesMasculinos.map((lot) => (
-                          <option key={`ABADA_${lot.id}`} value={`ABADA_${lot.id}`}>
-                            Abadá Masculino - R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
-                          </option>
-                        ))}
-                        {outrosLotes.map((lot) => (
-                          <option key={`ABADA_${lot.id}`} value={`ABADA_${lot.id}`}>
-                            Abadá - {lot.name} - R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
+                            {lot.name} - R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
                           </option>
                         ))}
                         {/* Pulseira Extra */}
-                        <option value="PULSEIRA_EXTRA">
-                          Pulseira Extra {lots[0] ? `- R$ ${(lots[0].pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}` : ''}
-                        </option>
+                        {lots.length > 0 && (
+                          <option value="PULSEIRA_EXTRA">
+                            Pulseira Extra - R$ {(lots[0].pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                          </option>
+                        )}
                       </select>
                     </div>
                     {item.itemType === 'ABADA' && (
