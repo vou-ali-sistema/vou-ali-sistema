@@ -56,8 +56,8 @@ export async function criarPreferenciaPedido(orderId: string) {
   })
 
   try {
-    // Garantir que temos uma URL base válida
-    let baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
+    // Garantir que temos uma URL base válida (APP_BASE_URL primeiro em produção para webhook bater no domínio certo)
+    let baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
     
     // Remover barra final se houver
     baseUrl = baseUrl.replace(/\/$/, '')
@@ -65,7 +65,8 @@ export async function criarPreferenciaPedido(orderId: string) {
     // IMPORTANTE: Mercado Pago não aceita mais URLs HTTP (apenas HTTPS)
     // Para desenvolvimento local, você precisa usar ngrok ou similar
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.startsWith('http://')
-    
+    const isHttps = baseUrl.startsWith('https://')
+
     // Incluir orderId na URL de retorno para facilitar busca do pedido
     const successUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
     const failureUrl = `${baseUrl}/troca/pendente?orderId=${orderId}`
@@ -79,6 +80,7 @@ export async function criarPreferenciaPedido(orderId: string) {
       pending: pendingUrl,
       notification: notificationUrl,
       isLocalhost,
+      notificationSent: isHttps,
     })
 
     const preferenceBody: any = {
@@ -102,8 +104,12 @@ export async function criarPreferenciaPedido(orderId: string) {
       name: order.customer?.name?.trim() || undefined,
     }
 
-    // Se for localhost/HTTP, não adicionar back_urls e auto_return
-    // (Mercado Pago não aceita HTTP)
+    // notification_url: já definido acima quando isHttps (crítico para pedido virar PAGO)
+    if (isHttps) {
+      preferenceBody.notification_url = notificationUrl
+    }
+
+    // Se for localhost/HTTP, não adicionar back_urls e auto_return (Mercado Pago não aceita HTTP)
     if (!isLocalhost) {
       preferenceBody.back_urls = {
         success: successUrl,
@@ -111,12 +117,8 @@ export async function criarPreferenciaPedido(orderId: string) {
         pending: pendingUrl,
       }
       preferenceBody.auto_return = 'approved'
-      preferenceBody.notification_url = notificationUrl
     } else {
-      // Para desenvolvimento local, apenas criar a preferência sem URLs
-      // O usuário precisará usar o init_point retornado
       console.warn('⚠️ Modo desenvolvimento: URLs HTTP não são suportadas pelo Mercado Pago. Use ngrok para HTTPS ou teste em produção.')
-      // Ainda assim, tentar criar a preferência (pode funcionar sem back_urls)
     }
 
     const preference = await mercadoPago.create({
