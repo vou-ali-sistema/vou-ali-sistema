@@ -260,7 +260,7 @@ export default function ComprarPage() {
         return acc
       }, {} as Record<string, any[]>)
 
-      // Criar pedidos para cada lote (ou agrupar em um único pedido se todos forem do mesmo lote)
+      // Criar pedidos para cada lote (um pedido por lote diferente)
       const lotIds = Object.keys(itemsByLot)
       
       if (lotIds.length === 0) {
@@ -269,54 +269,63 @@ export default function ComprarPage() {
         return
       }
       
-      if (lotIds.length === 1) {
-        // Todos os itens são do mesmo lote - criar um único pedido
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customer: {
-              name: name.trim(),
-              phone: phone.trim(),
-              email: email.trim(),
-            },
-            items: itemsByLot[lotIds[0]],
-            lotId: lotIds[0],
-          }),
-        })
+      // Criar um pedido para cada lote
+      const pedidosCriados = []
+      let primeiroErro = null
+      
+      for (const lotId of lotIds) {
+        try {
+          const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              customer: {
+                name: name.trim(),
+                phone: phone.trim(),
+                email: email.trim(),
+              },
+              items: itemsByLot[lotId],
+              lotId: lotId,
+            }),
+          })
 
-        if (!res.ok) {
-          let errorMsg = `Erro ${res.status} ao criar pedido`
-          try {
-            const errorData = await res.json()
-            errorMsg = errorData.error || errorMsg
-            if (errorData.details) {
-              errorMsg += `\n\nDetalhes: ${typeof errorData.details === 'string' ? errorData.details : JSON.stringify(errorData.details)}`
+          if (!res.ok) {
+            let errorMsg = `Erro ${res.status} ao criar pedido para lote`
+            try {
+              const errorData = await res.json()
+              errorMsg = errorData.error || errorMsg
+              if (errorData.details) {
+                errorMsg += `\n\nDetalhes: ${typeof errorData.details === 'string' ? errorData.details : JSON.stringify(errorData.details)}`
+              }
+            } catch {
+              const text = await res.text().catch(() => '')
+              if (text) errorMsg += `\n\nResposta: ${text}`
             }
-          } catch {
-            const text = await res.text().catch(() => '')
-            if (text) errorMsg += `\n\nResposta: ${text}`
+            if (!primeiroErro) primeiroErro = errorMsg
+            continue // Continuar tentando criar os outros pedidos
           }
-          throw new Error(errorMsg)
-        }
 
-        const data = await res.json()
-        
-        // Redirecionar para o link de pagamento do Mercado Pago
-        if (data.paymentLink) {
-          window.location.href = data.paymentLink
-        } else if (data.warning) {
-          const errorMsg = data.warning + (data.details ? `\n\nDetalhes: ${data.details}` : '')
-          setError(errorMsg)
-        } else {
-          setError('Erro ao gerar link de pagamento. Verifique se o Mercado Pago está configurado.')
+          const data = await res.json()
+          if (data.paymentLink) {
+            pedidosCriados.push({ lotId, paymentLink: data.paymentLink, orderId: data.orderId })
+          } else {
+            if (!primeiroErro) {
+              primeiroErro = data.warning || 'Erro ao gerar link de pagamento para um dos lotes.'
+            }
+          }
+        } catch (err: any) {
+          if (!primeiroErro) {
+            primeiroErro = err.message || 'Erro ao criar pedido'
+          }
         }
+      }
+
+      // Se pelo menos um pedido foi criado com sucesso, redirecionar para o primeiro
+      if (pedidosCriados.length > 0) {
+        window.location.href = pedidosCriados[0].paymentLink
       } else {
-        // Múltiplos lotes - criar um pedido por lote
-        // Por enquanto, vamos criar apenas o primeiro e avisar o usuário
-        setError('Por favor, faça pedidos separados para lotes diferentes. Cada pedido deve conter itens de apenas um lote.')
-        setSubmitting(false)
-        return
+        // Se nenhum pedido foi criado, mostrar erro
+        throw new Error(primeiroErro || 'Erro ao criar pedidos. Nenhum pedido foi criado com sucesso.')
       }
     } catch (err: any) {
       setError(err.message || 'Erro ao processar pedido')
