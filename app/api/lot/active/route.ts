@@ -47,10 +47,13 @@ export async function GET(request: NextRequest) {
 
     // Se houver apenas um, retornar como objeto (compatibilidade)
     // Se houver múltiplos, retornar array
+    // Cache desabilitado para garantir que lotes ativados apareçam imediatamente
     if (activeLots.length === 1) {
       return NextResponse.json(activeLots[0], {
         headers: { 
-          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
         },
       })
     }
@@ -58,7 +61,9 @@ export async function GET(request: NextRequest) {
     // Múltiplos lotes ativos - retornar array
     return NextResponse.json(activeLots, {
       headers: { 
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     })
   } catch (error) {

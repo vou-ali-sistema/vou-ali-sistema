@@ -111,7 +111,7 @@ export default function ComprarPage() {
         // Executar todos os fetches em paralelo para melhorar tempo de resposta
         const [statusRes, lotRes, cardsRes] = await Promise.all([
           fetch('/api/public/purchase-status', { cache: 'no-store' }),
-          fetch('/api/lot/active'),
+          fetch('/api/lot/active', { cache: 'no-store' }), // Sem cache para sempre buscar lotes atualizados
           fetch('/api/promo-cards?placement=COMPRAR'),
         ])
         
@@ -149,12 +149,22 @@ export default function ComprarPage() {
         const lotData = await lotRes.json()
         // Pode ser objeto único ou array (múltiplos lotes ativos)
         const activeLots = Array.isArray(lotData) ? lotData : [lotData]
+        
+        // Debug: log dos lotes carregados
+        console.log('Lotes carregados da API:', activeLots)
+        console.log('Quantidade de lotes:', activeLots.length)
+        
         if (!cancelled && activeLots.length > 0) {
           setLots(activeLots)
           
           // Separar lotes por tipo
           const lotMasculino = activeLots.find(l => getLotType(l.name) === 'MASCULINO')
           const lotFeminino = activeLots.find(l => getLotType(l.name) === 'FEMININO')
+          
+          // Debug: log dos tipos encontrados
+          console.log('Lote masculino encontrado:', lotMasculino?.name)
+          console.log('Lote feminino encontrado:', lotFeminino?.name)
+          console.log('Lotes genéricos:', activeLots.filter(l => getLotType(l.name) === null).map(l => l.name))
           
           // NÃO adicionar itens automaticamente - o usuário deve escolher manualmente
           // Apenas marcar os lotes como disponíveis se ainda não foram selecionados
