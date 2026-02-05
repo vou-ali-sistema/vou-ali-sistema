@@ -12,6 +12,7 @@ const criarOrderSchema = z.object({
     size: z.string().optional(),
     quantity: z.number().int().positive(),
   })),
+  lotId: z.string().optional(), // ID do lote selecionado pelo usuário
 })
 
 export async function POST(request: NextRequest) {
@@ -47,18 +48,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Buscar lote ativo (pode haver múltiplos - feminino e masculino)
-    // Por padrão, usar o primeiro encontrado (ou podemos adicionar parâmetro gender no futuro)
-    const activeLot = await prisma.lot.findFirst({
-      where: { active: true },
-      orderBy: { createdAt: 'desc' }, // Mais recente primeiro
-    })
-
-    if (!activeLot) {
-      return NextResponse.json(
-        { error: 'Nenhum lote ativo encontrado. Configure um lote ativo no painel admin.' },
-        { status: 500 }
-      )
+    // Buscar lote ativo
+    // Se lotId foi fornecido, usar esse lote específico; caso contrário, usar o primeiro encontrado
+    let activeLot
+    if (data.lotId) {
+      activeLot = await prisma.lot.findFirst({
+        where: { 
+          id: data.lotId,
+          active: true 
+        },
+      })
+      if (!activeLot) {
+        return NextResponse.json(
+          { error: 'Lote selecionado não está mais ativo ou não foi encontrado.' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Buscar primeiro lote ativo (compatibilidade com código antigo)
+      activeLot = await prisma.lot.findFirst({
+        where: { active: true },
+        orderBy: { createdAt: 'desc' },
+      })
+      if (!activeLot) {
+        return NextResponse.json(
+          { error: 'Nenhum lote ativo encontrado. Configure um lote ativo no painel admin.' },
+          { status: 500 }
+        )
+      }
     }
 
     // Calcular total em centavos usando preços do lote

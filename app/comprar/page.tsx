@@ -34,7 +34,8 @@ interface PromoCard {
 }
 
 export default function ComprarPage() {
-  const [lot, setLot] = useState<Lot | null>(null)
+  const [lots, setLots] = useState<Lot[]>([])
+  const [selectedLotId, setSelectedLotId] = useState<string | null>(null)
   const [promoCards, setPromoCards] = useState<PromoCard[]>([])
   const [loading, setLoading] = useState(true)
   const [purchaseEnabled, setPurchaseEnabled] = useState<boolean | null>(null)
@@ -50,6 +51,9 @@ export default function ComprarPage() {
   const [items, setItems] = useState<Item[]>([
     { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1 }
   ])
+
+  // Lote selecionado (derivado do selectedLotId)
+  const selectedLot = lots.find(l => l.id === selectedLotId) || lots[0] || null
 
   // Buscar lote ativo, preços e cards de divulgação em paralelo para melhor performance
   useEffect(() => {
@@ -97,9 +101,12 @@ export default function ComprarPage() {
         
         const lotData = await lotRes.json()
         // Pode ser objeto único ou array (múltiplos lotes ativos)
-        // Se for array, usar o primeiro (mais recente)
-        const activeLot = Array.isArray(lotData) ? lotData[0] : lotData
-        if (!cancelled && activeLot) setLot(activeLot)
+        const activeLots = Array.isArray(lotData) ? lotData : [lotData]
+        if (!cancelled && activeLots.length > 0) {
+          setLots(activeLots)
+          // Selecionar o primeiro lote por padrão se ainda não houver seleção
+          setSelectedLotId(prev => prev || activeLots[0].id)
+        }
 
         // Processar cards de divulgação (não bloqueia se falhar; garantir array)
         if (cardsRes.ok) {
@@ -149,14 +156,14 @@ export default function ComprarPage() {
 
   // Memoizar cálculo do total para evitar re-execução a cada render
   const total = useMemo(() => {
-    if (!lot) return 0
+    if (!selectedLot) return 0
     return items.reduce((sum, item) => {
       const precoUnitario = item.itemType === 'ABADA' 
-        ? lot.abadaPriceCents 
-        : lot.pulseiraPriceCents
+        ? selectedLot.abadaPriceCents 
+        : selectedLot.pulseiraPriceCents
       return sum + (precoUnitario * item.quantity)
     }, 0) / 100
-  }, [lot, items])
+  }, [selectedLot, items])
 
   // Memoizar filtros de cards para evitar re-execução a cada render
   // IMPORTANTE: hooks devem ser chamados antes de qualquer return condicional
@@ -211,6 +218,12 @@ export default function ComprarPage() {
         }
       })
 
+      if (!selectedLot) {
+        setError('Selecione um lote para continuar')
+        setSubmitting(false)
+        return
+      }
+
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,6 +234,7 @@ export default function ComprarPage() {
             email: email.trim(),
           },
           items: itemsToSend,
+          lotId: selectedLot.id, // Enviar o ID do lote selecionado
         }),
       })
 
@@ -273,7 +287,7 @@ export default function ComprarPage() {
     )
   }
 
-  if (!lot) {
+  if (lots.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400">
         <div className="text-center bg-white rounded-2xl shadow-2xl p-12 max-w-md mx-4">
@@ -335,6 +349,30 @@ export default function ComprarPage() {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+          {/* Seletor de Lote */}
+          {lots.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Selecione o Lote *
+              </label>
+              <select
+                value={selectedLotId || ''}
+                onChange={(e) => setSelectedLotId(e.target.value)}
+                required
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg font-semibold bg-white"
+              >
+                {lots.map((lot) => (
+                  <option key={lot.id} value={lot.id}>
+                    {lot.name} - Abadá: R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')} | Pulseira: R$ {(lot.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Escolha o lote desejado (Feminino ou Masculino)
+              </p>
+            </div>
+          )}
+
           {/* Dados do Cliente */}
           <div>
             <h3 className="text-xl font-bold text-blue-900 mb-4">Seus Dados</h3>
@@ -434,7 +472,7 @@ export default function ComprarPage() {
                   </div>
 
                   <div className="mt-2 text-sm text-gray-600">
-                    Preço unitário: R$ {((item.itemType === 'ABADA' ? lot.abadaPriceCents : lot.pulseiraPriceCents) / 100).toFixed(2).replace('.', ',')}
+                    Preço unitário: R$ {selectedLot ? ((item.itemType === 'ABADA' ? selectedLot.abadaPriceCents : selectedLot.pulseiraPriceCents) / 100).toFixed(2).replace('.', ',') : '0,00'}
                   </div>
 
                   {items.length > 1 && (
