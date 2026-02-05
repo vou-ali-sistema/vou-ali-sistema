@@ -157,6 +157,15 @@ export default function ComprarPage() {
     }, 0) / 100
   }, [lot, items])
 
+  // Memoizar filtros de cards para evitar re-execução a cada render
+  // IMPORTANTE: hooks devem ser chamados antes de qualquer return condicional
+  const { topPreferred, bottomPreferred, unSlotted } = useMemo(() => {
+    const top = promoCards.filter((c) => c.comprarSlot === 'TOP')
+    const bottom = promoCards.filter((c) => c.comprarSlot === 'BOTTOM')
+    const unSlotted = promoCards.filter((c) => !c.comprarSlot)
+    return { topPreferred: top, bottomPreferred: bottom, unSlotted }
+  }, [promoCards])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -279,14 +288,6 @@ export default function ComprarPage() {
       </div>
     )
   }
-
-  // Memoizar filtros de cards para evitar re-execução a cada render
-  const { topPreferred, bottomPreferred, unSlotted } = useMemo(() => {
-    const top = promoCards.filter((c) => c.comprarSlot === 'TOP')
-    const bottom = promoCards.filter((c) => c.comprarSlot === 'BOTTOM')
-    const unSlotted = promoCards.filter((c) => !c.comprarSlot)
-    return { topPreferred: top, bottomPreferred: bottom, unSlotted }
-  }, [promoCards])
 
   const topCard = topPreferred[0] || unSlotted[0] || null
   const bottomCandidate =
