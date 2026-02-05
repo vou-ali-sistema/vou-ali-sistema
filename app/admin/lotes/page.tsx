@@ -174,51 +174,51 @@ export default function LotesPage() {
         <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-green-600 to-blue-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+              <th className="px-5 py-4 text-left text-xs font-medium text-white uppercase tracking-wider min-w-[300px]">
                 Nome
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+              <th className="px-5 py-4 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap w-32">
                 Preço Abadá
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+              <th className="px-5 py-4 text-left text-xs font-medium text-white uppercase tracking-wider min-w-[200px]">
                 Preço Pulseira
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+              <th className="px-5 py-4 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap w-36">
                 Produzidos (A/P)
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+              <th className="px-5 py-4 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap w-28">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap">
+              <th className="px-5 py-4 text-left text-xs font-medium text-white uppercase tracking-wider whitespace-nowrap w-40">
                 Ações
               </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {lotes.map((lote) => (
-              <tr key={lote.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+              <tr key={lote.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-5 py-5 text-sm font-medium text-gray-900 leading-relaxed">
                   {lote.name}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-5 py-5 whitespace-nowrap text-sm text-gray-700 font-semibold">
                   R$ {(lote.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-700">
+                <td className="px-5 py-5 text-sm text-gray-700">
                   {lote.pulseiraPriceCents !== null 
                     ? (
-                      <div>
-                        <div className="font-medium">{lote.pulseiraName || 'Pulseira Extra'}</div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900 leading-tight">{lote.pulseiraName || 'Pulseira Extra'}</div>
                         <div className="text-xs text-gray-500">R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}</div>
                       </div>
                     )
                     : <span className="text-gray-400">-</span>
                   }
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-5 py-5 whitespace-nowrap text-sm text-gray-700 font-medium">
                   {lote.abadaProducedQty ?? 0} / {lote.pulseiraProducedQty ?? 0}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                <td className="px-5 py-5 whitespace-nowrap">
+                  <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     lote.active
                       ? 'bg-green-100 text-green-800'
                       : 'bg-gray-100 text-gray-800'
@@ -226,37 +226,39 @@ export default function LotesPage() {
                     {lote.active ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  {lote.active ? (
+                <td className="px-5 py-5 whitespace-nowrap">
+                  <div className="flex items-center gap-3 text-sm font-medium">
+                    {lote.active ? (
+                      <button
+                        onClick={() => handleDeactivate(lote.id)}
+                        className="text-orange-600 hover:text-orange-900 font-semibold transition-colors"
+                      >
+                        Desativar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleActivate(lote.id)}
+                        className="text-green-600 hover:text-green-900 font-semibold transition-colors"
+                      >
+                        Ativar
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleDeactivate(lote.id)}
-                      className="text-orange-600 hover:text-orange-900 font-semibold"
+                      onClick={() => {
+                        setEditingLot(lote)
+                        setShowModal(true)
+                      }}
+                      className="text-blue-600 hover:text-blue-900 font-semibold transition-colors"
                     >
-                      Desativar
+                      Editar
                     </button>
-                  ) : (
                     <button
-                      onClick={() => handleActivate(lote.id)}
-                      className="text-green-600 hover:text-green-900 font-semibold"
+                      onClick={() => handleDelete(lote)}
+                      className="text-red-600 hover:text-red-900 font-semibold transition-colors"
                     >
-                      Ativar
+                      Excluir
                     </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setEditingLot(lote)
-                      setShowModal(true)
-                    }}
-                    className="text-blue-600 hover:text-blue-900 font-semibold"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(lote)}
-                    className="text-red-600 hover:text-red-900 font-semibold"
-                  >
-                    Excluir
-                  </button>
+                  </div>
                 </td>
               </tr>
             ))}
