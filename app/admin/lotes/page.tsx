@@ -145,7 +145,7 @@ export default function LotesPage() {
   }
 
   return (
-    <div className="px-4 py-6">
+    <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h1 className="text-3xl font-bold text-blue-900">Lotes</h1>
         <button
@@ -172,7 +172,7 @@ export default function LotesPage() {
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-green-600">
         <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full divide-y divide-gray-200">
+          <table className="w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-green-600 to-blue-900">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
