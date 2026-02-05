@@ -75,33 +75,24 @@ export default function PedidosToolbar({
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const qValue = formData.get('q')?.toString() || ''
-    const statusValue = formData.get('status')?.toString() || ''
-    const archivedValue = formData.get('archived') ? '1' : ''
-    
-    console.log('[PedidosToolbar] Valores do formulário:', { qValue, statusValue, archivedValue })
-    
+    const form = e.currentTarget
+    const formData = new FormData(form)
+    const qValue = (formData.get('q') ?? '').toString().trim()
+    const statusValue = (formData.get('status') ?? '').toString().trim()
+    // Checkbox: quando desmarcado não vem no FormData; quando marcado vem como "1"
+    const archivedChecked = form.querySelector<HTMLInputElement>('input[name="archived"]')?.checked ?? false
+    const archivedValue = archivedChecked ? '1' : ''
+
     const params = new URLSearchParams()
-    // Só adicionar parâmetros se tiverem valor (não adicionar q= vazio)
-    if (qValue && qValue.trim()) {
-      params.set('q', qValue.trim())
-    }
-    if (statusValue && statusValue.trim()) {
-      // Garantir que o status está em maiúsculas
-      params.set('status', statusValue.trim().toUpperCase())
-    }
-    if (archivedValue === '1') {
-      params.set('archived', '1')
-    }
-    
+    if (qValue) params.set('q', qValue)
+    if (statusValue) params.set('status', statusValue.toUpperCase())
+    if (archivedValue) params.set('archived', '1')
+
     const queryString = params.toString()
-    const url = `/admin/pedidos${queryString ? `?${queryString}` : ''}`
-    
-    console.log('[PedidosToolbar] URL final:', url)
-    console.log('[PedidosToolbar] Query string:', queryString)
-    
-    // Usar window.location para garantir que a página seja recarregada completamente
+    const path = '/admin/pedidos'
+    const url = queryString ? `${path}?${queryString}` : path
+
+    // Navegação completa para garantir que o servidor receba os query params e recarregue os dados
     window.location.href = url
   }
 
