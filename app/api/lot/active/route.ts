@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         name: true,
         abadaPriceCents: true,
         pulseiraPriceCents: true,
+        pulseiraName: true, // Nome/descrição da pulseira
         abadaProducedQty: true,
         pulseiraProducedQty: true,
       },

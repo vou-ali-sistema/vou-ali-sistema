@@ -7,6 +7,7 @@ interface Lot {
   name: string
   abadaPriceCents: number
   pulseiraPriceCents: number | null // Pode ser null
+  pulseiraName: string | null // Nome/descrição da pulseira
   abadaProducedQty: number
   pulseiraProducedQty: number
   active: boolean
@@ -205,7 +206,12 @@ export default function LotesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                   {lote.pulseiraPriceCents !== null 
-                    ? `R$ ${(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}`
+                    ? (
+                      <div>
+                        <div className="font-medium">{lote.pulseiraName || 'Pulseira Extra'}</div>
+                        <div className="text-xs text-gray-500">R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}</div>
+                      </div>
+                    )
                     : <span className="text-gray-400">-</span>
                   }
                 </td>
@@ -267,6 +273,7 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
   const [name, setName] = useState(lot?.name || '')
   const [abadaPriceCents, setAbadaPriceCents] = useState(lot?.abadaPriceCents ? (lot.abadaPriceCents / 100).toString() : '')
   const [pulseiraPriceCents, setPulseiraPriceCents] = useState(lot?.pulseiraPriceCents ? (lot.pulseiraPriceCents / 100).toString() : '')
+  const [pulseiraName, setPulseiraName] = useState(lot?.pulseiraName || '')
   const [abadaProducedQty, setAbadaProducedQty] = useState(lot?.abadaProducedQty?.toString() || '0')
   const [pulseiraProducedQty, setPulseiraProducedQty] = useState(lot?.pulseiraProducedQty?.toString() || '0')
   const [loading, setLoading] = useState(false)
@@ -298,6 +305,7 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
         name: name.trim(),
         abadaPriceCents: Math.round(abadaPrice * 100),
         pulseiraPriceCents: pulseiraPrice && pulseiraPriceCents.trim() !== '' ? Math.round(pulseiraPrice * 100) : null,
+        pulseiraName: pulseiraName.trim() || null, // Nome da pulseira (opcional)
         abadaProducedQty: Math.max(0, parseInt(abadaProducedQty || '0', 10) || 0),
         pulseiraProducedQty: Math.max(0, parseInt(pulseiraProducedQty || '0', 10) || 0),
       }
@@ -383,6 +391,22 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
               />
               <p className="text-xs text-gray-500 mt-1">
                 A pulseira só será vendida/dada no primeiro lote como bonificação de compra antecipada.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nome da Pulseira <span className="text-gray-500 text-xs font-normal">(Opcional - ex: "Pulseira do After")</span>
+              </label>
+              <input
+                type="text"
+                value={pulseiraName}
+                onChange={(e) => setPulseiraName(e.target.value)}
+                placeholder="Ex: Pulseira do After, Pulseira Conversa, etc."
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Nome ou descrição da pulseira para que os clientes saibam para que serve (bonificação do after).
               </p>
             </div>
 

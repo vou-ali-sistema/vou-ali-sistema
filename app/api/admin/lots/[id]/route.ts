@@ -11,6 +11,7 @@ const atualizarLotSchema = z.object({
   name: z.string().min(1).optional(),
   abadaPriceCents: z.number().int().positive().optional(),
   pulseiraPriceCents: z.number().int().positive().optional().nullable(), // Opcional e pode ser null
+  pulseiraName: z.string().optional().nullable(), // Nome/descrição da pulseira
   abadaProducedQty: z.number().int().min(0).optional(),
   pulseiraProducedQty: z.number().int().min(0).optional(),
   startsAt: z.union([z.string().datetime(), z.null(), z.undefined()]).optional(),
@@ -35,6 +36,7 @@ export async function PUT(
     if (data.name !== undefined) updateData.name = data.name
     if (data.abadaPriceCents !== undefined) updateData.abadaPriceCents = data.abadaPriceCents
     if (data.pulseiraPriceCents !== undefined) updateData.pulseiraPriceCents = data.pulseiraPriceCents
+    if (data.pulseiraName !== undefined) updateData.pulseiraName = data.pulseiraName
     if (data.abadaProducedQty !== undefined) updateData.abadaProducedQty = data.abadaProducedQty
     if (data.pulseiraProducedQty !== undefined) updateData.pulseiraProducedQty = data.pulseiraProducedQty
     if (data.startsAt !== undefined) updateData.startsAt = data.startsAt ? new Date(data.startsAt) : null
