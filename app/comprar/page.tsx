@@ -725,10 +725,8 @@ export default function ComprarPage() {
                           </div>
                           <div className="text-sm text-gray-600">
                             <p>Abadá: R$ {(lote.abadaPriceCents / 100).toFixed(2).replace('.', ',')}</p>
-                            {lote.pulseiraPriceCents ? (
+                            {lote.pulseiraPriceCents && (
                               <p>{lote.pulseiraName || 'Pulseira'}: R$ {(lote.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}</p>
-                            ) : (
-                              <p className="text-gray-400">Sem pulseira</p>
                             )}
                           </div>
                         </div>
