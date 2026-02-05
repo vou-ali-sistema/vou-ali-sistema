@@ -166,19 +166,19 @@ export default async function PedidosPage({
 
       <PedidosToolbar q={q} status={status} archived={archived} />
 
-      {/* Debug: mostrar filtros aplicados */}
+      {/* Filtros aplicados - Link evita onClick em Server Component */}
       {(q || status) && (
         <div className="mb-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
           <p className="text-sm text-blue-800">
             <strong>Filtros ativos:</strong>
             {status && <span className="ml-2">Status: <strong>{status}</strong></span>}
             {q && <span className="ml-2">Busca: <strong>{q}</strong></span>}
-            <button
-              onClick={() => window.location.href = '/admin/pedidos'}
+            <Link
+              href="/admin/pedidos"
               className="ml-3 text-blue-600 hover:text-blue-800 underline text-xs"
             >
               Limpar filtros
-            </button>
+            </Link>
           </p>
         </div>
       )}
