@@ -320,7 +320,7 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preço Pulseira Extra (R$) <span className="text-gray-500 text-xs">(Opcional - apenas primeiro lote)</span>
+                Preço Pulseira Extra (R$) <span className="text-gray-500 text-xs font-normal">(Opcional - apenas primeiro lote)</span>
               </label>
               <input
                 type="number"
