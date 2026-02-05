@@ -88,7 +88,9 @@ export default function PedidosToolbar({
     const queryString = params.toString()
     const url = `/admin/pedidos${queryString ? `?${queryString}` : ''}`
     
-    router.push(url)
+    // Usar window.location para garantir que a página seja recarregada completamente
+    // Isso garante que os searchParams sejam atualizados corretamente
+    window.location.href = url
   }
 
   return (
@@ -111,7 +113,6 @@ export default function PedidosToolbar({
           <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
           <select
             name="status"
-            key={`status-${status}`} // Forçar re-render quando status mudar
             defaultValue={status}
             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
           >

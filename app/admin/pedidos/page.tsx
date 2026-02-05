@@ -35,11 +35,12 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
     }
 
     // Aplicar filtro de status (só se não estiver vazio e for um valor válido)
-    if (status && status !== '') {
+    if (status && status !== '' && status.trim() !== '') {
       // Validar que o status é um dos valores válidos
       const validStatuses = ['PENDENTE', 'PAGO', 'RETIRADO', 'CANCELADO']
-      if (validStatuses.includes(status)) {
-        conditions.push({ status: status as 'PENDENTE' | 'PAGO' | 'RETIRADO' | 'CANCELADO' })
+      const cleanStatus = status.trim().toUpperCase()
+      if (validStatuses.includes(cleanStatus)) {
+        conditions.push({ status: cleanStatus as 'PENDENTE' | 'PAGO' | 'RETIRADO' | 'CANCELADO' })
       }
     }
 
@@ -112,9 +113,11 @@ export default async function PedidosPage({
   searchParams?: Promise<{ q?: string; status?: string; archived?: string }>
 }) {
   const params = await (searchParams || Promise.resolve({}))
-  const q = params.q || ''
-  const status = params.status || ''
-  const archived = params.archived || ''
+  
+  // Garantir que os valores sejam strings e não arrays
+  const q = Array.isArray(params.q) ? params.q[0] || '' : (params.q || '')
+  const status = Array.isArray(params.status) ? params.status[0] || '' : (params.status || '')
+  const archived = Array.isArray(params.archived) ? params.archived[0] || '' : (params.archived || '')
 
   const { orders } = await getOrders({ q, status, archived })
 
