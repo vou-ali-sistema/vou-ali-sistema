@@ -7,14 +7,48 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 async function getDataByToken(token: string) {
-  // Buscar Order por exchangeToken
-  const order = await prisma.order.findUnique({
-    where: { exchangeToken: token },
-    include: {
-      items: true,
-      customer: true,
+  // Decodificar URL caso o token tenha sido codificado
+  let decodedToken = token
+  try {
+    decodedToken = decodeURIComponent(token)
+  } catch (e) {
+    // Se falhar, usar o token original
+    decodedToken = token
+  }
+  
+  // Limpar o token: remover espaços, quebras de linha e caracteres especiais que podem vir do email
+  const cleanToken = decodedToken.trim().replace(/\s+/g, '').replace(/[^\w-]/g, '')
+  
+  // Debug: log para verificar o token recebido e limpo
+  console.log('Token recebido (original):', token)
+  console.log('Token decodificado:', decodedToken)
+  console.log('Token limpo:', cleanToken)
+  console.log('Comprimento do token limpo:', cleanToken.length)
+  
+  // Lista de variações do token para tentar buscar
+  const tokenVariations = [
+    cleanToken,           // Token limpo
+    decodedToken,         // Token decodificado
+    token,                // Token original
+    cleanToken.toLowerCase(), // Token em minúsculas
+    cleanToken.toUpperCase(), // Token em maiúsculas
+  ].filter((t, index, self) => self.indexOf(t) === index) // Remover duplicatas
+  
+  // Tentar buscar Order com cada variação
+  let order = null
+  for (const tokenVar of tokenVariations) {
+    order = await prisma.order.findUnique({
+      where: { exchangeToken: tokenVar },
+      include: {
+        items: true,
+        customer: true,
+      }
+    })
+    if (order) {
+      console.log('Pedido encontrado com variação:', tokenVar)
+      break
     }
-  })
+  }
 
   if (order) {
     return {
@@ -23,19 +57,86 @@ async function getDataByToken(token: string) {
     }
   }
 
-  // Buscar Courtesy por exchangeToken
-  const courtesy = await prisma.courtesy.findUnique({
-    where: { exchangeToken: token },
-    include: {
-      items: true,
+  // Buscar Courtesy por exchangeToken (também com todas as variações)
+  let courtesy = null
+  for (const tokenVar of tokenVariations) {
+    courtesy = await prisma.courtesy.findUnique({
+      where: { exchangeToken: tokenVar },
+      include: {
+        items: true,
+      }
+    })
+    if (courtesy) {
+      console.log('Cortesia encontrada com variação:', tokenVar)
+      break
     }
-  })
+  }
 
   if (courtesy) {
     return {
       type: 'courtesy' as const,
       data: courtesy,
     }
+  }
+
+  // Se o token tem pelo menos 16 caracteres, tentar busca por prefixo (caso tenha sido truncado)
+  if (cleanToken.length >= 16) {
+    const prefix = cleanToken.substring(0, 16)
+    console.log('Tentando busca por prefixo:', prefix)
+    
+    const ordersByPrefix = await prisma.order.findMany({
+      where: {
+        exchangeToken: {
+          startsWith: prefix,
+        }
+      },
+      select: {
+        id: true,
+        exchangeToken: true,
+        status: true,
+      },
+      take: 5,
+    })
+    
+    if (ordersByPrefix.length === 1) {
+      // Se encontrou exatamente um pedido com esse prefixo, usar ele
+      console.log('Encontrado pedido único por prefixo:', ordersByPrefix[0].exchangeToken)
+      const foundOrder = await prisma.order.findUnique({
+        where: { id: ordersByPrefix[0].id },
+        include: {
+          items: true,
+          customer: true,
+        }
+      })
+      if (foundOrder) {
+        return {
+          type: 'order' as const,
+          data: foundOrder,
+        }
+      }
+    } else if (ordersByPrefix.length > 1) {
+      console.log('Múltiplos pedidos encontrados com prefixo:', ordersByPrefix.length)
+    }
+  }
+
+  // Debug: verificar se há algum pedido com token similar (para diagnóstico)
+  const similarOrders = await prisma.order.findMany({
+    where: {
+      exchangeToken: {
+        contains: cleanToken.substring(0, Math.min(10, cleanToken.length)),
+      }
+    },
+    select: {
+      id: true,
+      exchangeToken: true,
+      status: true,
+    },
+    take: 5,
+  })
+  
+  console.log('Pedidos com token similar encontrados:', similarOrders.length)
+  if (similarOrders.length > 0) {
+    console.log('Tokens similares:', similarOrders.map(o => o.exchangeToken))
   }
 
   return null
@@ -88,7 +189,23 @@ export default async function TrocaPage({
 }: {
   params: Promise<{ token: string }>
 }) {
-  const { token } = await params
+  const { token: rawToken } = await params
+  
+  // Decodificar o token da URL (Next.js pode codificar caracteres especiais)
+  let token = rawToken
+  try {
+    // Tentar decodificar múltiplas vezes caso tenha sido codificado várias vezes
+    let decoded = decodeURIComponent(rawToken)
+    while (decoded !== token && decoded !== rawToken) {
+      token = decoded
+      decoded = decodeURIComponent(token)
+    }
+    token = decoded
+  } catch (e) {
+    // Se falhar, usar o token original
+    token = rawToken
+  }
+  
   const result = await getDataByToken(token)
 
   if (!result) {
@@ -112,10 +229,28 @@ export default async function TrocaPage({
             </p>
           </div>
 
-          <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-700">
-              <strong>Token:</strong> {token.substring(0, 16)}...
+          <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4 mb-4">
+            <p className="text-sm text-red-700 mb-2">
+              <strong>Token recebido:</strong>
             </p>
+            <code className="block text-xs text-red-800 break-all bg-white p-2 rounded border border-red-300">
+              {token}
+            </code>
+            <p className="text-xs text-red-600 mt-2">
+              Comprimento: {token.length} caracteres (esperado: 64 caracteres)
+            </p>
+          </div>
+          
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800 font-semibold mb-2">
+              💡 Dicas para resolver:
+            </p>
+            <ul className="text-xs text-blue-700 space-y-1 text-left list-disc list-inside">
+              <li>Certifique-se de copiar o token completo do email</li>
+              <li>Não adicione espaços ou quebras de linha</li>
+              <li>O token deve ter exatamente 64 caracteres</li>
+              <li>Se o problema persistir, entre em contato com o suporte</li>
+            </ul>
           </div>
         </div>
       </div>

@@ -71,6 +71,18 @@ export async function sendTokenEmail({ to, customerName, token, orderId, mpPayme
           <a href="${trocaUrl}" style="color: #059669; word-break: break-all;">${trocaUrl}</a>
         </p>
         
+        <div style="background: #e0f2fe; border: 2px solid #0284c7; border-radius: 8px; padding: 15px; margin-top: 20px;">
+          <p style="margin: 0 0 10px 0; font-size: 14px; color: #0c4a6e; font-weight: bold;">
+            🔑 Seu Token de Troca:
+          </p>
+          <code style="display: block; background: white; padding: 10px; border: 1px solid #0284c7; border-radius: 4px; font-size: 12px; word-break: break-all; color: #0c4a6e; font-family: 'Courier New', monospace;">
+            ${token}
+          </code>
+          <p style="margin: 10px 0 0 0; font-size: 12px; color: #0c4a6e;">
+            Você pode usar este token diretamente acessando: <a href="${trocaUrl}" style="color: #0284c7;">${trocaUrl}</a>
+          </p>
+        </div>
+        
         <div style="background: #fef3c7; border: 2px solid #facc15; border-radius: 8px; padding: 15px; margin-top: 20px;">
           <p style="margin: 0; font-size: 14px; color: #92400e;">
             <strong>⚠️ Importante:</strong> Guarde este email com segurança. Você precisará do token para retirar seus itens.
@@ -96,7 +108,8 @@ Seu pagamento foi aprovado com sucesso!
 
 Seu token de troca está pronto. Use-o para retirar seus itens:
 
-Token: ${token}
+🔑 Seu Token de Troca:
+${token}
 
 Acesse: ${trocaUrl}
 
