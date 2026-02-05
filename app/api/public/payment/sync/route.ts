@@ -41,17 +41,20 @@ async function mpFetchJson(url: string) {
   return text ? JSON.parse(text) : null
 }
 
+function isNumericPaymentId(value: string): boolean {
+  return /^\d+$/.test(value.trim())
+}
+
 async function buscarPagamentoMP(opts: { paymentId?: string; externalReference?: string; preferenceId?: string }) {
-  if (opts.paymentId) {
-    const pid = String(opts.paymentId).trim()
-    if (pid) {
-      return mpFetchJson(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(pid)}`)
-    }
+  const pid = opts.paymentId?.trim()
+  if (pid && isNumericPaymentId(pid)) {
+    return mpFetchJson(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(pid)}`)
   }
 
   const url = new URL('https://api.mercadopago.com/v1/payments/search')
   if (opts.externalReference) url.searchParams.set('external_reference', opts.externalReference)
-  if (opts.preferenceId) url.searchParams.set('preference_id', opts.preferenceId)
+  const preferenceIdForSearch = opts.preferenceId?.trim() || (pid && !isNumericPaymentId(pid) ? pid : undefined)
+  if (preferenceIdForSearch) url.searchParams.set('preference_id', preferenceIdForSearch)
   url.searchParams.set('sort', 'date_created')
   url.searchParams.set('criteria', 'desc')
   url.searchParams.set('limit', '5') // Buscar mais resultados para ter mais chances de encontrar

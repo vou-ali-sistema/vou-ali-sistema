@@ -493,13 +493,15 @@ export default function ComprarPage() {
     }
   }, [name, phone, email, items, selectedLotIdMasculino, selectedLotIdFeminino, selectedLotesGenericos])
 
-  // Redirecionar automaticamente após 2s quando na tela "Redirecionando para o Mercado Pago"
+  // Abrir checkout do Mercado Pago em nova aba (evita travamentos; formas de pagamento carregam melhor)
   useEffect(() => {
     if (!redirectingToPayment) return
-    const t = setTimeout(() => {
-      window.location.href = redirectingToPayment
-    }, 2000)
-    return () => clearTimeout(t)
+    const opened = window.open(redirectingToPayment, '_blank', 'noopener,noreferrer')
+    if (!opened) {
+      // Pop-up bloqueado: redirecionar na mesma janela após 1s
+      const t = setTimeout(() => { window.location.href = redirectingToPayment }, 1000)
+      return () => clearTimeout(t)
+    }
   }, [redirectingToPayment])
 
   if (redirectingToPayment) {
@@ -509,10 +511,10 @@ export default function ComprarPage() {
           <div className="mb-6">
             <Logo size="large" showSubtitle={false} />
           </div>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
-          <p className="text-gray-700 font-medium mb-2">Redirecionando para o Mercado Pago...</p>
+          <p className="text-green-700 font-semibold mb-2">✓ Página de pagamento aberta em nova aba</p>
+          <p className="text-gray-700 mb-2">Conclua o pagamento (Pix, cartão ou boleto) na aba do Mercado Pago.</p>
           <p className="text-gray-600 text-sm mb-6">
-            Se a página do Mercado Pago não abrir, use o botão abaixo para abrir em nova aba. Avisos de favicon no console não impedem o pagamento — pode finalizar normalmente.
+            Se a aba não abriu ou foi bloqueada, use o botão abaixo. Depois de pagar, você voltará automaticamente para nosso site.
           </p>
           <div className="flex flex-col gap-3">
             <a
@@ -521,7 +523,7 @@ export default function ComprarPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 transition"
             >
-              Abrir pagamento em nova aba
+              Abrir pagamento no Mercado Pago
             </a>
             <button
               type="button"

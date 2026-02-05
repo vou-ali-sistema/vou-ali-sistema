@@ -92,14 +92,20 @@ export async function criarPreferenciaPedido(orderId: string) {
       },
     }
 
-    // Mercado Pago EXIGE payer.email para exibir Pix, cartão e outras opções de pagamento
+    // Mercado Pago EXIGE payer.email para exibir Pix, cartão e outras opções; phone ajuda a liberar métodos
     const email = order.customer?.email?.trim()
     if (!email) {
       throw new Error('Email do cliente é obrigatório para exibir opções de pagamento no Mercado Pago. Verifique se o pedido inclui o email do cliente.')
     }
+    const rawPhone = order.customer?.phone?.replace(/\D/g, '')?.slice(-11) || ''
+    const payerPhone = rawPhone.length >= 10
+      ? { area_code: rawPhone.slice(0, 2), number: rawPhone.slice(2) }
+      : undefined
+
     preferenceBody.payer = {
       email,
       name: order.customer?.name?.trim() || undefined,
+      ...(payerPhone && { phone: payerPhone }),
     }
 
     // notification_url: já definido acima quando isHttps (crítico para pedido virar PAGO)
