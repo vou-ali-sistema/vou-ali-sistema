@@ -39,7 +39,7 @@ async function getOrderById(orderId: string) {
       return null
     }
 
-    // Formatar no mesmo formato do endpoint
+    const customer = order.customer
     return {
       id: order.id,
       status: order.status,
@@ -56,13 +56,8 @@ async function getOrderById(orderId: string) {
         unitPriceCents: item.unitPriceCents,
         totalCents: item.quantity * item.unitPriceCents,
       })),
-      customer: {
-        name: order.customer.name,
-      },
-      lot: order.lot ? {
-        id: order.lot.id,
-        name: order.lot.name,
-      } : null,
+      customer: customer ? { name: customer.name } : { name: '' },
+      lot: order.lot ? { id: order.lot.id, name: order.lot.name } : null,
     }
   } catch (error) {
     console.error('Erro ao buscar pedido:', error)

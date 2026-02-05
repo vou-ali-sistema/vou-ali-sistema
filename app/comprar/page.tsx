@@ -512,7 +512,7 @@ export default function ComprarPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900 mx-auto mb-4"></div>
           <p className="text-gray-700 font-medium mb-2">Redirecionando para o Mercado Pago...</p>
           <p className="text-gray-600 text-sm mb-6">
-            Se a página do Mercado Pago não abrir ou aparecer erro no navegador, use o botão abaixo para abrir em nova aba.
+            Se a página do Mercado Pago não abrir, use o botão abaixo para abrir em nova aba. Avisos de favicon no console não impedem o pagamento — pode finalizar normalmente.
           </p>
           <div className="flex flex-col gap-3">
             <a

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams, useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function TrocaDetailPage({ params }: { params: { id: string } }) {
+export default function TrocaDetailPage() {
+  const params = useParams()
   const searchParams = useSearchParams()
   const router = useRouter()
   const type = searchParams.get('type')

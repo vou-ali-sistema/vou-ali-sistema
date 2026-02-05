@@ -175,19 +175,27 @@ async function getStats() {
 }
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
+  try {
+    const session = await getServerSession(authOptions)
 
-  if (!session) {
-    redirect('/admin/login')
-  }
+    if (!session) {
+      redirect('/admin/login')
+    }
 
-  const stats = await getStats()
+    const stats = await getStats()
 
-  if (!stats) {
-    return <div>Erro ao carregar estatísticas</div>
-  }
+    if (!stats) {
+      return (
+        <div className="px-4 py-6">
+          <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-6 text-amber-900">
+            <p className="font-semibold">Erro ao carregar estatísticas.</p>
+            <p className="text-sm mt-2">Tente recarregar a página. Se persistir, verifique a conexão com o banco.</p>
+          </div>
+        </div>
+      )
+    }
 
-  return (
+    return (
     <div className="px-4 py-6">
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -353,5 +361,16 @@ export default async function DashboardPage() {
       </div>
     </div>
   )
+  } catch (err) {
+    console.error('DashboardPage error:', err)
+    return (
+      <div className="px-4 py-6">
+        <div className="rounded-lg border-2 border-red-200 bg-red-50 p-6 text-red-900">
+          <p className="font-semibold">Erro ao carregar o dashboard.</p>
+          <p className="text-sm mt-2">Tente recarregar a página ou faça logout e login novamente.</p>
+        </div>
+      </div>
+    )
+  }
 }
 

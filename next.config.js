@@ -51,7 +51,11 @@ const nextConfig = {
           { key: 'Content-Security-Policy', value: cspStrict },
         ],
       },
-      // CSP permissiva SOMENTE nas rotas de checkout (permite Mercado Pago; sobrescreve CSP com nonce/strict-dynamic)
+      // CSP com Mercado Pago no fluxo de compra: comprar, troca/pendente (retorno), checkout, review, redirect
+      { source: '/comprar', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
+      { source: '/comprar/:path*', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
+      { source: '/troca/pendente', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
+      { source: '/troca/pendente/:path*', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
       { source: '/checkout', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
       { source: '/checkout/:path*', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
       { source: '/review', headers: [{ key: 'Content-Security-Policy', value: cspCheckout }] },
