@@ -90,7 +90,7 @@ model Lot {
   id                String   @id @default(cuid())
   name              String
   abadaPriceCents   Int
-  pulseiraPriceCents Int
+  pulseiraPriceCents Int?    // Opcional - apenas primeiro lote tem pulseira como bonificação
   abadaProducedQty  Int      @default(0)
   pulseiraProducedQty Int    @default(0)
   active            Boolean  @default(false)

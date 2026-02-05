@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 const atualizarLotSchema = z.object({
   name: z.string().min(1).optional(),
   abadaPriceCents: z.number().int().positive().optional(),
-  pulseiraPriceCents: z.number().int().positive().optional(),
+  pulseiraPriceCents: z.number().int().positive().optional().nullable(), // Opcional e pode ser null
   abadaProducedQty: z.number().int().min(0).optional(),
   pulseiraProducedQty: z.number().int().min(0).optional(),
   startsAt: z.union([z.string().datetime(), z.null(), z.undefined()]).optional(),

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 const criarLotSchema = z.object({
   name: z.string().min(1),
   abadaPriceCents: z.number().int().positive(),
-  pulseiraPriceCents: z.number().int().positive(),
+  pulseiraPriceCents: z.number().int().positive().optional().nullable(), // Opcional - apenas primeiro lote tem pulseira
   abadaProducedQty: z.number().int().min(0).optional(),
   pulseiraProducedQty: z.number().int().min(0).optional(),
   startsAt: z.string().datetime().optional().nullable(),
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: data.name,
         abadaPriceCents: data.abadaPriceCents,
-        pulseiraPriceCents: data.pulseiraPriceCents,
+        pulseiraPriceCents: data.pulseiraPriceCents ?? null, // Opcional - pode ser null
         abadaProducedQty: data.abadaProducedQty ?? 0,
         pulseiraProducedQty: data.pulseiraProducedQty ?? 0,
         active: false, // Sempre criar como inativo

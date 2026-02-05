@@ -230,14 +230,15 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
     try {
       // Validar valores antes de enviar
       const abadaPrice = parseFloat(abadaPriceCents)
-      const pulseiraPrice = parseFloat(pulseiraPriceCents)
+      const pulseiraPrice = pulseiraPriceCents ? parseFloat(pulseiraPriceCents) : null
 
       if (isNaN(abadaPrice) || abadaPrice <= 0) {
         throw new Error('Preço do Abadá deve ser maior que zero')
       }
 
-      if (isNaN(pulseiraPrice) || pulseiraPrice <= 0) {
-        throw new Error('Preço da Pulseira deve ser maior que zero')
+      // Pulseira é opcional - apenas validar se foi preenchida
+      if (pulseiraPriceCents && pulseiraPriceCents.trim() !== '' && (isNaN(pulseiraPrice!) || pulseiraPrice! <= 0)) {
+        throw new Error('Preço da Pulseira deve ser maior que zero (ou deixe em branco se não houver pulseira)')
       }
 
       const url = lot ? `/api/admin/lots/${lot.id}` : '/api/admin/lots'
@@ -246,7 +247,7 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
       const body: any = {
         name: name.trim(),
         abadaPriceCents: Math.round(abadaPrice * 100),
-        pulseiraPriceCents: Math.round(pulseiraPrice * 100),
+        pulseiraPriceCents: pulseiraPrice && pulseiraPriceCents.trim() !== '' ? Math.round(pulseiraPrice * 100) : null,
         abadaProducedQty: Math.max(0, parseInt(abadaProducedQty || '0', 10) || 0),
         pulseiraProducedQty: Math.max(0, parseInt(pulseiraProducedQty || '0', 10) || 0),
       }
@@ -319,7 +320,7 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preço Pulseira Extra (R$) *
+                Preço Pulseira Extra (R$) <span className="text-gray-500 text-xs">(Opcional - apenas primeiro lote)</span>
               </label>
               <input
                 type="number"
@@ -327,9 +328,12 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
                 min="0"
                 value={pulseiraPriceCents}
                 onChange={(e) => setPulseiraPriceCents(e.target.value)}
-                required
+                placeholder="Deixe em branco se não houver pulseira"
                 className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                A pulseira só será vendida/dada no primeiro lote como bonificação de compra antecipada.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

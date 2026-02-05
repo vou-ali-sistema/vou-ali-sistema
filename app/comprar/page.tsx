@@ -15,7 +15,7 @@ interface Lot {
   id: string
   name: string
   abadaPriceCents: number
-  pulseiraPriceCents: number
+  pulseiraPriceCents: number | null // Opcional - apenas primeiro lote tem pulseira
 }
 
 interface PromoCard {
@@ -228,10 +228,10 @@ export default function ComprarPage() {
 
   // Adicionar pulseira extra (não precisa de lote selecionado)
   function adicionarPulseiraExtra() {
-    // Usar o primeiro lote disponível como referência para preço, mas não é obrigatório
-    const lotReferencia = lots.find(l => l.id === primeiroLoteSelecionado) || lots[0]
-    if (!lotReferencia) {
-      setError('Nenhum lote disponível para referência de preço')
+    // Usar o primeiro lote disponível que tenha pulseira como referência para preço
+    const lotReferencia = lots.find(l => l.pulseiraPriceCents && (l.id === primeiroLoteSelecionado || l.pulseiraPriceCents)) || lots.find(l => l.pulseiraPriceCents)
+    if (!lotReferencia || !lotReferencia.pulseiraPriceCents) {
+      setError('Nenhum lote com pulseira disponível. A pulseira só está disponível no primeiro lote como bonificação.')
       return
     }
     
@@ -330,7 +330,7 @@ export default function ComprarPage() {
       if (!itemLot) return sum // Se não encontrar o lote, não adicionar ao total
       const precoUnitario = item.itemType === 'ABADA' 
         ? itemLot.abadaPriceCents 
-        : itemLot.pulseiraPriceCents
+        : (itemLot.pulseiraPriceCents || 0) // Se não tiver pulseira, usar 0
       return sum + (precoUnitario * item.quantity)
     }, 0) / 100
   }, [lots, items])
@@ -598,7 +598,7 @@ export default function ComprarPage() {
                     >
                       <option value="">-- Não selecionar --</option>
                       <option value={lotMasculino.id}>
-                        {lotMasculino.name} - Abadá: R$ {(lotMasculino.abadaPriceCents / 100).toFixed(2).replace('.', ',')} | Pulseira: R$ {(lotMasculino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                        {lotMasculino.name} - Abadá: R$ {(lotMasculino.abadaPriceCents / 100).toFixed(2).replace('.', ',')}{lotMasculino.pulseiraPriceCents ? ` | Pulseira: R$ ${(lotMasculino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}` : ''}
                       </option>
                     </select>
                   </div>
@@ -617,7 +617,7 @@ export default function ComprarPage() {
                     >
                       <option value="">-- Não selecionar --</option>
                       <option value={lotFeminino.id}>
-                        {lotFeminino.name} - Abadá: R$ {(lotFeminino.abadaPriceCents / 100).toFixed(2).replace('.', ',')} | Pulseira: R$ {(lotFeminino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
+                        {lotFeminino.name} - Abadá: R$ {(lotFeminino.abadaPriceCents / 100).toFixed(2).replace('.', ',')}{lotFeminino.pulseiraPriceCents ? ` | Pulseira: R$ ${(lotFeminino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}` : ''}
                       </option>
                     </select>
                   </div>
@@ -711,13 +711,15 @@ export default function ComprarPage() {
                         >
                           + Abadá Masculino (R$ {(lotMasculino.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => adicionarPulseiraDoLote(selectedLotIdMasculino)}
-                          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
-                        >
-                          + Pulseira Extra Masculino (R$ {(lotMasculino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
-                        </button>
+                        {lotMasculino.pulseiraPriceCents && (
+                          <button
+                            type="button"
+                            onClick={() => adicionarPulseiraDoLote(selectedLotIdMasculino)}
+                            className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
+                          >
+                            + Pulseira Extra Masculino (R$ {(lotMasculino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                          </button>
+                        )}
                       </div>
                     ) : null
                   })()}
@@ -734,13 +736,15 @@ export default function ComprarPage() {
                         >
                           + Abadá Feminino (R$ {(lotFeminino.abadaPriceCents / 100).toFixed(2).replace('.', ',')})
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => adicionarPulseiraDoLote(selectedLotIdFeminino)}
-                          className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
-                        >
-                          + Pulseira Extra Feminino (R$ {(lotFeminino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
-                        </button>
+                        {lotFeminino.pulseiraPriceCents && (
+                          <button
+                            type="button"
+                            onClick={() => adicionarPulseiraDoLote(selectedLotIdFeminino)}
+                            className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold text-sm"
+                          >
+                            + Pulseira Extra Feminino (R$ {(lotFeminino.pulseiraPriceCents / 100).toFixed(2).replace('.', ',')})
+                          </button>
+                        )}
                       </div>
                     ) : null
                   })()}
@@ -810,8 +814,18 @@ export default function ComprarPage() {
                           const isItemDoLote = isPrimeiroAbadaDoLote || isPrimeiraPulseiraDoLote
                   
                   return (
-                  <div key={originalIndex} className={`border-2 rounded-lg p-4 ${isItemDoLote ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-300'}`}>
-                    <div className="mb-2 flex items-center justify-between">
+                  <div key={originalIndex} className={`border-2 rounded-lg p-4 ${isItemDoLote ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-300'} relative`}>
+                    {/* Botão de remover no topo direito */}
+                    <button
+                      type="button"
+                      onClick={() => removerItem(originalIndex)}
+                      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all transform hover:scale-110 z-10"
+                      title="Remover este item"
+                    >
+                      ✕
+                    </button>
+                    
+                    <div className="mb-2 flex items-center justify-between pr-10">
                       {isItemDoLote && (
                         <span className="text-xs font-semibold text-green-700">
                           ✓ Item do Lote
@@ -873,7 +887,7 @@ export default function ComprarPage() {
                                 {lot.name} - R$ {(lot.abadaPriceCents / 100).toFixed(2).replace('.', ',')}
                               </option>
                             ))}
-                            {lots.length > 0 && (
+                            {lots.length > 0 && lots[0].pulseiraPriceCents && (
                               <option value="PULSEIRA_EXTRA">
                                 Pulseira Extra - R$ {(lots[0].pulseiraPriceCents / 100).toFixed(2).replace('.', ',')}
                               </option>
@@ -910,28 +924,30 @@ export default function ComprarPage() {
                       </div>
                     </div>
 
-                    <div className="mt-2 text-sm text-gray-600">
-                      {itemLot && (
-                        <>
-                          Preço unitário: R$ {((item.itemType === 'ABADA' ? itemLot.abadaPriceCents : itemLot.pulseiraPriceCents) / 100).toFixed(2).replace('.', ',')}
-                          {' | '}
-                          Subtotal: R$ {((item.itemType === 'ABADA' ? itemLot.abadaPriceCents : itemLot.pulseiraPriceCents) * item.quantity / 100).toFixed(2).replace('.', ',')}
-                        </>
-                      )}
+                    <div className="mt-3 flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        {itemLot && (
+                          <>
+                            Preço unitário: R$ {((item.itemType === 'ABADA' ? itemLot.abadaPriceCents : (itemLot.pulseiraPriceCents || 0)) / 100).toFixed(2).replace('.', ',')}
+                            {' | '}
+                            Subtotal: R$ {((item.itemType === 'ABADA' ? itemLot.abadaPriceCents : (itemLot.pulseiraPriceCents || 0)) * item.quantity / 100).toFixed(2).replace('.', ',')}
+                          </>
+                        )}
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => removerItem(originalIndex)}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all transform hover:scale-105 shadow-md ${
+                          isItemDoLote 
+                            ? 'bg-orange-500 hover:bg-orange-600 text-white border-2 border-orange-600' 
+                            : 'bg-red-500 hover:bg-red-600 text-white border-2 border-red-600'
+                        }`}
+                        title="Clique para remover este item do pedido"
+                      >
+                        🗑️ Remover
+                      </button>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removerItem(originalIndex)}
-                      className={`mt-2 text-sm font-semibold ${
-                        isItemDoLote 
-                          ? 'text-orange-600 hover:text-orange-900' 
-                          : 'text-red-600 hover:text-red-900'
-                      }`}
-                      title={isItemDoLote ? 'Remover item padrão do lote' : 'Remover item extra'}
-                    >
-                      {isItemDoLote ? '🗑️ Remover Item do Lote' : '🗑️ Remover Item Extra'}
-                    </button>
                   </div>
                   )
                 })}

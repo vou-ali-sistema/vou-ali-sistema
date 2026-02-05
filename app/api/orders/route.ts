@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     const itemsWithPrices = data.items.map(item => {
       const unitPriceCents = item.itemType === 'ABADA' 
         ? activeLot.abadaPriceCents 
-        : activeLot.pulseiraPriceCents
+        : (activeLot.pulseiraPriceCents || 0) // Se não tiver pulseira, usar 0
       const itemTotal = unitPriceCents * item.quantity
       totalValueCents += itemTotal
       
