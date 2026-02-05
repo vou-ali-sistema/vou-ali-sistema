@@ -155,12 +155,14 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
   }
 }
 
+type SearchParams = { q?: string | string[]; status?: string | string[]; archived?: string | string[] }
+
 export default async function PedidosPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string | string[]; status?: string | string[]; archived?: string | string[] }>
+  searchParams?: Promise<SearchParams>
 }) {
-  const params = await (searchParams || Promise.resolve({}))
+  const params: SearchParams = await (searchParams ?? Promise.resolve({}))
   
   // Extrair parâmetros de forma mais robusta
   let qRaw: string | undefined = undefined
