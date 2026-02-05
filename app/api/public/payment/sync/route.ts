@@ -47,17 +47,26 @@ function isNumericPaymentId(value: string): boolean {
 
 async function buscarPagamentoMP(opts: { paymentId?: string; externalReference?: string; preferenceId?: string }) {
   const pid = opts.paymentId?.trim()
-  if (pid && isNumericPaymentId(pid)) {
+  const hasExternalRef = Boolean(opts.externalReference?.trim())
+  const preferenceIdForSearch = opts.preferenceId?.trim() || (pid && !isNumericPaymentId(pid) ? pid : undefined)
+  const hasPreferenceId = Boolean(preferenceIdForSearch)
+
+  // Só usar GET /v1/payments/{id} quando temos APENAS paymentId numérico (evita 404 por ID de outro ambiente ou preference_id)
+  if (pid && isNumericPaymentId(pid) && !hasExternalRef && !hasPreferenceId) {
     return mpFetchJson(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(pid)}`)
   }
 
   const url = new URL('https://api.mercadopago.com/v1/payments/search')
-  if (opts.externalReference) url.searchParams.set('external_reference', opts.externalReference)
-  const preferenceIdForSearch = opts.preferenceId?.trim() || (pid && !isNumericPaymentId(pid) ? pid : undefined)
-  if (preferenceIdForSearch) url.searchParams.set('preference_id', preferenceIdForSearch)
   url.searchParams.set('sort', 'date_created')
   url.searchParams.set('criteria', 'desc')
-  url.searchParams.set('limit', '5') // Buscar mais resultados para ter mais chances de encontrar
+  url.searchParams.set('range', 'date_created')
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  url.searchParams.set('begin_date', thirtyDaysAgo.toISOString())
+  url.searchParams.set('end_date', now.toISOString())
+  if (opts.externalReference) url.searchParams.set('external_reference', opts.externalReference)
+  if (preferenceIdForSearch) url.searchParams.set('preference_id', preferenceIdForSearch)
+  url.searchParams.set('limit', '10')
 
   const data = await mpFetchJson(url.toString())
   const payments = Array.isArray(data?.results) ? data.results : []

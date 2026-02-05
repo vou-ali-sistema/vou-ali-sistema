@@ -1,5 +1,41 @@
 # Mercado Pago: mapeamento do fluxo e diagnóstico (compras não registradas)
 
+## Fluxo oficial (resumo)
+
+```
+Criar Preference
+       ↓
+Usuário paga
+       ↓
+Mercado Pago redireciona ou chama webhook
+       ↓
+Você recebe payment_id
+       ↓
+GET /v1/payments/{payment_id}
+       ↓
+Atualiza status no banco
+```
+
+| Etapa | Onde no código |
+|-------|----------------|
+| **Criar Preference** | `lib/mercado-pago.ts` → `criarPreferenciaPedido(orderId)`. Preferência com `external_reference = orderId`, `notification_url`, `back_urls`. |
+| **Usuário paga** | Checkout do MP (link da preferência). |
+| **Redireciona ou webhook** | **Webhook:** `POST /api/webhooks/mercadopago` (MP envia `data.id` = payment_id). **Redirect:** `back_urls` → `/troca/pendente?orderId=...` (MP pode enviar `payment_id`/`collection_id` na URL). |
+| **Recebe payment_id** | Webhook: extraído de `body.data.id` / `body.resource` (só numérico). Sync: da URL `payment_id` ou `collection_id`, ou via busca por `external_reference`/`preference_id` se não tiver ID. |
+| **GET /v1/payments/{payment_id}** | **Webhook:** sempre `GET /v1/payments/{payment_id}` (ID já é numérico). **Sync:** só usa GET por ID quando há *apenas* `payment_id` numérico; senão usa **search** por `external_reference`/`preference_id` (evita 404 quando a URL traz só preference_id). |
+| **Atualiza status no banco** | `app/api/webhooks/mercadopago/route.ts` e `app/api/public/payment/sync/route.ts` → `prisma.order.update` (PAGO, CANCELADO, mpPaymentId, exchangeToken, email). |
+
+### Endpoint correto para buscar pagamento
+
+```
+GET https://api.mercadopago.com/v1/payments/{PAYMENT_ID}
+```
+
+- **PAYMENT_ID** = ID **numérico** do pagamento (ex.: `12345678901`), recebido no webhook (`data.id`) ou na URL de retorno (`payment_id` / `collection_id`).
+- **Não** usar `preference_id` (UUID) neste endpoint — retorna 404. Para buscar por preferência ou por `external_reference`, use a API de **search**: `GET https://api.mercadopago.com/v1/payments/search?external_reference=...` (e opcionalmente `preference_id=...`, `range`, `begin_date`, `end_date`).
+
+---
+
 ## Onde cada coisa está no código
 
 | O quê | Onde |

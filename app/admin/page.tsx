@@ -7,6 +7,8 @@ import FinanceiroWidget from './FinanceiroWidget'
 import CompraToggle from './CompraToggle'
 import { isPurchaseEnabled } from '@/lib/settings'
 
+export const dynamic = 'force-dynamic'
+
 async function getStats() {
   try {
     const whereActiveOrders = { archivedAt: null as any }
