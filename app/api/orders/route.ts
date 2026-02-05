@@ -11,8 +11,9 @@ const criarOrderSchema = z.object({
     itemType: z.enum(['ABADA', 'PULSEIRA_EXTRA']),
     size: z.string().optional(),
     quantity: z.number().int().positive(),
+    lotId: z.string().optional(), // Se enviado, preço vem deste lote (permite um pedido com vários lotes)
   })),
-  lotId: z.string().optional(), // ID do lote selecionado pelo usuário
+  lotId: z.string().optional(), // Lote único para todos os itens (compatibilidade)
 })
 
 export async function POST(request: NextRequest) {
@@ -48,50 +49,53 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Buscar lote ativo
-    // Se lotId foi fornecido, usar esse lote específico; caso contrário, usar o primeiro encontrado
-    let activeLot
-    if (data.lotId) {
-      activeLot = await prisma.lot.findFirst({
-        where: { 
-          id: data.lotId,
-          active: true 
-        },
-      })
-      if (!activeLot) {
+    // Resolver preço por item: cada item usa o lote do seu lotId (nunca usar só um lote para todos)
+    const lotIdsToFetch = new Set<string>()
+    if (data.lotId && String(data.lotId).trim()) lotIdsToFetch.add(String(data.lotId).trim())
+    for (const item of data.items) {
+      const id = item.lotId != null ? String(item.lotId).trim() : ''
+      if (id) lotIdsToFetch.add(id)
+    }
+    const lots = lotIdsToFetch.size > 0
+      ? await prisma.lot.findMany({ where: { id: { in: [...lotIdsToFetch] }, active: true } })
+      : await prisma.lot.findMany({ where: { active: true }, orderBy: { createdAt: 'desc' }, take: 1 })
+    const lotMap = new Map(lots.map(l => [l.id, l]))
+    const defaultLot = data.lotId ? lotMap.get(data.lotId) : lots[0]
+    if (!defaultLot && lots.length === 0) {
+      return NextResponse.json(
+        { error: 'Nenhum lote ativo encontrado. Configure um lote ativo no painel admin.' },
+        { status: 500 }
+      )
+    }
+
+    if (!defaultLot) {
+      return NextResponse.json(
+        { error: 'Nenhum lote ativo encontrado. Configure um lote ativo no painel admin.' },
+        { status: 500 }
+      )
+    }
+
+    let totalValueCents = 0
+    const itemsWithPrices: Array<{ itemType: 'ABADA' | 'PULSEIRA_EXTRA'; size?: string; quantity: number; unitPriceCents: number }> = []
+    for (const item of data.items) {
+      const rawLotId = item.lotId != null ? String(item.lotId).trim() : ''
+      const lot = rawLotId ? lotMap.get(rawLotId) : null
+      const lotToUse = lot || defaultLot
+      if (!lotToUse) {
+        const id = rawLotId || data.lotId
         return NextResponse.json(
-          { error: 'Lote selecionado não está mais ativo ou não foi encontrado.' },
+          { error: `Lote não encontrado ou inativo: ${id}. Recarregue a página e tente novamente.` },
           { status: 400 }
         )
       }
-    } else {
-      // Buscar primeiro lote ativo (compatibilidade com código antigo)
-      activeLot = await prisma.lot.findFirst({
-        where: { active: true },
-        orderBy: { createdAt: 'desc' },
-      })
-      if (!activeLot) {
-        return NextResponse.json(
-          { error: 'Nenhum lote ativo encontrado. Configure um lote ativo no painel admin.' },
-          { status: 500 }
-        )
-      }
+      const unitPriceCents = item.itemType === 'ABADA'
+        ? lotToUse.abadaPriceCents
+        : (lotToUse.pulseiraPriceCents || 0)
+      totalValueCents += unitPriceCents * item.quantity
+      itemsWithPrices.push({ ...item, unitPriceCents })
     }
 
-    // Calcular total em centavos usando preços do lote
-    let totalValueCents = 0
-    const itemsWithPrices = data.items.map(item => {
-      const unitPriceCents = item.itemType === 'ABADA' 
-        ? activeLot.abadaPriceCents 
-        : (activeLot.pulseiraPriceCents || 0) // Se não tiver pulseira, usar 0
-      const itemTotal = unitPriceCents * item.quantity
-      totalValueCents += itemTotal
-      
-      return {
-        ...item,
-        unitPriceCents,
-      }
-    })
+    const primaryLotId = defaultLot.id
 
     // Criar ou buscar cliente por telefone
     const customer = await prisma.customer.upsert({
@@ -109,11 +113,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Criar pedido com lotId e preços congelados
+    // Criar um único pedido com todos os itens (preços por lote já aplicados)
     const order = await prisma.order.create({
       data: {
         customerId: customer.id,
-        lotId: activeLot.id,
+        lotId: primaryLotId,
         status: 'PENDENTE',
         totalValueCents,
         externalReference: undefined, // será atualizado após criar

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     const url = new URL(request.url)
-    const take = Math.min(200, Math.max(1, Number(url.searchParams.get('take') || 50)))
+    const take = Math.min(200, Math.max(1, Number(url.searchParams.get('take') ?? 50) || 50))
 
     const entries = await prisma.financeEntry.findMany({
       orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],

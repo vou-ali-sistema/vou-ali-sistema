@@ -96,9 +96,16 @@ export default function FinanceiroWidget({
           description,
         }),
       })
-      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(data.error || 'Erro ao salvar lançamento')
+        let msg = 'Erro ao salvar lançamento'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        throw new Error(msg)
       }
 
       setAmountReais('')
@@ -118,8 +125,17 @@ export default function FinanceiroWidget({
     setError('')
     try {
       const res = await fetch(`/api/admin/finance/entries/${id}`, { method: 'DELETE' })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Erro ao excluir lançamento')
+      if (!res.ok) {
+        let msg = 'Erro ao excluir lançamento'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        throw new Error(msg)
+      }
       await refresh()
     } catch (e: any) {
       setError(e?.message || 'Erro ao excluir lançamento')

@@ -63,8 +63,15 @@ export default function CriarCortesiaModal({ onClose }: { onClose: () => void })
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao criar cortesia')
+        let msg = 'Erro ao criar cortesia'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        throw new Error(msg)
       }
 
       onClose()

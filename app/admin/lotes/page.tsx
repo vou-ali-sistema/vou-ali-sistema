@@ -126,13 +126,18 @@ export default function LotesPage() {
 
     try {
       const res = await fetch(`/api/admin/lots/${lot.id}`, { method: 'DELETE' })
-      const data = await res.json().catch(() => ({}))
-
       if (!res.ok) {
-        alert(data.error || 'Erro ao excluir lote')
+        let msg = 'Erro ao excluir lote'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        alert(msg)
         return
       }
-
       await fetchLotes()
       alert('Lote excluído com sucesso!')
     } catch (error) {
@@ -317,9 +322,16 @@ function LotModal({ lot, onClose }: { lot: Lot | null; onClose: () => void }) {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        const errorMsg = data.error || 'Erro ao salvar lote'
-        const details = data.details ? `\n\nDetalhes: ${JSON.stringify(data.details)}` : ''
+        let errorMsg = 'Erro ao salvar lote'
+        let details = ''
+        try {
+          const data = await res.json()
+          errorMsg = data.error || errorMsg
+          details = data.details ? `\n\nDetalhes: ${JSON.stringify(data.details)}` : ''
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) errorMsg = text
+        }
         throw new Error(errorMsg + details)
       }
 

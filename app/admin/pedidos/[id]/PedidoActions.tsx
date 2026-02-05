@@ -23,8 +23,15 @@ export default function PedidoActions({ order }: { order: any }) {
       })
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Erro ao atualizar pedido')
+        let msg = 'Erro ao atualizar pedido'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        throw new Error(msg)
       }
 
       if (action === 'resend_token_email') {

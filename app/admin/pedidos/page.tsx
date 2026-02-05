@@ -122,21 +122,15 @@ export default async function PedidosPage({
 }) {
   const params: SearchParams = await (searchParams ?? Promise.resolve({}))
   
-  // Extrair parâmetros de forma mais robusta
-  let qRaw: string | undefined = undefined
-  let statusRaw: string | undefined = undefined
-  let archivedRaw: string | undefined = undefined
-  
-  if (params.q) {
-    qRaw = Array.isArray(params.q) ? params.q[0] : params.q
-  }
-  if (params.status) {
-    statusRaw = Array.isArray(params.status) ? params.status[0] : params.status
-  }
-  if (params.archived) {
-    archivedRaw = Array.isArray(params.archived) ? params.archived[0] : params.archived
-  }
-  
+  // Extrair parâmetros com optional chaining e nullish coalescing (evita .toString() em undefined)
+  const qVal = params?.q ?? null
+  const statusVal = params?.status ?? null
+  const archivedVal = params?.archived ?? null
+
+  const qRaw = qVal == null ? undefined : Array.isArray(qVal) ? qVal[0] : qVal
+  const statusRaw = statusVal == null ? undefined : Array.isArray(statusVal) ? statusVal[0] : statusVal
+  const archivedRaw = archivedVal == null ? undefined : Array.isArray(archivedVal) ? archivedVal[0] : archivedVal
+
   const q = (qRaw && qRaw !== '' && qRaw !== 'undefined') ? String(qRaw).trim() : ''
   const status = (statusRaw && statusRaw !== '' && statusRaw !== 'undefined') ? String(statusRaw).trim() : ''
   const archived = (archivedRaw && archivedRaw !== '' && archivedRaw !== 'undefined') ? String(archivedRaw).trim() : ''

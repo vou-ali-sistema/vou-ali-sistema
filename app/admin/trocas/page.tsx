@@ -50,16 +50,22 @@ export default function TrocasPage() {
         body: JSON.stringify({ token: tokenToSearch }),
       })
 
-      if (res.ok) {
-        const data = await res.json()
-        setExchangeData(data)
-        // Fechar scanner se estiver aberto
-        if (showQRScanner) {
-          stopScanner()
+      if (!res.ok) {
+        let msg = 'Token não encontrado'
+        try {
+          const errorData = await res.json()
+          msg = errorData.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
         }
-      } else {
-        const errorData = await res.json()
-        setError(errorData.error || 'Token não encontrado')
+        setError(msg)
+        return
+      }
+      const data = await res.json()
+      setExchangeData(data)
+      if (showQRScanner) {
+        stopScanner()
       }
     } catch (error) {
       setError('Erro ao buscar token')

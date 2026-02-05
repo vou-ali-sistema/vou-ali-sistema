@@ -18,14 +18,18 @@ export default function DeleteOrderButton({ orderId }: { orderId: string }) {
       const res = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'DELETE',
       })
-
-      const data = await res.json().catch(() => ({}))
-
       if (!res.ok) {
-        alert(data.error || 'Erro ao excluir pedido')
+        let msg = 'Erro ao excluir pedido'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        alert(msg)
         return
       }
-
       alert('Pedido excluído com sucesso!')
       router.refresh()
     } catch (error) {

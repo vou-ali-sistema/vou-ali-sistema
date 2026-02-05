@@ -55,6 +55,18 @@ export default function AdminLoginPage() {
     setResetMsg('')
     try {
       const res = await fetch('/api/reset-admin-password')
+      if (!res.ok) {
+        let msg = `Erro ${res.status} ao redefinir senha`
+        try {
+          const data = await res.json()
+          msg = data.erro || data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        setResetMsg('Erro: ' + msg)
+        return
+      }
       const data = await res.json()
       if (data.ok) {
         setResetMsg('Senha redefinida! Use admin@vouali.com / admin123')

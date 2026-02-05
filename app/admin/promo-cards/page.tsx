@@ -394,15 +394,19 @@ export default function PromoCardsPage() {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Erro ao salvar card:', data)
+        let errorMsg = 'Erro ao salvar card'
+        let details = ''
+        try {
+          const data = await res.json()
+          if (process.env.NODE_ENV === 'development') console.error('Erro ao salvar card:', data)
+          errorMsg = data.error || errorMsg
+          details = data.details ? `\n\nDetalhes: ${JSON.stringify(data.details, null, 2)}` : ''
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) errorMsg = text
         }
-        const errorMsg = data.error || 'Erro ao salvar card'
-        const details = data.details ? `\n\nDetalhes: ${JSON.stringify(data.details, null, 2)}` : ''
         throw new Error(errorMsg + details)
       }
-
       const saved = await res.json().catch(() => null)
       await fetchCards()
 
@@ -470,10 +474,16 @@ export default function PromoCardsPage() {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Erro ao atualizar card')
+        let msg = 'Erro ao atualizar card'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        throw new Error(msg)
       }
-
       fetchCards()
     } catch (err: any) {
       setError(err.message)

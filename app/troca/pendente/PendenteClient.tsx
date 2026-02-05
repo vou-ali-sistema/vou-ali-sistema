@@ -63,20 +63,18 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
           externalReference: externalRef,
         }),
       })
-      
-      let json: any = null
-      try {
-        json = await res.json()
-      } catch (parseError) {
-        setData({ ok: false, error: `Erro ao processar resposta do servidor (HTTP ${res.status})` })
-        return
-      }
-      
       if (!res.ok) {
-        setData(json || { ok: false, error: `Erro HTTP ${res.status}: ${res.statusText}` })
+        let errorMsg = `Erro HTTP ${res.status}: ${res.statusText}`
+        try {
+          const errBody = await res.json()
+          if (errBody?.error) errorMsg = errBody.error
+        } catch {
+          // corpo não é JSON
+        }
+        setData({ ok: false, error: errorMsg })
         return
       }
-      
+      const json = await res.json()
       setData(json)
       
       // Se encontrou um pedido aprovado, limpar o localStorage
@@ -141,20 +139,16 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
               externalReference: externalRef,
             }),
           })
-          
           if (cancelled) return
-          
+          if (!res.ok) return
           let json: any = null
           try {
             json = await res.json()
-          } catch (parseError) {
-            if (!cancelled) {
-              setData({ ok: false, error: `Erro ao processar resposta do servidor (HTTP ${res.status})` })
-            }
+          } catch {
+            if (!cancelled) setData({ ok: false, error: `Erro ao processar resposta (HTTP ${res.status})` })
             return
           }
-          
-          if (res.ok && json) {
+          if (json) {
             if (!cancelled) {
               setData(json)
             }

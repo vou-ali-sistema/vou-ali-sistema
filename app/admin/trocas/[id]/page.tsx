@@ -73,14 +73,21 @@ export default function TrocaDetailPage() {
         }),
       })
 
-      if (res.ok) {
-        router.refresh()
-        fetchData()
-        alert('Itens entregues com sucesso!')
-      } else {
-        const error = await res.json()
-        alert(error.error || 'Erro ao entregar itens')
+      if (!res.ok) {
+        let msg = 'Erro ao entregar itens'
+        try {
+          const errData = await res.json()
+          msg = errData.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        alert(msg)
+        return
       }
+      router.refresh()
+      fetchData()
+      alert('Itens entregues com sucesso!')
     } catch (error) {
       alert('Erro ao entregar itens')
     } finally {

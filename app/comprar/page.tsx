@@ -408,84 +408,51 @@ export default function ComprarPage() {
         return
       }
 
-      // Agrupar itens por lote
-      const itemsByLot = itemsComTamanho.reduce((acc, item) => {
-        const lotId = item.lotId!
-        if (!acc[lotId]) {
-          acc[lotId] = []
-        }
-        acc[lotId].push({
-          itemType: item.itemType,
-          size: item.itemType === 'ABADA' ? (item.size || 'Tamanho Único') : undefined,
-          quantity: item.quantity,
-        })
-        return acc
-      }, {} as Record<string, any[]>)
+      // Um único pedido com todos os itens; cada item envia seu lotId para o backend usar o preço do lote correto (feminino vs masculino)
+      const payloadItems = itemsComTamanho.map(item => ({
+        itemType: item.itemType,
+        size: item.itemType === 'ABADA' ? (item.size || 'Tamanho Único') : undefined,
+        quantity: item.quantity,
+        ...(item.lotId && { lotId: String(item.lotId).trim() }),
+      }))
 
-      // Criar pedidos separados para cada lote selecionado
-      const lotIds = Object.keys(itemsByLot)
-      const pedidosCriados: Array<{ lotId: string; paymentLink: string; orderId?: string }> = []
-      let primeiroErro: string | null = null
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: {
+            name: name.trim(),
+            phone: phone.trim(),
+            email: email.trim(),
+          },
+          items: payloadItems,
+        }),
+      })
 
-      for (const lotId of lotIds) {
+      if (!res.ok) {
+        let errorMsg = `Erro ${res.status} ao criar pedido`
         try {
-          const res = await fetch('/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              customer: {
-                name: name.trim(),
-                phone: phone.trim(),
-                email: email.trim(),
-              },
-              items: itemsByLot[lotId],
-              lotId: lotId,
-            }),
-          })
-
-          if (!res.ok) {
-            let errorMsg = `Erro ${res.status} ao criar pedido para lote`
-            try {
-              const errorData = await res.json()
-              errorMsg = errorData.error || errorMsg
-              if (errorData.details) {
-                errorMsg += `\n\nDetalhes: ${typeof errorData.details === 'string' ? errorData.details : JSON.stringify(errorData.details)}`
-              }
-            } catch {
-              const text = await res.text().catch(() => '')
-              if (text) errorMsg += `\n\nResposta: ${text}`
-            }
-            if (!primeiroErro) primeiroErro = errorMsg
-            continue // Continuar tentando criar os outros pedidos
+          const errorData = await res.json()
+          errorMsg = errorData.error || errorMsg
+          if (errorData.details) {
+            errorMsg += `\n\nDetalhes: ${typeof errorData.details === 'string' ? errorData.details : JSON.stringify(errorData.details)}`
           }
-
-          const data = await res.json()
-          if (data.paymentLink) {
-            pedidosCriados.push({ lotId, paymentLink: data.paymentLink, orderId: data.orderId })
-          } else {
-            if (!primeiroErro) {
-              primeiroErro = data.warning || 'Erro ao gerar link de pagamento para um dos lotes.'
-            }
-          }
-        } catch (err: any) {
-          if (!primeiroErro) {
-            primeiroErro = err.message || 'Erro ao criar pedido'
-          }
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) errorMsg += `\n\nResposta: ${text}`
         }
+        throw new Error(errorMsg)
       }
 
-      // Se pelo menos um pedido foi criado com sucesso, salvar orderId e mostrar tela de redirecionamento
-      if (pedidosCriados.length > 0) {
-        // Salvar o orderId no localStorage para recuperar depois se necessário
-        if (pedidosCriados[0].orderId && typeof window !== 'undefined') {
-          localStorage.setItem('vouali_recent_order_id', pedidosCriados[0].orderId)
-        }
-        // Mostrar tela "Redirecionando..." com opção de abrir em nova aba (contorna erros de CSP/404 na página do MP)
-        setRedirectingToPayment(pedidosCriados[0].paymentLink)
-      } else {
-        // Se nenhum pedido foi criado, mostrar erro
-        throw new Error(primeiroErro || 'Erro ao criar pedidos. Nenhum pedido foi criado com sucesso.')
+      const data = await res.json()
+      if (!data.paymentLink) {
+        throw new Error(data.warning || 'Erro ao gerar link de pagamento. Tente novamente.')
       }
+
+      if (data.orderId && typeof window !== 'undefined') {
+        localStorage.setItem('vouali_recent_order_id', data.orderId)
+      }
+      setRedirectingToPayment(data.paymentLink)
     } catch (err: any) {
       setError(err.message || 'Erro ao processar pedido')
     } finally {

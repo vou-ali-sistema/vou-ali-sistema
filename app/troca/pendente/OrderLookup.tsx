@@ -21,13 +21,19 @@ export default function OrderLookup() {
 
     try {
       const res = await fetch(`/api/public/orders/${orderId.trim()}`)
-      const data = await res.json()
-
       if (!res.ok) {
-        setError(data.error || 'Pedido não encontrado. Verifique o código e tente novamente.')
+        let msg = 'Pedido não encontrado. Verifique o código e tente novamente.'
+        try {
+          const errData = await res.json()
+          msg = errData.error || msg
+        } catch {
+          const text = await res.text().catch(() => '')
+          if (text) msg = text
+        }
+        setError(msg)
         return
       }
-
+      const data = await res.json()
       setOrder(data)
     } catch (err) {
       setError('Erro ao buscar pedido. Tente novamente.')
