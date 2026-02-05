@@ -24,7 +24,6 @@ export async function criarPreferenciaPedido(orderId: string) {
     include: {
       items: true,
       lot: true,
-      customer: true,
     },
   })
 
@@ -80,19 +79,10 @@ export async function criarPreferenciaPedido(orderId: string) {
       isLocalhost,
     })
 
-    // Construir o body da preferência
+    // Construir o body da preferência (apenas items e external_reference - como estava quando funcionava)
     const preferenceBody: any = {
       items,
       external_reference: order.externalReference || orderId,
-    }
-
-    // Payer com e-mail é necessário para o Mercado Pago habilitar o botão "Criar Pix" no checkout
-    const payerEmail = order.customer?.email?.trim()
-    if (payerEmail) {
-      preferenceBody.payer = {
-        email: payerEmail,
-        ...(order.customer?.name?.trim() && { name: order.customer.name.trim() }),
-      }
     }
 
     // Se for localhost/HTTP, não adicionar back_urls e auto_return
