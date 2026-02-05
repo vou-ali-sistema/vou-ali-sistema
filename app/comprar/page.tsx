@@ -48,9 +48,9 @@ export default function ComprarPage() {
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
   
-  // Itens do pedido
+  // Itens do pedido (lotId será definido quando os lotes forem carregados)
   const [items, setItems] = useState<Item[]>([
-    { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: lots[0]?.id }
+    { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1 }
   ])
 
   // Buscar lote ativo, preços e cards de divulgação em paralelo para melhor performance
@@ -102,11 +102,15 @@ export default function ComprarPage() {
         const activeLots = Array.isArray(lotData) ? lotData : [lotData]
         if (!cancelled && activeLots.length > 0) {
           setLots(activeLots)
-          // Atualizar lotId dos itens que não têm lote definido
-          setItems(prev => prev.map(item => ({
-            ...item,
-            lotId: item.lotId || activeLots[0].id
-          })))
+          // Atualizar lotId dos itens que não têm lote definido (apenas uma vez)
+          setItems(prev => {
+            const needsUpdate = prev.some(item => !item.lotId)
+            if (!needsUpdate) return prev // Evitar atualização desnecessária
+            return prev.map(item => ({
+              ...item,
+              lotId: item.lotId || activeLots[0].id
+            }))
+          })
         }
 
         // Processar cards de divulgação (não bloqueia se falhar; garantir array)
@@ -129,7 +133,8 @@ export default function ComprarPage() {
   }, [])
 
   function adicionarItem() {
-    const defaultLotId = lots[0]?.id || null
+    // Usar o primeiro lote disponível ou o lote do primeiro item existente
+    const defaultLotId = lots[0]?.id || items[0]?.lotId || null
     setItems([...items, { itemType: 'ABADA', size: 'Tamanho Único', quantity: 1, lotId: defaultLotId }])
   }
 
@@ -159,6 +164,7 @@ export default function ComprarPage() {
   // Memoizar cálculo do total para evitar re-execução a cada render
   // Cada item pode ter seu próprio lote
   const total = useMemo(() => {
+    if (lots.length === 0) return 0
     return items.reduce((sum, item) => {
       const itemLot = lots.find(l => l.id === item.lotId) || lots[0]
       if (!itemLot) return sum
