@@ -73,9 +73,25 @@ export default function PedidosToolbar({
     }
   }
 
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const q = formData.get('q')?.toString() || ''
+    const status = formData.get('status')?.toString() || ''
+    const archived = formData.get('archived')?.toString() || ''
+    
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    if (status) params.set('status', status)
+    if (archived === '1') params.set('archived', '1')
+    
+    const queryString = params.toString()
+    router.push(`/admin/pedidos${queryString ? `?${queryString}` : ''}`)
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 mb-6 border-2 border-gray-200">
-      <form method="get" className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="md:col-span-2">
           <label className="block text-xs font-semibold text-gray-600 mb-1">
             Buscar (cliente, telefone, email, pedido, MP)

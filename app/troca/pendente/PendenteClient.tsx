@@ -64,15 +64,38 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
     let interval: any = null
 
     ;(async () => {
+      // Primeira sincronização imediata
       await syncNow()
       if (cancelled) return
 
+      // Polling a cada 6 segundos
       interval = setInterval(async () => {
         if (cancelled) return
-        // Se já aprovou, para de consultar
-        const approved = (data as any)?.status === 'PAGO' || (data as any)?.paymentStatus === 'APPROVED'
-        if (approved) return
-        await syncNow()
+        
+        // Buscar dados atualizados antes de verificar
+        const res = await fetch('/api/public/payment/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            paymentId,
+            preferenceId,
+            externalReference,
+          }),
+        })
+        
+        if (cancelled) return
+        
+        const json = (await res.json().catch(() => null)) as any
+        if (res.ok && json) {
+          setData(json)
+          
+          // Se aprovado, parar o polling
+          const approved = json?.status === 'PAGO' || json?.paymentStatus === 'APPROVED'
+          if (approved && interval) {
+            clearInterval(interval)
+            interval = null
+          }
+        }
       }, 6000)
     })()
 

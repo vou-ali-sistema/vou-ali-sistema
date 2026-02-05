@@ -1,13 +1,15 @@
 import Logo from '@/app/components/Logo'
 import PendenteClient from './PendenteClient'
 
-export default function TrocaPendentePage({
+export default async function TrocaPendentePage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const params = await (searchParams || Promise.resolve({}))
+  
   const getParam = (key: string) => {
-    const v = searchParams?.[key]
+    const v = params[key]
     if (!v) return undefined
     return Array.isArray(v) ? v[0] : v
   }

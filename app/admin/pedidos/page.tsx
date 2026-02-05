@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import PedidosToolbar from './PedidosToolbar'
+import DeleteOrderButton from './DeleteOrderButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,10 +33,12 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
       where.archivedAt = null
     }
 
+    // Aplicar filtro de status
     if (status) {
       where.status = status
     }
 
+    // Aplicar busca (combinada com outros filtros usando AND implícito do Prisma)
     if (q) {
       where.OR = [
         { id: { contains: q, mode: 'insensitive' } },
@@ -85,11 +88,12 @@ async function getOrders(params: { q?: string; status?: string; archived?: strin
 export default async function PedidosPage({
   searchParams,
 }: {
-  searchParams?: { q?: string; status?: string; archived?: string }
+  searchParams?: Promise<{ q?: string; status?: string; archived?: string }>
 }) {
-  const q = searchParams?.q || ''
-  const status = searchParams?.status || ''
-  const archived = searchParams?.archived || ''
+  const params = await (searchParams || Promise.resolve({}))
+  const q = params.q || ''
+  const status = params.status || ''
+  const archived = params.archived || ''
 
   const { orders } = await getOrders({ q, status, archived })
 
@@ -167,12 +171,17 @@ export default async function PedidosPage({
                   {new Date(order.createdAt).toLocaleDateString('pt-BR')}
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <Link
-                    href={`/admin/pedidos/${order.id}`}
-                    className="text-blue-600 hover:text-blue-900 font-semibold"
-                  >
-                    Ver
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/admin/pedidos/${order.id}`}
+                      className="text-blue-600 hover:text-blue-900 font-semibold"
+                    >
+                      Ver
+                    </Link>
+                    {order.status === 'CANCELADO' && (
+                      <DeleteOrderButton orderId={order.id} />
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
