@@ -124,15 +124,20 @@ export async function POST(request: NextRequest) {
         include: { customer: true },
       })
       if (orderWithCustomer?.customer?.email) {
-        sendTokenEmail({
-          to: orderWithCustomer.customer.email,
-          customerName: orderWithCustomer.customer.name,
-          token: exchangeToken,
-          orderId: externalReference,
-          mpPaymentId: paymentId,
-        }).catch((emailError) => {
+        try {
+          const emailResult = await sendTokenEmail({
+            to: orderWithCustomer.customer.email,
+            customerName: orderWithCustomer?.customer?.name ?? 'Cliente',
+            token: exchangeToken,
+            orderId: externalReference,
+            mpPaymentId: paymentId,
+          })
+          if (!(emailResult as any)?.success) {
+            console.error('[MP_WEBHOOK] Email não enviado:', (emailResult as any)?.errorMessage)
+          }
+        } catch (emailError) {
           console.error('[MP_WEBHOOK] Erro ao enviar email:', emailError)
-        })
+        }
       }
     } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
       await prisma.order.update({

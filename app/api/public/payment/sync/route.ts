@@ -61,14 +61,14 @@ async function buscarPagamentoMP(opts: { paymentId?: string; externalReference?:
   const url = new URL('https://api.mercadopago.com/v1/payments/search')
   url.searchParams.set('sort', 'date_created')
   url.searchParams.set('criteria', 'desc')
-  url.searchParams.set('range', 'date_created')
-  const now = new Date()
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  url.searchParams.set('begin_date', thirtyDaysAgo.toISOString())
-  url.searchParams.set('end_date', now.toISOString())
   if (opts.externalReference) url.searchParams.set('external_reference', opts.externalReference)
   if (preferenceIdForSearch) url.searchParams.set('preference_id', preferenceIdForSearch)
   url.searchParams.set('limit', '10')
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  url.searchParams.set('range', 'date_created')
+  url.searchParams.set('begin_date', thirtyDaysAgo.toISOString())
+  url.searchParams.set('end_date', now.toISOString())
 
   const data = await mpFetchJson(url.toString())
   const payments = Array.isArray(data?.results) ? data.results : []
@@ -92,14 +92,15 @@ export async function POST(request: NextRequest) {
     const preferenceId = parsed.preferenceId || undefined
     let paymentId = parsed.paymentId || undefined
 
-    // Validar payment_id quando enviado: deve ser numérico
+    // payment_id só é usado em GET por ID quando for numérico; se vier UUID/preference_id, ignorar (evita 400 e deixa buscar por orderId/preferenceId)
     if (paymentId != null && String(paymentId).trim() !== '') {
       const pidStr = String(paymentId).trim()
       if (isNaN(Number(pidStr)) || !/^\d+$/.test(pidStr)) {
-        return NextResponse.json({ ok: false, error: 'payment_id inválido' }, { status: 400 })
+        paymentId = undefined
+      } else {
+        paymentId = pidStr
       }
-      paymentId = pidStr
-    } else if (paymentId !== undefined) {
+    } else {
       paymentId = undefined
     }
 
@@ -232,8 +233,13 @@ export async function POST(request: NextRequest) {
       )
     }
     console.error('Erro ao sync pagamento (public):', error)
+    const msg = err?.message || (error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { ok: false, error: 'Erro interno ao sincronizar pagamento' },
+      {
+        ok: false,
+        error: 'Erro interno ao sincronizar pagamento',
+        details: msg,
+      },
       { status: 500 }
     )
   }

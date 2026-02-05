@@ -94,7 +94,24 @@ Use este guia para conferir tudo no Mercado Pago e garantir que as vendas e o ch
 
 ---
 
-## 7. Resumo do que colar onde
+## 7. Não consigo comprar: “está bloqueando”
+
+**O Mercado Pago não permite que a mesma conta que é dona do aplicativo (vendedor) seja usada para pagar.**
+
+- A conta com que você fez login no painel de desenvolvedores e que tem as credenciais é a **vendedora**.
+- Essa mesma conta **não pode** ser usada como comprador no seu próprio checkout; o MP bloqueia (evita que você “pague a si mesmo”).
+
+**Como testar:**
+
+1. **Outra conta:** Use outro email/celular (conta Mercado Pago de outra pessoa) para finalizar o pagamento no checkout.
+2. **Modo teste (sandbox):** Se estiver em credenciais de **teste**, crie um **usuário de teste comprador** no painel do MP (Desenvolvedores → Suas integrações → Testes → Usuários de teste) e use esse usuário para pagar.
+3. **Produção:** Em produção, qualquer cliente com conta Mercado Pago (que não seja a dona do app) pode comprar normalmente.
+
+**Resumo:** Quem está logado com a conta do **vendedor** não consegue completar a compra no próprio site. Use outra conta (ou usuário de teste) para testar.
+
+---
+
+## 8. Resumo do que colar onde
 
 | Onde | O que colar |
 |------|-------------|
@@ -103,7 +120,7 @@ Use este guia para conferir tudo no Mercado Pago e garantir que as vendas e o ch
 
 ---
 
-## 8. Depois de configurar
+## 9. Depois de configurar
 
 1. No Vercel, dê **Redeploy** no projeto (para carregar o token novo).
 2. No site, faça um **pedido de teste** (pode ser valor baixo).

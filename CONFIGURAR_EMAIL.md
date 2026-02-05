@@ -4,14 +4,27 @@
 
 O sistema usa o email **blocovouali@gmail.com** para enviar os tokens de troca aos clientes.
 
-## ⚙️ Configuração no .env
+## ⚙️ Configuração
 
-Adicione as seguintes variáveis no arquivo `.env`:
+### Local (.env)
+
+Adicione no `.env` ou `.env.local`:
 
 ```env
 EMAIL_FROM="blocovouali@gmail.com"
 EMAIL_PASSWORD="sua-senha-de-app-aqui"
 ```
+
+### Produção (Vercel) — obrigatório para o email chegar
+
+1. Vercel → seu projeto → **Settings** → **Environment Variables**
+2. Adicione:
+   - **EMAIL_FROM**: `blocovouali@gmail.com` (ou o email que envia)
+   - **EMAIL_PASSWORD**: a **Senha de app** do Gmail (16 caracteres)
+3. Marque o ambiente **Production** (e Preview se quiser).
+4. Salve e faça **Redeploy** do projeto.
+
+**Se EMAIL_PASSWORD não estiver configurado no Vercel, o email com o token não será enviado** (o pagamento é aprovado, mas o cliente não recebe o email).
 
 ### Como obter a senha de app do Gmail:
 
@@ -50,13 +63,12 @@ Para testar o envio de email, você pode:
 
 ### Email não está sendo enviado
 
-1. Verifique se `EMAIL_FROM` e `EMAIL_PASSWORD` estão configurados no `.env`
-2. Verifique se está usando uma "Senha de App" do Microsoft
-3. Verifique os logs do servidor para erros
+1. **Produção (Vercel):** Confirme que `EMAIL_FROM` e `EMAIL_PASSWORD` estão em **Environment Variables** e que fez Redeploy depois de salvar.
+2. Use **Senha de app** do Google (não a senha normal do Gmail).
+3. Verifique os logs (Vercel → Deployments → Function logs) por erros como `[MP_WEBHOOK] Erro ao enviar email` ou `EMAIL_PASSWORD não configurado`.
 
-### Erro de autenticação
+### Erro de autenticação (Gmail)
 
-- Certifique-se de usar uma "Senha de App" e não a senha normal
-- Verifique se a verificação em duas etapas está ativada
-- Verifique se o email está correto: `blocovouali@gmail.com`
-- Certifique-se de que a senha de app foi gerada corretamente (16 caracteres)
+- Use **Senha de app** do Google (não a senha normal da conta).
+- Ative a **Verificação em duas etapas** na conta Google.
+- Gere a senha de app em: https://myaccount.google.com/apppasswords (16 caracteres, sem espaços).
