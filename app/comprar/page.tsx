@@ -458,10 +458,10 @@ export default function ComprarPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Item *
+                        Tipo *
                       </label>
                       <select
-                        value={item.itemType === 'ABADA' && item.lotId ? `ABADA_${item.lotId}` : item.itemType}
+                        value={item.itemType === 'ABADA' && item.lotId ? `ABADA_${item.lotId}` : (item.itemType || '')}
                         onChange={(e) => {
                           const value = e.target.value
                           if (value === 'PULSEIRA_EXTRA') {
@@ -479,6 +479,7 @@ export default function ComprarPage() {
                         className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                         required
                       >
+                        <option value="">Selecione...</option>
                         {/* Opções de Abadá por lote */}
                         {lotesFemininos.map((lot) => (
                           <option key={`ABADA_${lot.id}`} value={`ABADA_${lot.id}`}>
