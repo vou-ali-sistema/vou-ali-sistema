@@ -1,7 +1,7 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { prisma } from './prisma'
 
-if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+if (!process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) {
   console.warn('MERCADOPAGO_ACCESS_TOKEN não está configurado no .env')
 }
 
@@ -15,7 +15,8 @@ const client = new MercadoPagoConfig({
 export const mercadoPago = new Preference(client)
 
 export async function criarPreferenciaPedido(orderId: string) {
-  if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+  const token = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim()
+  if (!token) {
     throw new Error('MERCADOPAGO_ACCESS_TOKEN não está configurado. Configure no Vercel (Settings > Environment Variables) para produção.')
   }
 
@@ -59,9 +60,9 @@ export async function criarPreferenciaPedido(orderId: string) {
     // Em produção (Vercel): use APP_BASE_URL = https://seu-dominio.com para notification_url e back_urls
     let baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
     baseUrl = baseUrl.replace(/\/$/, '')
-    const isProductionEnv = process.env.VERCEL === '1' || (baseUrl.startsWith('https://') && !baseUrl.includes('localhost'))
-    const tokenHint = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').slice(0, 19) + '...'
-    if (isProductionEnv) {
+    const isProd = process.env.VERCEL === '1' || (baseUrl.startsWith('https://') && !baseUrl.includes('localhost'))
+    const tokenHint = token ? `${token.slice(0, 19)}...${token.slice(-6)}` : 'vazio'
+    if (isProd) {
       console.log('[MP_CREATE] Ambiente produção: token', tokenHint, 'baseUrl', baseUrl)
     }
 
@@ -128,10 +129,8 @@ export async function criarPreferenciaPedido(orderId: string) {
 
     const rawInitPoint = (preference as any).init_point ?? null
     const rawSandboxPoint = (preference as any).sandbox_init_point ?? null
-    const token = process.env.MERCADOPAGO_ACCESS_TOKEN || ''
-    const tokenHint = token ? `${token.slice(0, 19)}...${token.slice(-6)}` : 'vazio'
 
-    if (isProductionEnv) {
+    if (isProd) {
       // Produção (Vercel): usar SOMENTE init_point. Token de teste retorna só sandbox_init_point.
       if (rawInitPoint && !rawInitPoint.includes('sandbox')) {
         console.log('[MP_CREATE] Produção: usando init_point', {
@@ -169,7 +168,7 @@ export async function criarPreferenciaPedido(orderId: string) {
       init_point: paymentUrl.slice(0, 80) + (paymentUrl.length > 80 ? '...' : ''),
       external_reference: externalRef,
       tokenHint,
-      isProduction: isProductionEnv,
+      isProduction: isProd,
     })
 
     return { ...preference, init_point: paymentUrl }

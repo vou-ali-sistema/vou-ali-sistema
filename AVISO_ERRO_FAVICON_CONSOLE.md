@@ -24,7 +24,7 @@
 
 ### O que foi verificado no projeto
 
-1. **CSP** – Não há `Content-Security-Policy` nem `nonce` em middleware, `next.config.js` ou layout.
+1. **CSP** – A CSP está definida em **`next.config.js`** (função `headers()`): nas rotas de checkout (`/comprar`, `/troca/pendente`, `/checkout`, `/review`, `/redirect`) é usada uma política permissiva para o Mercado Pago; no restante do site, uma CSP forte sem `strict-dynamic`/nonce. Ver `CSP_MERCADOPAGO.md`.
 2. **Favicon** – O app usa apenas favicon local (`/favicon.ico`, `app/icon.ico`, `layout.tsx`).
 3. **Integração de pagamento** – O fluxo apenas redireciona para o link do MP; não embutimos checkout em iframe nem scripts do MP no nosso domínio.
 
