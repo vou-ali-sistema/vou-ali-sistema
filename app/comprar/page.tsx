@@ -531,8 +531,13 @@ export default function ComprarPage() {
         }
       }
 
-      // Se pelo menos um pedido foi criado com sucesso, redirecionar para o primeiro link de pagamento
+      // Se pelo menos um pedido foi criado com sucesso, salvar orderId e redirecionar
       if (pedidosCriados.length > 0) {
+        // Salvar o orderId no localStorage para recuperar depois se necessário
+        if (pedidosCriados[0].orderId && typeof window !== 'undefined') {
+          localStorage.setItem('vouali_recent_order_id', pedidosCriados[0].orderId)
+        }
+        
         // Se houver múltiplos pedidos, redirecionar para o primeiro
         // O usuário poderá pagar os outros pedidos depois através do email
         window.location.href = pedidosCriados[0].paymentLink

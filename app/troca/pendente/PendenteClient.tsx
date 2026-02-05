@@ -30,22 +30,37 @@ type SyncResult =
 export default function PendenteClient({ paymentId, preferenceId, externalReference }: Props) {
   const [data, setData] = useState<SyncResult | null>(null)
   const [busy, setBusy] = useState(false)
+  const [recentOrderId, setRecentOrderId] = useState<string | null>(null)
+  const [tryingRecentOrder, setTryingRecentOrder] = useState(false)
+
+  // Tentar recuperar orderId recente do localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('vouali_recent_order_id')
+      if (stored) {
+        setRecentOrderId(stored)
+      }
+    }
+  }, [])
 
   const canSync = useMemo(() => {
-    return Boolean(paymentId || preferenceId || externalReference)
-  }, [paymentId, preferenceId, externalReference])
+    return Boolean(paymentId || preferenceId || externalReference || recentOrderId)
+  }, [paymentId, preferenceId, externalReference, recentOrderId])
 
-  async function syncNow() {
+  async function syncNow(useRecentOrder = false) {
     if (!canSync) return
     setBusy(true)
     try {
+      // Se não há parâmetros mas temos um orderId recente, tentar usar ele
+      const externalRef = externalReference || (useRecentOrder && recentOrderId ? recentOrderId : undefined)
+      
       const res = await fetch('/api/public/payment/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           paymentId,
           preferenceId,
-          externalReference,
+          externalReference: externalRef,
         }),
       })
       const json = (await res.json().catch(() => null)) as any
@@ -54,13 +69,26 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
         return
       }
       setData(json)
+      
+      // Se encontrou um pedido aprovado, limpar o localStorage
+      if (json?.status === 'PAGO' && typeof window !== 'undefined') {
+        localStorage.removeItem('vouali_recent_order_id')
+      }
     } finally {
       setBusy(false)
     }
   }
 
   useEffect(() => {
-    if (!canSync) return
+    if (!canSync) {
+      // Se não há parâmetros, tentar buscar pedido recente do localStorage
+      if (recentOrderId && !tryingRecentOrder) {
+        setTryingRecentOrder(true)
+        syncNow(true).finally(() => setTryingRecentOrder(false))
+      }
+      return
+    }
+    
     let cancelled = false
     let interval: any = null
 
@@ -74,13 +102,14 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
         if (cancelled) return
         
         // Buscar dados atualizados antes de verificar
+        const externalRef = externalReference || recentOrderId || undefined
         const res = await fetch('/api/public/payment/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             paymentId,
             preferenceId,
-            externalReference,
+            externalReference: externalRef,
           }),
         })
         
@@ -90,11 +119,14 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
         if (res.ok && json) {
           setData(json)
           
-          // Se aprovado, parar o polling
+          // Se aprovado, parar o polling e limpar localStorage
           const approved = json?.status === 'PAGO' || json?.paymentStatus === 'APPROVED'
           if (approved && interval) {
             clearInterval(interval)
             interval = null
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('vouali_recent_order_id')
+            }
           }
         }
       }, 3000)
@@ -105,18 +137,39 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
       if (interval) clearInterval(interval)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canSync, paymentId, preferenceId, externalReference])
+  }, [canSync, paymentId, preferenceId, externalReference, recentOrderId])
 
   const approved = (data as any)?.status === 'PAGO' || (data as any)?.paymentStatus === 'APPROVED'
   const rejected = (data as any)?.status === 'CANCELADO' || (data as any)?.paymentStatus === 'REJECTED'
 
   return (
     <div className="mt-6">
-      {!canSync ? (
+      {!canSync && !tryingRecentOrder ? (
         <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 text-left">
-          <p className="text-sm text-gray-700">
-            Não recebemos parâmetros do Mercado Pago nesta volta. Se você pagou e voltou pra cá, abra o admin e clique em{' '}
-            <span className="font-semibold">Sincronizar Mercado Pago</span> no pedido.
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>⚠️ Não recebemos parâmetros do Mercado Pago.</strong>
+          </p>
+          <p className="text-sm text-gray-700 mb-3">
+            Se você já pagou, verifique seu email! O token de troca foi enviado para o endereço cadastrado.
+          </p>
+          <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mt-3">
+            <p className="text-sm text-blue-800 font-semibold mb-1">📧 Verifique seu email:</p>
+            <ul className="text-xs text-blue-700 list-disc list-inside space-y-1">
+              <li>Procure por um email de "Bloco Vou Ali"</li>
+              <li>O assunto será sobre "Token de Troca"</li>
+              <li>O email contém seu token completo e link direto</li>
+            </ul>
+          </div>
+          <p className="text-xs text-gray-600 mt-3">
+            Se não recebeu o email, entre em contato conosco ou acesse o admin para sincronizar manualmente.
+          </p>
+        </div>
+      ) : null}
+      
+      {tryingRecentOrder && !data ? (
+        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
+          <p className="text-sm text-blue-700">
+            🔍 Buscando informações do seu pedido recente...
           </p>
         </div>
       ) : null}
@@ -149,8 +202,18 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
             <div className="mt-4 bg-gradient-to-br from-green-50 to-green-100 border-4 border-green-500 rounded-xl p-6 shadow-lg">
               <div className="text-center mb-4">
                 <div className="text-5xl mb-2">✅</div>
-                <h3 className="text-2xl font-bold text-green-800 mb-1">Pagamento Aprovado!</h3>
-                <p className="text-green-700">Seu ingresso está pronto para retirada</p>
+                <h3 className="text-2xl font-bold text-green-800 mb-1">Pagamento Confirmado!</h3>
+                <p className="text-green-700 font-semibold">Seu ingresso está pronto para retirada</p>
+              </div>
+              
+              {/* Mensagem sobre email */}
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800 font-semibold mb-1">📧 Confirmação por Email:</p>
+                <p className="text-xs text-blue-700">
+                  Um email com seu token completo foi enviado para{' '}
+                  <strong>{(data as any).email || 'o endereço cadastrado'}</strong>.
+                  {' '}{(data as any).emailSent ? '✅ Enviado com sucesso!' : (data as any).emailSent === false ? '⏳ Enviando...' : ''}
+                </p>
               </div>
               
               {/* QR Code */}
@@ -160,7 +223,7 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
                   <div className="flex justify-center">
                     <div className="border-4 border-green-600 rounded-xl p-3 bg-white">
                       <QRCodeSVG
-                        value={(data as any).trocaUrl}
+                        value={typeof window !== 'undefined' ? `${window.location.origin}${(data as any).trocaUrl}` : (data as any).trocaUrl}
                         size={200}
                         level="H"
                         includeMargin={true}
@@ -172,22 +235,51 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
               
               {/* Token */}
               <div className="bg-white rounded-lg p-4 mb-4 border-2 border-green-300">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Token de Troca:</p>
-                <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-gray-700 mb-2">🔑 Seu Token de Troca:</p>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <code className="flex-1 bg-gradient-to-r from-green-100 to-blue-100 px-4 py-3 rounded-lg border-2 border-green-600 text-blue-900 font-mono text-sm break-all">
                     {(data as any).exchangeToken}
                   </code>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText((data as any).exchangeToken)
-                      alert('Token copiado!')
-                    }}
-                    className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold whitespace-nowrap"
-                    title="Copiar token"
-                  >
-                    📋 Copiar
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText((data as any).exchangeToken)
+                        alert('Token copiado!')
+                      }}
+                      className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold whitespace-nowrap"
+                      title="Copiar token"
+                    >
+                      📋 Copiar
+                    </button>
+                    {(data as any).trocaUrl && (
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}${(data as any).trocaUrl}`
+                          if (navigator.share) {
+                            navigator.share({
+                              title: 'Token de Troca - Bloco Vou Ali',
+                              text: `Meu token de troca: ${(data as any).exchangeToken}`,
+                              url: url,
+                            }).catch(() => {
+                              navigator.clipboard.writeText(url)
+                              alert('Link copiado!')
+                            })
+                          } else {
+                            navigator.clipboard.writeText(url)
+                            alert('Link copiado!')
+                          }
+                        }}
+                        className="px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold whitespace-nowrap"
+                        title="Compartilhar token"
+                      >
+                        📤 Compartilhar
+                      </button>
+                    )}
+                  </div>
                 </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  💡 Guarde este token! Você precisará dele para retirar seus itens.
+                </p>
               </div>
               
               {/* Botões de ação */}
@@ -200,19 +292,14 @@ export default function PendenteClient({ paymentId, preferenceId, externalRefere
                 </Link>
               </div>
               
-              {/* Info do email */}
-              <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-gray-200">
-                <p className="font-semibold mb-1">Informações:</p>
-                <p>
-                  Email:{' '}
-                  {(data as any).email
-                    ? `${(data as any).email} (${(data as any).emailSent ? '✅ enviado' : '⏳ enviando...'})`
-                    : 'não cadastrado'}
-                  {(data as any).emailError ? ` — erro: ${(data as any).emailError}` : ''}
-                </p>
-                <p className="mt-1 text-gray-500">
-                  💡 Guarde este QR code ou token. Você precisará dele para retirar seus itens!
-                </p>
+              {/* Instruções finais */}
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-3">
+                <p className="text-xs text-yellow-800 font-semibold mb-1">📋 Próximos Passos:</p>
+                <ul className="text-xs text-yellow-700 list-disc list-inside space-y-1">
+                  <li>Guarde este QR code ou token em local seguro</li>
+                  <li>Verifique seu email para receber uma cópia do token</li>
+                  <li>Apresente o QR code ou token no momento da retirada</li>
+                </ul>
               </div>
             </div>
           ) : null}

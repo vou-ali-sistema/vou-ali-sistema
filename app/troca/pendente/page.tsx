@@ -39,8 +39,11 @@ export default async function TrocaPendentePage({
         </div>
 
         <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>💡 Importante:</strong> Assim que o pagamento for confirmado, você verá seu QR code e token de troca nesta página automaticamente.
+          </p>
           <p className="text-sm text-gray-700">
-            <strong>💡 Importante:</strong> Assim que o pagamento for confirmado, você verá seu QR code e token de troca nesta página. Você também receberá um email com essas informações.
+            <strong>📧 Email:</strong> Você também receberá um email com o token completo assim que o pagamento for aprovado. Verifique sua caixa de entrada!
           </p>
         </div>
 
