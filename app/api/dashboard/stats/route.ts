@@ -90,13 +90,20 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    const receitaVendasCents = receitaTotalCents._sum.totalValueCents || 0
+    const receitaVendasBrutaCents = receitaTotalCents._sum.totalValueCents || 0
+    // Desconto de 5% do Mercado Pago
+    const taxaMercadoPagoPercent = 0.05 // 5%
+    const descontoMercadoPagoCents = Math.round(receitaVendasBrutaCents * taxaMercadoPagoPercent)
+    const receitaVendasCents = receitaVendasBrutaCents - descontoMercadoPagoCents
+    
     const entradasLancadasCents = financeIncomeAgg._sum.amountCents || 0
     const saidasLancadasCents = financeExpenseAgg._sum.amountCents || 0
     const receitaEmPosseCents = receitaVendasCents + entradasLancadasCents - saidasLancadasCents
 
+    const receitaVendasBruta = receitaVendasBrutaCents / 100
     const receitaVendas = receitaVendasCents / 100
     const receitaEmPosse = receitaEmPosseCents / 100
+    const descontoMercadoPago = descontoMercadoPagoCents / 100
     const courtesyByType = {
       ABADA: 0,
       PULSEIRA_EXTRA: 0,
@@ -219,8 +226,12 @@ export async function GET(request: NextRequest) {
           pulseiras: remainingPulseiras,
         },
       },
+      receitaVendasBruta,
+      receitaVendasBrutaCents,
       receitaVendas,
       receitaVendasCents,
+      descontoMercadoPago,
+      descontoMercadoPagoCents,
       entradasLancadasCents,
       saidasLancadasCents,
       receitaEmPosse,

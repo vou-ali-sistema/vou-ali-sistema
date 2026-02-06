@@ -86,13 +86,20 @@ async function getStats() {
       }),
     ])
 
-    const receitaVendasCents = receitaTotalCents._sum.totalValueCents || 0
+    const receitaVendasBrutaCents = receitaTotalCents._sum.totalValueCents || 0
+    // Desconto de 5% do Mercado Pago
+    const taxaMercadoPagoPercent = 0.05 // 5%
+    const descontoMercadoPagoCents = Math.round(receitaVendasBrutaCents * taxaMercadoPagoPercent)
+    const receitaVendasCents = receitaVendasBrutaCents - descontoMercadoPagoCents
+    
     const entradasLancadasCents = financeIncomeAgg._sum.amountCents || 0
     const saidasLancadasCents = financeExpenseAgg._sum.amountCents || 0
     const receitaEmPosseCents = receitaVendasCents + entradasLancadasCents - saidasLancadasCents
 
+    const receitaVendasBruta = receitaVendasBrutaCents / 100
     const receitaVendas = receitaVendasCents / 100
     const receitaEmPosse = receitaEmPosseCents / 100
+    const descontoMercadoPago = descontoMercadoPagoCents / 100
     const courtesyByType = {
       ABADA: 0,
       PULSEIRA_EXTRA: 0,
@@ -218,8 +225,12 @@ async function getStats() {
           pulseiras: remainingPulseiras,
         },
       },
+      receitaVendasBruta,
+      receitaVendasBrutaCents,
       receitaVendas,
       receitaVendasCents,
+      descontoMercadoPago,
+      descontoMercadoPagoCents,
       entradasLancadasCents,
       saidasLancadasCents,
       receitaEmPosse,
@@ -300,13 +311,21 @@ export default async function DashboardPage() {
         </div>
 
         <div className="bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400 rounded-xl shadow-lg p-6 text-white border-2 border-white">
-          <h3 className="text-sm font-medium mb-2 opacity-90">Receita (em posse)</h3>
+          <h3 className="text-sm font-medium mb-2 opacity-90">Receita Líquida (em posse)</h3>
           <p className="text-3xl font-bold">
             R$ {stats.receitaEmPosse.toFixed(2).replace('.', ',')}
           </p>
           <div className="mt-3 text-xs opacity-95 space-y-1">
             <div className="flex justify-between gap-3">
-              <span>Vendas:</span>
+              <span>Vendas brutas:</span>
+              <span className="font-semibold">R$ {stats.receitaVendasBruta.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span>Desconto MP (5%):</span>
+              <span className="font-semibold text-red-200">- R$ {stats.descontoMercadoPago.toFixed(2).replace('.', ',')}</span>
+            </div>
+            <div className="flex justify-between gap-3 border-t border-white/30 pt-1">
+              <span>Vendas líquidas:</span>
               <span className="font-semibold">R$ {stats.receitaVendas.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between gap-3">
@@ -413,7 +432,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="md:col-span-2 lg:col-span-3">
-          <FinanceiroWidget receitaVendasCents={stats.receitaVendasCents} />
+          <FinanceiroWidget receitaVendasCents={stats.receitaVendasCents} receitaVendasBrutaCents={stats.receitaVendasBrutaCents} descontoMercadoPagoCents={stats.descontoMercadoPagoCents} />
         </div>
       </div>
 

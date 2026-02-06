@@ -24,8 +24,12 @@ function labelCategory(c: FinanceEntry['category']) {
 
 export default function FinanceiroWidget({
   receitaVendasCents,
+  receitaVendasBrutaCents,
+  descontoMercadoPagoCents,
 }: {
   receitaVendasCents: number
+  receitaVendasBrutaCents: number
+  descontoMercadoPagoCents: number
 }) {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -169,11 +173,13 @@ export default function FinanceiroWidget({
           <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
             <p className="text-xs font-semibold text-gray-700 mb-2">Resumo</p>
             <div className="space-y-1 text-sm">
-              <div className="flex justify-between"><span>Receita (vendas):</span><span className="font-bold">{formatMoney(receitaVendasCents)}</span></div>
+              <div className="flex justify-between"><span>Receita bruta (vendas):</span><span className="font-bold">{formatMoney(receitaVendasBrutaCents)}</span></div>
+              <div className="flex justify-between"><span>Desconto MP (5%):</span><span className="font-bold text-red-600">- {formatMoney(descontoMercadoPagoCents)}</span></div>
+              <div className="flex justify-between border-t border-gray-200 pt-1"><span>Receita líquida (vendas):</span><span className="font-bold">{formatMoney(receitaVendasCents)}</span></div>
               <div className="flex justify-between"><span>Entradas (lançadas):</span><span className="font-bold">{formatMoney(encontro.income)}</span></div>
               <div className="flex justify-between"><span>Saídas (lançadas):</span><span className="font-bold">{formatMoney(encontro.expense)}</span></div>
               <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between">
-                <span className="font-semibold">Saldo (vendas + entradas - saídas):</span>
+                <span className="font-semibold">Saldo (vendas líquidas + entradas - saídas):</span>
                 <span className={`font-extrabold ${encontro.saldo < 0 ? 'text-red-600' : 'text-green-700'}`}>
                   {formatMoney(encontro.saldo)}
                 </span>
