@@ -79,9 +79,10 @@ async function getStats() {
         where: { itemType: 'PULSEIRA_EXTRA', ...courtesyWhereAtivasOuRetiradas },
         _sum: { quantity: true, deliveredQuantity: true },
       }),
-      prisma.lot.findFirst({
+      prisma.lot.findMany({
         where: { active: true },
         select: { id: true, name: true, abadaProducedQty: true, pulseiraProducedQty: true },
+        orderBy: { createdAt: 'desc' },
       }),
     ])
 
@@ -102,8 +103,9 @@ async function getStats() {
       if (row.itemType === 'PULSEIRA_EXTRA') courtesyByType.PULSEIRA_EXTRA = qty
     }
 
-    const producedAbadas = activeLot?.abadaProducedQty ?? 0
-    const producedPulseiras = activeLot?.pulseiraProducedQty ?? 0
+    // Agregar todos os lotes ativos
+    const totalProducedAbadas = activeLot.reduce((sum, lot) => sum + (lot.abadaProducedQty ?? 0), 0)
+    const totalProducedPulseiras = activeLot.reduce((sum, lot) => sum + (lot.pulseiraProducedQty ?? 0), 0)
 
     const soldAbadas = orderItemsAbadaAgg._sum.quantity ?? 0
     const soldPulseiras = orderItemsPulseiraAgg._sum.quantity ?? 0
@@ -124,8 +126,60 @@ async function getStats() {
     const toDeliverAbadas = Math.max(0, committedAbadas - deliveredAbadas)
     const toDeliverPulseiras = Math.max(0, committedPulseiras - deliveredPulseiras)
 
-    const remainingAbadas = producedAbadas - committedAbadas
-    const remainingPulseiras = producedPulseiras - committedPulseiras
+    const remainingAbadas = totalProducedAbadas - committedAbadas
+    const remainingPulseiras = totalProducedPulseiras - committedPulseiras
+
+    // Estatísticas por lote individual
+    const statsPorLote = await Promise.all(
+      activeLot.map(async (lot) => {
+        const orderItemsAbadaLote = await prisma.orderItem.aggregate({
+          where: {
+            itemType: 'ABADA',
+            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+          },
+          _sum: { quantity: true, deliveredQuantity: true },
+        })
+        const orderItemsPulseiraLote = await prisma.orderItem.aggregate({
+          where: {
+            itemType: 'PULSEIRA_EXTRA',
+            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+          },
+          _sum: { quantity: true, deliveredQuantity: true },
+        })
+        // Cortesias não têm lotId, então não incluímos na contabilidade por lote individual
+        // (só na contabilidade geral)
+        const soldAbadasLote = orderItemsAbadaLote._sum.quantity ?? 0
+        const soldPulseirasLote = orderItemsPulseiraLote._sum.quantity ?? 0
+        const deliveredAbadasOrdersLote = orderItemsAbadaLote._sum.deliveredQuantity ?? 0
+        const deliveredPulseirasOrdersLote = orderItemsPulseiraLote._sum.deliveredQuantity ?? 0
+
+        const committedAbadasLote = soldAbadasLote // Sem cortesias por lote
+        const committedPulseirasLote = soldPulseirasLote // Sem cortesias por lote
+        const deliveredAbadasLote = deliveredAbadasOrdersLote
+        const deliveredPulseirasLote = deliveredPulseirasOrdersLote
+        const toDeliverAbadasLote = Math.max(0, committedAbadasLote - deliveredAbadasLote)
+        const toDeliverPulseirasLote = Math.max(0, committedPulseirasLote - deliveredPulseirasLote)
+        const remainingAbadasLote = (lot.abadaProducedQty ?? 0) - committedAbadasLote
+        const remainingPulseirasLote = (lot.pulseiraProducedQty ?? 0) - committedPulseirasLote
+
+        return {
+          id: lot.id,
+          name: lot.name,
+          producedAbadas: lot.abadaProducedQty ?? 0,
+          producedPulseiras: lot.pulseiraProducedQty ?? 0,
+          soldAbadas: soldAbadasLote,
+          soldPulseiras: soldPulseirasLote,
+          committedAbadas: committedAbadasLote,
+          committedPulseiras: committedPulseirasLote,
+          deliveredAbadas: deliveredAbadasLote,
+          deliveredPulseiras: deliveredPulseirasLote,
+          toDeliverAbadas: toDeliverAbadasLote,
+          toDeliverPulseiras: toDeliverPulseirasLote,
+          remainingAbadas: remainingAbadasLote,
+          remainingPulseiras: remainingPulseirasLote,
+        }
+      })
+    )
 
     return {
       orders: {
@@ -143,9 +197,10 @@ async function getStats() {
       },
       courtesiesByItem: courtesyByType,
       production: {
-        activeLotName: activeLot?.name || null,
-        abadas: producedAbadas,
-        pulseiras: producedPulseiras,
+        activeLotName: activeLot.length > 0 ? (activeLot.length === 1 ? activeLot[0].name : `${activeLot.length} lotes ativos`) : null,
+        abadas: totalProducedAbadas,
+        pulseiras: totalProducedPulseiras,
+        lots: statsPorLote,
         committed: {
           abadas: committedAbadas,
           pulseiras: committedPulseiras,
@@ -314,9 +369,9 @@ export default async function DashboardPage() {
               </div>
             </div>
             <div className="border-t border-gray-200 pt-3 mt-3">
-              <p className="text-sm font-semibold text-gray-800 mb-2">Produção (lote ativo)</p>
+              <p className="text-sm font-semibold text-gray-800 mb-2">Contabilidade Geral (todos os lotes)</p>
               <p className="text-xs text-gray-600 mb-2">
-                {stats.production.activeLotName ? `Lote: ${stats.production.activeLotName}` : 'Nenhum lote ativo'}
+                {stats.production.activeLotName || 'Nenhum lote ativo'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -361,6 +416,55 @@ export default async function DashboardPage() {
           <FinanceiroWidget receitaVendasCents={stats.receitaVendasCents} />
         </div>
       </div>
+
+      {/* Seção de Lotes Abertos */}
+      {stats.production.lots && stats.production.lots.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">Lotes Abertos - Contabilidade Individual</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {stats.production.lots.map((lot) => (
+              <div key={lot.id} className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
+                <h3 className="text-lg font-bold text-blue-900 mb-4">{lot.name}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-700 mb-2">Abadá</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between"><span>Produzidos:</span><span className="font-bold">{lot.producedAbadas}</span></div>
+                      <div className="flex justify-between"><span>Vendidos:</span><span className="font-bold">{lot.soldAbadas}</span></div>
+                      <div className="flex justify-between"><span>Comprometidos:</span><span className="font-bold">{lot.committedAbadas}</span></div>
+                      <div className="flex justify-between"><span>Entregues:</span><span className="font-bold">{lot.deliveredAbadas}</span></div>
+                      <div className="flex justify-between"><span>A entregar:</span><span className="font-bold">{lot.toDeliverAbadas}</span></div>
+                      <div className="flex justify-between">
+                        <span>Restantes:</span>
+                        <span className={`font-bold ${lot.remainingAbadas < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                          {lot.remainingAbadas}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="text-xs font-semibold text-purple-700 mb-2">Pulseira Extra</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between"><span>Produzidas:</span><span className="font-bold">{lot.producedPulseiras}</span></div>
+                      <div className="flex justify-between"><span>Vendidas:</span><span className="font-bold">{lot.soldPulseiras}</span></div>
+                      <div className="flex justify-between"><span>Comprometidas:</span><span className="font-bold">{lot.committedPulseiras}</span></div>
+                      <div className="flex justify-between"><span>Entregues:</span><span className="font-bold">{lot.deliveredPulseiras}</span></div>
+                      <div className="flex justify-between"><span>A entregar:</span><span className="font-bold">{lot.toDeliverPulseiras}</span></div>
+                      <div className="flex justify-between">
+                        <span>Restantes:</span>
+                        <span className={`font-bold ${lot.remainingPulseiras < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                          {lot.remainingPulseiras}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
   } catch (err) {

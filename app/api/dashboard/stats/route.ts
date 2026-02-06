@@ -83,9 +83,10 @@ export async function GET(request: NextRequest) {
         where: { itemType: 'PULSEIRA_EXTRA', ...courtesyWhereAtivasOuRetiradas },
         _sum: { quantity: true, deliveredQuantity: true },
       }),
-      prisma.lot.findFirst({
+      prisma.lot.findMany({
         where: { active: true },
         select: { id: true, name: true, abadaProducedQty: true, pulseiraProducedQty: true },
+        orderBy: { createdAt: 'desc' },
       }),
     ])
 
@@ -106,8 +107,8 @@ export async function GET(request: NextRequest) {
       if (row.itemType === 'PULSEIRA_EXTRA') courtesyByType.PULSEIRA_EXTRA = qty
     }
 
-    const producedAbadas = activeLot?.abadaProducedQty ?? 0
-    const producedPulseiras = activeLot?.pulseiraProducedQty ?? 0
+    const totalProducedAbadas = activeLot.reduce((sum, lot) => sum + (lot.abadaProducedQty ?? 0), 0)
+    const totalProducedPulseiras = activeLot.reduce((sum, lot) => sum + (lot.pulseiraProducedQty ?? 0), 0)
 
     const soldAbadas = orderItemsAbadaAgg._sum.quantity ?? 0
     const soldPulseiras = orderItemsPulseiraAgg._sum.quantity ?? 0
@@ -128,8 +129,59 @@ export async function GET(request: NextRequest) {
     const toDeliverAbadas = Math.max(0, committedAbadas - deliveredAbadas)
     const toDeliverPulseiras = Math.max(0, committedPulseiras - deliveredPulseiras)
 
-    const remainingAbadas = producedAbadas - committedAbadas
-    const remainingPulseiras = producedPulseiras - committedPulseiras
+    const remainingAbadas = totalProducedAbadas - committedAbadas
+    const remainingPulseiras = totalProducedPulseiras - committedPulseiras
+
+    // Estatísticas por lote individual
+    const statsPorLote = await Promise.all(
+      activeLot.map(async (lot) => {
+        const orderItemsAbadaLote = await prisma.orderItem.aggregate({
+          where: {
+            itemType: 'ABADA',
+            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+          },
+          _sum: { quantity: true, deliveredQuantity: true },
+        })
+        const orderItemsPulseiraLote = await prisma.orderItem.aggregate({
+          where: {
+            itemType: 'PULSEIRA_EXTRA',
+            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+          },
+          _sum: { quantity: true, deliveredQuantity: true },
+        })
+
+        const soldAbadasLote = orderItemsAbadaLote._sum.quantity ?? 0
+        const soldPulseirasLote = orderItemsPulseiraLote._sum.quantity ?? 0
+        const deliveredAbadasOrdersLote = orderItemsAbadaLote._sum.deliveredQuantity ?? 0
+        const deliveredPulseirasOrdersLote = orderItemsPulseiraLote._sum.deliveredQuantity ?? 0
+
+        const committedAbadasLote = soldAbadasLote
+        const committedPulseirasLote = soldPulseirasLote
+        const deliveredAbadasLote = deliveredAbadasOrdersLote
+        const deliveredPulseirasLote = deliveredPulseirasOrdersLote
+        const toDeliverAbadasLote = Math.max(0, committedAbadasLote - deliveredAbadasLote)
+        const toDeliverPulseirasLote = Math.max(0, committedPulseirasLote - deliveredPulseirasLote)
+        const remainingAbadasLote = (lot.abadaProducedQty ?? 0) - committedAbadasLote
+        const remainingPulseirasLote = (lot.pulseiraProducedQty ?? 0) - committedPulseirasLote
+
+        return {
+          id: lot.id,
+          name: lot.name,
+          producedAbadas: lot.abadaProducedQty ?? 0,
+          producedPulseiras: lot.pulseiraProducedQty ?? 0,
+          soldAbadas: soldAbadasLote,
+          soldPulseiras: soldPulseirasLote,
+          committedAbadas: committedAbadasLote,
+          committedPulseiras: committedPulseirasLote,
+          deliveredAbadas: deliveredAbadasLote,
+          deliveredPulseiras: deliveredPulseirasLote,
+          toDeliverAbadas: toDeliverAbadasLote,
+          toDeliverPulseiras: toDeliverPulseirasLote,
+          remainingAbadas: remainingAbadasLote,
+          remainingPulseiras: remainingPulseirasLote,
+        }
+      })
+    )
 
     return NextResponse.json({
       orders: {
@@ -146,9 +198,10 @@ export async function GET(request: NextRequest) {
       },
       courtesiesByItem: courtesyByType,
       production: {
-        activeLotName: activeLot?.name || null,
-        abadas: producedAbadas,
-        pulseiras: producedPulseiras,
+        activeLotName: activeLot.length > 0 ? (activeLot.length === 1 ? activeLot[0].name : `${activeLot.length} lotes ativos`) : null,
+        abadas: totalProducedAbadas,
+        pulseiras: totalProducedPulseiras,
+        lots: statsPorLote,
         committed: {
           abadas: committedAbadas,
           pulseiras: committedPulseiras,
