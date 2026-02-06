@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getMercadoPagoTaxaPercent } from '@/lib/settings'
 
 // Este endpoint depende de headers/cookies (NextAuth), então não pode ser pré-renderizado.
 export const dynamic = 'force-dynamic'
@@ -91,9 +92,10 @@ export async function GET(request: NextRequest) {
     ])
 
     const receitaVendasBrutaCents = receitaTotalCents._sum.totalValueCents || 0
-    // Desconto de 5% do Mercado Pago
-    const taxaMercadoPagoPercent = 0.05 // 5%
-    const descontoMercadoPagoCents = Math.round(receitaVendasBrutaCents * taxaMercadoPagoPercent)
+    // Desconto configurável do Mercado Pago
+    const taxaMercadoPagoPercent = await getMercadoPagoTaxaPercent()
+    const taxaMercadoPagoDecimal = taxaMercadoPagoPercent / 100
+    const descontoMercadoPagoCents = Math.round(receitaVendasBrutaCents * taxaMercadoPagoDecimal)
     const receitaVendasCents = receitaVendasBrutaCents - descontoMercadoPagoCents
     
     const entradasLancadasCents = financeIncomeAgg._sum.amountCents || 0

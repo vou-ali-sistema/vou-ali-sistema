@@ -26,10 +26,12 @@ export default function FinanceiroWidget({
   receitaVendasCents,
   receitaVendasBrutaCents,
   descontoMercadoPagoCents,
+  mercadoPagoTaxaPercent,
 }: {
   receitaVendasCents: number
   receitaVendasBrutaCents: number
   descontoMercadoPagoCents: number
+  mercadoPagoTaxaPercent: number
 }) {
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -174,7 +176,7 @@ export default function FinanceiroWidget({
             <p className="text-xs font-semibold text-gray-700 mb-2">Resumo</p>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between"><span>Receita bruta (vendas):</span><span className="font-bold">{formatMoney(receitaVendasBrutaCents)}</span></div>
-              <div className="flex justify-between"><span>Desconto MP (5%):</span><span className="font-bold text-red-600">- {formatMoney(descontoMercadoPagoCents)}</span></div>
+              <div className="flex justify-between"><span>Desconto MP ({mercadoPagoTaxaPercent.toFixed(2)}%):</span><span className="font-bold text-red-600">- {formatMoney(descontoMercadoPagoCents)}</span></div>
               <div className="flex justify-between border-t border-gray-200 pt-1"><span>Receita líquida (vendas):</span><span className="font-bold">{formatMoney(receitaVendasCents)}</span></div>
               <div className="flex justify-between"><span>Entradas (lançadas):</span><span className="font-bold">{formatMoney(encontro.income)}</span></div>
               <div className="flex justify-between"><span>Saídas (lançadas):</span><span className="font-bold">{formatMoney(encontro.expense)}</span></div>

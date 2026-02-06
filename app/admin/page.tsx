@@ -5,7 +5,8 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import FinanceiroWidget from './FinanceiroWidget'
 import CompraToggle from './CompraToggle'
-import { isPurchaseEnabled } from '@/lib/settings'
+import MercadoPagoTaxa from './MercadoPagoTaxa'
+import { isPurchaseEnabled, getMercadoPagoTaxaPercent } from '@/lib/settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,9 +88,10 @@ async function getStats() {
     ])
 
     const receitaVendasBrutaCents = receitaTotalCents._sum.totalValueCents || 0
-    // Desconto de 5% do Mercado Pago
-    const taxaMercadoPagoPercent = 0.05 // 5%
-    const descontoMercadoPagoCents = Math.round(receitaVendasBrutaCents * taxaMercadoPagoPercent)
+    // Desconto configurável do Mercado Pago
+    const taxaMercadoPagoPercent = await getMercadoPagoTaxaPercent()
+    const taxaMercadoPagoDecimal = taxaMercadoPagoPercent / 100
+    const descontoMercadoPagoCents = Math.round(receitaVendasBrutaCents * taxaMercadoPagoDecimal)
     const receitaVendasCents = receitaVendasBrutaCents - descontoMercadoPagoCents
     
     const entradasLancadasCents = financeIncomeAgg._sum.amountCents || 0
@@ -235,6 +237,7 @@ async function getStats() {
       saidasLancadasCents,
       receitaEmPosse,
       receitaEmPosseCents,
+      mercadoPagoTaxaPercent: taxaMercadoPagoPercent,
     }
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error)
@@ -290,8 +293,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 space-y-6">
         <CompraToggle initialEnabled={stats.purchaseEnabled} />
+        <MercadoPagoTaxa initialTaxa={stats.mercadoPagoTaxaPercent ?? 5.0} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -321,7 +325,7 @@ export default async function DashboardPage() {
               <span className="font-semibold">R$ {stats.receitaVendasBruta.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Desconto MP (5%):</span>
+              <span>Desconto MP ({stats.mercadoPagoTaxaPercent?.toFixed(2) ?? '5.00'}%):</span>
               <span className="font-semibold text-red-200">- R$ {stats.descontoMercadoPago.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between gap-3 border-t border-white/30 pt-1">
@@ -432,7 +436,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="md:col-span-2 lg:col-span-3">
-          <FinanceiroWidget receitaVendasCents={stats.receitaVendasCents} receitaVendasBrutaCents={stats.receitaVendasBrutaCents} descontoMercadoPagoCents={stats.descontoMercadoPagoCents} />
+          <FinanceiroWidget receitaVendasCents={stats.receitaVendasCents} receitaVendasBrutaCents={stats.receitaVendasBrutaCents} descontoMercadoPagoCents={stats.descontoMercadoPagoCents} mercadoPagoTaxaPercent={stats.mercadoPagoTaxaPercent ?? 5.0} />
         </div>
       </div>
 
