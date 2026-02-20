@@ -1,0 +1,41 @@
+========================================
+  CRIAR USUÁRIO vouali.trocas (1 vez)
+========================================
+
+O deploy já está no ar. Falta CRIAR o usuário no banco.
+
+PASSO 1 - Pegar o token
+------------------------
+1. Abra: https://vercel.com (entre na sua conta)
+2. Clique no projeto do Bloco Vou Ali
+3. Aba "Settings" (Configurações)
+4. No menu da esquerda: "Environment Variables"
+5. Procure a variável: NEXTAUTH_SECRET
+6. Clique no "valor" para revelar e COPIE (Ctrl+C)
+
+
+PASSO 2 - Criar o usuário
+-------------------------
+7. Abra uma nova aba no navegador
+8. Cole esta URL e NO FINAL adicione o valor que você copiou (sem espaço):
+
+   https://www.blocovouali.com/api/setup-trocas-user?token=
+
+   Exemplo: se o secret for "abc123xyz", a URL fica:
+   https://www.blocovouali.com/api/setup-trocas-user?token=abc123xyz
+
+9. Aperte Enter. Deve aparecer uma mensagem em JSON tipo:
+   {"ok":true,"message":"Usuário vouali.trocas criado...","login":"vouali.trocas","senha":"112233"}
+
+
+PASSO 3 - Fazer login
+----------------------
+10. Vá em: https://www.blocovouali.com/admin/login
+11. Email/usuário: vouali.trocas
+12. Senha: 112233
+13. Entrar
+
+
+Se ainda der erro: confira que a senha é exatamente 112233 (só números).
+
+========================================
