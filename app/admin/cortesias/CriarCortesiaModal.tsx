@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 
 interface Item {
   itemType: 'ABADA' | 'PULSEIRA_EXTRA'
@@ -16,6 +17,7 @@ export default function CriarCortesiaModal({ onClose }: { onClose: () => void })
   ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [createdToken, setCreatedToken] = useState<string | null>(null)
 
   function adicionarItem() {
     setItens([...itens, { itemType: 'ABADA', quantity: 1 }])
@@ -74,12 +76,67 @@ export default function CriarCortesiaModal({ onClose }: { onClose: () => void })
         throw new Error(msg)
       }
 
-      onClose()
+      const data = await res.json()
+      if (data?.exchangeToken) {
+        setCreatedToken(data.exchangeToken)
+      } else {
+        onClose()
+      }
     } catch (error: any) {
       setError(error.message || 'Erro ao criar cortesia')
     } finally {
       setLoading(false)
     }
+  }
+
+  const trocaUrl = typeof window !== 'undefined' && createdToken
+    ? `${window.location.origin}/troca/${encodeURIComponent(createdToken)}`
+    : ''
+
+  if (createdToken) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-green-800">Cortesia criada</h2>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">Envie o QR code ou o link abaixo para o convidado retirar a cortesia.</p>
+            <div className="flex flex-col items-center border-2 border-green-200 rounded-xl p-4 bg-green-50/50">
+              <div className="border-2 border-green-600 rounded-lg p-3 bg-white shadow-inner">
+                <QRCodeSVG value={trocaUrl} size={220} level="H" includeMargin />
+              </div>
+              <p className="mt-3 text-xs font-semibold text-gray-700">Token:</p>
+              <code className="mt-1 text-xs font-mono bg-gray-100 px-2 py-1 rounded break-all">{createdToken}</code>
+              <a
+                href={trocaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 text-sm text-blue-600 hover:text-blue-800 font-semibold underline"
+              >
+                Abrir página da cortesia
+              </a>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg font-semibold"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
