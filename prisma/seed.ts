@@ -34,6 +34,13 @@ async function main() {
     console.log("Admin existente – senha redefinida para:", pass);
   }
 
+  // Garantir que o enum Role no PostgreSQL tem o valor TROCAS
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'TROCAS'`);
+  } catch (_) {
+    // Ignora se já existir (ex.: PG antigo sem IF NOT EXISTS)
+  }
+
   // Usuário apenas para trocas (ler QR code)
   const emailTrocas = "vouali.trocas";
   const passTrocas = "112233";
