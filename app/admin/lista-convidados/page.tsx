@@ -241,7 +241,10 @@ export default function ListaConvidadosPage() {
   return (
     <div className="px-4 py-6">
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-blue-900">Lista de Convidados</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-blue-900">Lista de Convidados</h1>
+          <p className="text-sm text-green-700 font-medium mt-1">Confirmar entrada: marque quem já entrou na seção verde abaixo ou na coluna &quot;Já entrou?&quot; da tabela.</p>
+        </div>
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
@@ -336,10 +339,12 @@ export default function ListaConvidadosPage() {
         </form>
       </div>
 
-      {list.length > 0 && (
-        <div className="mb-6 p-5 rounded-xl border-2 border-green-400 bg-green-50 shadow-sm">
-          <h2 className="text-lg font-bold text-green-900 mb-1">Quem já entrou?</h2>
-          <p className="text-sm text-green-800 mb-4">Marque o checkbox quando o convidado confirmar a entrada.</p>
+      <div className="mb-6 p-5 rounded-xl border-2 border-green-400 bg-green-50 shadow-sm" data-secao="ja-entrou">
+        <h2 className="text-lg font-bold text-green-900 mb-1">Quem já entrou?</h2>
+        <p className="text-sm text-green-800 mb-4">Marque o checkbox quando o convidado confirmar a entrada.</p>
+        {list.length === 0 ? (
+          <p className="text-sm text-green-700 italic">Quando houver convidados, os checkboxes aparecerão aqui.</p>
+        ) : (
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             {list.map((c) => (
               <label
@@ -357,8 +362,8 @@ export default function ListaConvidadosPage() {
               </label>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="rounded-xl border-2 border-gray-200 overflow-visible">
         <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">

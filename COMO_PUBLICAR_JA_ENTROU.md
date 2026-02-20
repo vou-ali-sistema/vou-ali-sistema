@@ -2,7 +2,24 @@
 
 A funcionalidade **"Já entrou?"** já está no código. Para ela aparecer em **https://www.blocovouali.com/admin/lista-convidados**, é preciso **fazer um novo deploy**.
 
-## Passo a passo
+---
+
+## Rápido: comandos para publicar
+
+No terminal, na pasta do projeto:
+
+```bash
+cd "c:\Users\Nicholas Cordeiro\Desktop\VOU_ALI_SISTEMA"
+git add .
+git commit -m "Lista convidados: Já entrou? checkbox e coluna"
+git push origin main
+```
+
+Depois do `git push`, se o projeto estiver ligado à Vercel, um novo deploy começa sozinho. Espere terminar e acesse o site com **Ctrl+Shift+R** para recarregar sem cache.
+
+---
+
+## Passo a passo (detalhado)
 
 ### 1. Abrir o terminal na pasta do projeto
 
