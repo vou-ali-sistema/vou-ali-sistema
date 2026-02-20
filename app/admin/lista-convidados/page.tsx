@@ -179,8 +179,8 @@ export default function ListaConvidadosPage() {
     }
     const rows = list
       .map(
-        (c) =>
-          `<tr><td>${c.entrou ? 'Sim' : 'Não'}</td><td>${escapeHtml(c.nomeCompleto)}</td><td>${formatCPF(c.cpf)}</td><td>${formatTel(c.telefone)}</td></tr>`
+        (c, i) =>
+          `<tr><td>${i + 1}</td><td>${c.entrou ? 'Sim' : 'Não'}</td><td>${escapeHtml(c.nomeCompleto)}</td><td>${formatCPF(c.cpf)}</td><td>${formatTel(c.telefone)}</td></tr>`
       )
       .join('')
     const data = new Date().toLocaleDateString('pt-BR', {
@@ -211,7 +211,7 @@ export default function ListaConvidadosPage() {
   <h1>Lista de Convidados – Equipe da Portaria</h1>
   <p class="sub">Gerado em ${data} &nbsp;|&nbsp; Total: ${list.length} convidado(s)</p>
   <table>
-    <thead><tr><th>Entrou</th><th>Nome completo</th><th>CPF</th><th>Telefone</th></tr></thead>
+    <thead><tr><th>Nº</th><th>Entrou</th><th>Nome completo</th><th>CPF</th><th>Telefone</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
 </body>
@@ -348,11 +348,12 @@ export default function ListaConvidadosPage() {
           <p className="text-sm text-green-700 italic">Quando houver convidados, os checkboxes aparecerão aqui.</p>
         ) : (
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            {list.map((c) => (
+            {list.map((c, i) => (
               <label
                 key={c.id}
                 className="inline-flex items-center gap-3 cursor-pointer bg-white px-4 py-3 min-h-[52px] rounded-xl border-2 border-green-300 active:border-green-500 active:bg-green-50/50 touch-manipulation flex-1 sm:flex-none sm:min-w-0"
               >
+                <span className="flex-shrink-0 w-7 text-sm font-bold text-gray-500">{i + 1}.</span>
                 <input
                   type="checkbox"
                   checked={Boolean(c.entrou)}
@@ -381,9 +382,10 @@ export default function ListaConvidadosPage() {
               Nenhum convidado ainda. Adicione manualmente ou importe um CSV.
             </div>
           ) : (
-            list.map((c) => (
+            list.map((c, i) => (
               <div key={c.id} className="p-4 flex flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
+                  <span className="flex-shrink-0 w-8 text-sm font-bold text-gray-500">Nº {i + 1}</span>
                   <span className="text-base font-semibold text-gray-900 flex-1 min-w-0 truncate">{c.nomeCompleto}</span>
                   <label className="inline-flex items-center gap-2 cursor-pointer flex-shrink-0 touch-manipulation min-h-[44px] px-3">
                     <input
@@ -413,6 +415,9 @@ export default function ListaConvidadosPage() {
           <table className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'auto' }}>
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase w-12">
+                  Nº
+                </th>
                 <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap w-44 bg-green-200 border-r-2 border-green-400">
                   Já entrou?
                 </th>
@@ -431,13 +436,16 @@ export default function ListaConvidadosPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {list.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                     Nenhum convidado ainda.
                   </td>
                 </tr>
               ) : (
-                list.map((c) => (
+                list.map((c, i) => (
                   <tr key={c.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-3 text-center text-sm font-semibold text-gray-600 w-12">
+                      {i + 1}
+                    </td>
                     <td className="px-4 py-3 text-center bg-green-100 border-r-2 border-green-300 w-44">
                       <label className="inline-flex items-center justify-center gap-2 cursor-pointer select-none">
                         <input
