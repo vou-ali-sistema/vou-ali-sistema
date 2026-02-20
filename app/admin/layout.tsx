@@ -18,16 +18,22 @@ export default function AdminLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isLoginPage = pathname === '/admin/login'
 
+  const role = (session?.user as { role?: string })?.role ?? ''
+  const isTrocasOnly = role === 'TROCAS'
   const navItems = useMemo(
-    () => [
-      { href: '/admin', label: 'Dashboard' },
-      { href: '/admin/pedidos', label: 'Pedidos' },
-      { href: '/admin/trocas', label: 'Trocas' },
-      { href: '/admin/cortesias', label: 'Cortesias' },
-      { href: '/admin/lotes', label: 'Lotes' },
-      { href: '/admin/promo-cards', label: 'Cards' },
-    ],
-    []
+    () =>
+      isTrocasOnly
+        ? [{ href: '/admin/trocas', label: 'Trocas (ler QR)' }]
+        : [
+            { href: '/admin', label: 'Dashboard' },
+            { href: '/admin/pedidos', label: 'Pedidos' },
+            { href: '/admin/trocas', label: 'Trocas' },
+            { href: '/admin/cortesias', label: 'Cortesias' },
+            { href: '/admin/lista-convidados', label: 'Lista de Convidados' },
+            { href: '/admin/lotes', label: 'Lotes' },
+            { href: '/admin/promo-cards', label: 'Cards' },
+          ],
+    [isTrocasOnly]
   )
 
   // Se não tiver sessão e não for login, redirecionar
@@ -81,7 +87,7 @@ export default function AdminLayout({
 
               <div className="flex-shrink-0 flex items-center">
                 <h1 className="text-base sm:text-xl font-bold text-white leading-tight">
-                  <span className="text-yellow-300">BLOCO</span> VOU ALI - Admin
+                  <span className="text-yellow-300">BLOCO</span> VOU ALI - {isTrocasOnly ? 'Trocas' : 'Admin'}
                 </h1>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

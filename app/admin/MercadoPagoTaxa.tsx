@@ -18,7 +18,7 @@ export default function MercadoPagoTaxa({ initialTaxa }: { initialTaxa: number }
       const res = await fetch('/api/admin/settings', { cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Erro ao carregar configurações')
-      const taxaAtual = data.mercadoPagoTaxaPercent ?? 5.0
+      const taxaAtual = data.mercadoPagoTaxaPercent ?? 9.0
       setTaxa(taxaAtual)
       setInputValue(String(taxaAtual))
     } catch (e: any) {
@@ -103,7 +103,7 @@ export default function MercadoPagoTaxa({ initialTaxa }: { initialTaxa: number }
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={busy || loading}
                 className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-                placeholder="5.00"
+                placeholder="9.00"
               />
               <span className="text-sm font-semibold text-gray-700">%</span>
             </div>
@@ -124,8 +124,8 @@ export default function MercadoPagoTaxa({ initialTaxa }: { initialTaxa: number }
         </div>
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-xs text-blue-800">
-            <strong>Exemplo:</strong> Se a taxa for 5%, uma venda de R$ 100,00 terá desconto de R$ 5,00, 
-            resultando em receita líquida de R$ 95,00.
+            <strong>Exemplo:</strong> Se a taxa for 9%, uma venda de R$ 100,00 terá desconto de R$ 9,00, 
+            resultando em receita líquida de R$ 91,00.
           </p>
         </div>
       </div>

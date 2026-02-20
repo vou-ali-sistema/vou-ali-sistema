@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import Logo from '@/app/components/Logo'
 
@@ -39,8 +39,10 @@ export default function AdminLoginPage() {
         return
       }
       if (result?.ok) {
-        // Forçar navegação completa para que cookies sejam enviados
-        window.location.replace('/admin')
+        const session = await getSession()
+        const role = (session?.user as { role?: string })?.role
+        const url = role === 'TROCAS' ? '/admin/trocas' : '/admin'
+        window.location.replace(url)
         return
       }
       setError('Email ou senha inválidos')

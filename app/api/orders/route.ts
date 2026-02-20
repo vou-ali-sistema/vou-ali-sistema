@@ -154,12 +154,17 @@ export async function POST(request: NextRequest) {
         totalValueCents,
         externalReference: undefined, // será atualizado após criar
         items: {
-          create: itemsWithPrices.map(item => ({
-            itemType: item.itemType,
-            size: item.size,
-            quantity: item.quantity,
-            unitPriceCents: item.unitPriceCents, // Preço congelado do lote
-          }))
+          create: itemsWithPrices.map((item) => {
+            const raw = (item as { lotId?: string }).lotId
+            const itemLotId = raw != null && String(raw).trim() ? String(raw).trim() : primaryLotId
+            return {
+              itemType: item.itemType,
+              size: item.size,
+              quantity: item.quantity,
+              unitPriceCents: item.unitPriceCents,
+              lotId: itemLotId,
+            }
+          })
         }
       },
       include: {

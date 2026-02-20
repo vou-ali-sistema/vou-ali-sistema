@@ -138,20 +138,28 @@ async function getStats() {
     const remainingAbadas = totalProducedAbadas - committedAbadas
     const remainingPulseiras = totalProducedPulseiras - committedPulseiras
 
-    // Estatísticas por lote individual
+    // Estatísticas por lote individual (por item: usa OrderItem.lotId; se null, usa order.lotId para pedidos antigos)
     const statsPorLote = await Promise.all(
       activeLot.map(async (lot) => {
         const orderItemsAbadaLote = await prisma.orderItem.aggregate({
           where: {
             itemType: 'ABADA',
-            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+            order: wherePaidOrDeliveredOrders,
+            OR: [
+              { lotId: lot.id },
+              { lotId: null, order: { ...wherePaidOrDeliveredOrders, lotId: lot.id } },
+            ],
           },
           _sum: { quantity: true, deliveredQuantity: true },
         })
         const orderItemsPulseiraLote = await prisma.orderItem.aggregate({
           where: {
             itemType: 'PULSEIRA_EXTRA',
-            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+            order: wherePaidOrDeliveredOrders,
+            OR: [
+              { lotId: lot.id },
+              { lotId: null, order: { ...wherePaidOrDeliveredOrders, lotId: lot.id } },
+            ],
           },
           _sum: { quantity: true, deliveredQuantity: true },
         })
@@ -295,7 +303,7 @@ export default async function DashboardPage() {
 
       <div className="mb-8 space-y-6">
         <CompraToggle initialEnabled={stats.purchaseEnabled} />
-        <MercadoPagoTaxa initialTaxa={stats.mercadoPagoTaxaPercent ?? 5.0} />
+        <MercadoPagoTaxa initialTaxa={stats.mercadoPagoTaxaPercent ?? 9.0} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -325,7 +333,7 @@ export default async function DashboardPage() {
               <span className="font-semibold">R$ {stats.receitaVendasBruta.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between gap-3">
-              <span>Desconto MP ({stats.mercadoPagoTaxaPercent?.toFixed(2) ?? '5.00'}%):</span>
+              <span>Desconto MP ({stats.mercadoPagoTaxaPercent?.toFixed(2) ?? '9.00'}%):</span>
               <span className="font-semibold text-red-200">- R$ {stats.descontoMercadoPago.toFixed(2).replace('.', ',')}</span>
             </div>
             <div className="flex justify-between gap-3 border-t border-white/30 pt-1">

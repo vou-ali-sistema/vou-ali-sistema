@@ -35,10 +35,10 @@ export async function getMercadoPagoTaxaPercent(): Promise<number> {
         return parsed
       }
     }
-    // Padrão: 5%
-    return 5.0
+    // Padrão: 9%
+    return 9.0
   } catch {
-    return 5.0
+    return 9.0
   }
 }
 

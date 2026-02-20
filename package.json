@@ -25,6 +25,7 @@
     "@vercel/blob": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.2.0",
     "mercadopago": "^2.1.7",
     "next": "^16.1.2",
     "next-auth": "^4.24.5",

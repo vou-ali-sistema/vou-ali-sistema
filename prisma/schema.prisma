@@ -11,6 +11,7 @@ enum Role {
   ADMIN
   ATENDIMENTO
   CAIXA
+  TROCAS   // Acesso apenas à página de trocas (ler QR code)
 }
 
 enum OrderStatus {
@@ -152,6 +153,7 @@ model OrderItem {
   size              String?  // só ABADA
   quantity          Int
   unitPriceCents    Int
+  lotId             String?  // lote deste item (para contabilidade por lote no dashboard)
 
   deliveredQuantity Int      @default(0)
   lastDeliveredAt   DateTime?
@@ -161,6 +163,7 @@ model OrderItem {
   createdAt         DateTime @default(now())
 
   @@index([itemType])
+  @@index([lotId])
 }
 
 model Courtesy {
@@ -254,4 +257,17 @@ model AppSetting {
   updatedAt DateTime @updatedAt
 
   @@index([key])
+}
+
+// Lista de convidados (template: Nome completo, CPF, Telefone)
+model Convidado {
+  id           String   @id @default(cuid())
+  nomeCompleto String
+  cpf          String
+  telefone     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([cpf])
+  @@index([telefone])
 }

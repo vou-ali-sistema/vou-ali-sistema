@@ -34,6 +34,29 @@ async function main() {
     console.log("Admin existente – senha redefinida para:", pass);
   }
 
+  // Usuário apenas para trocas (ler QR code)
+  const emailTrocas = "vouali.trocas";
+  const passTrocas = "112233";
+  const hashTrocas = await bcrypt.hash(passTrocas, 10);
+  const existingTrocas = await prisma.user.findUnique({ where: { email: emailTrocas } });
+  if (!existingTrocas) {
+    await prisma.user.create({
+      data: {
+        name: "Trocas (funcionário)",
+        email: emailTrocas,
+        passwordHash: hashTrocas,
+        role: "TROCAS",
+      },
+    });
+    console.log("Usuário trocas criado:", emailTrocas, passTrocas);
+  } else {
+    await prisma.user.update({
+      where: { email: emailTrocas },
+      data: { passwordHash: hashTrocas, name: "Trocas (funcionário)", role: "TROCAS" },
+    });
+    console.log("Usuário trocas existente – senha redefinida para:", passTrocas);
+  }
+
   // Criar "Lote 1" ativo com preços padrão
   const lote1 = await prisma.lot.findFirst({ where: { name: "Lote 1" } });
   if (!lote1) {

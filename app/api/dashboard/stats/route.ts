@@ -141,20 +141,28 @@ export async function GET(request: NextRequest) {
     const remainingAbadas = totalProducedAbadas - committedAbadas
     const remainingPulseiras = totalProducedPulseiras - committedPulseiras
 
-    // Estatísticas por lote individual
+    // Estatísticas por lote individual (por item: OrderItem.lotId; se null, order.lotId para pedidos antigos)
     const statsPorLote = await Promise.all(
       activeLot.map(async (lot) => {
         const orderItemsAbadaLote = await prisma.orderItem.aggregate({
           where: {
             itemType: 'ABADA',
-            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+            order: wherePaidOrDeliveredOrders,
+            OR: [
+              { lotId: lot.id },
+              { lotId: null, order: { ...wherePaidOrDeliveredOrders, lotId: lot.id } },
+            ],
           },
           _sum: { quantity: true, deliveredQuantity: true },
         })
         const orderItemsPulseiraLote = await prisma.orderItem.aggregate({
           where: {
             itemType: 'PULSEIRA_EXTRA',
-            order: { ...wherePaidOrDeliveredOrders, lotId: lot.id },
+            order: wherePaidOrDeliveredOrders,
+            OR: [
+              { lotId: lot.id },
+              { lotId: null, order: { ...wherePaidOrDeliveredOrders, lotId: lot.id } },
+            ],
           },
           _sum: { quantity: true, deliveredQuantity: true },
         })
