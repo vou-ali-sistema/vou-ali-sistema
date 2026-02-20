@@ -20,17 +20,37 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const list = await prisma.convidado.findMany({
-      orderBy: { nomeCompleto: 'asc' },
-      select: {
-        id: true,
-        nomeCompleto: true,
-        cpf: true,
-        telefone: true,
-        entrou: true,
-        createdAt: true,
-      },
-    })
+    let list: Array<{
+      id: string
+      nomeCompleto: string
+      cpf: string
+      telefone: string
+      entrou: boolean
+      createdAt: Date
+    }>
+    try {
+      const rows = await prisma.convidado.findMany({
+        orderBy: { nomeCompleto: 'asc' },
+      })
+      list = rows.map((r) => ({
+        id: r.id,
+        nomeCompleto: r.nomeCompleto,
+        cpf: r.cpf,
+        telefone: r.telefone,
+        entrou: Boolean((r as { entrou?: boolean }).entrou),
+        createdAt: r.createdAt,
+      }))
+    } catch {
+      try {
+        const rows = await prisma.$queryRaw<
+          { id: string; nomeCompleto: string; cpf: string; telefone: string; createdAt: Date }[]
+        >`SELECT id, "nomeCompleto", cpf, telefone, "createdAt" FROM "Convidado" ORDER BY "nomeCompleto" ASC`
+        list = rows.map((r) => ({ ...r, entrou: false }))
+      } catch (rawErr) {
+        console.error('Fallback raw listagem convidados:', rawErr)
+        throw rawErr
+      }
+    }
     return NextResponse.json(list)
   } catch (error) {
     console.error('Erro ao listar convidados:', error)

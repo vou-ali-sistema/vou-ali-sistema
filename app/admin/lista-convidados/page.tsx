@@ -180,7 +180,7 @@ export default function ListaConvidadosPage() {
     const rows = list
       .map(
         (c) =>
-          `<tr><td>${escapeHtml(c.nomeCompleto)}</td><td>${formatCPF(c.cpf)}</td><td>${formatTel(c.telefone)}</td><td>${c.entrou ? 'Sim' : 'Não'}</td></tr>`
+          `<tr><td>${c.entrou ? 'Sim' : 'Não'}</td><td>${escapeHtml(c.nomeCompleto)}</td><td>${formatCPF(c.cpf)}</td><td>${formatTel(c.telefone)}</td></tr>`
       )
       .join('')
     const data = new Date().toLocaleDateString('pt-BR', {
@@ -211,7 +211,7 @@ export default function ListaConvidadosPage() {
   <h1>Lista de Convidados – Equipe da Portaria</h1>
   <p class="sub">Gerado em ${data} &nbsp;|&nbsp; Total: ${list.length} convidado(s)</p>
   <table>
-    <thead><tr><th>Nome completo</th><th>CPF</th><th>Telefone</th><th>Entrou</th></tr></thead>
+    <thead><tr><th>Entrou</th><th>Nome completo</th><th>CPF</th><th>Telefone</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
 </body>
@@ -342,10 +342,16 @@ export default function ListaConvidadosPage() {
             Total: {list.length} convidado(s)
           </p>
         </div>
+        <p className="text-xs text-gray-600 mb-2 px-1">
+          Use a coluna <strong>&quot;Já entrou?&quot;</strong> para marcar quem já confirmou entrada.
+        </p>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'auto' }}>
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap w-40 bg-green-100 border-r border-gray-200">
+                  Já entrou?
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Nome completo
                 </th>
@@ -354,9 +360,6 @@ export default function ListaConvidadosPage() {
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Telefone
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap min-w-[140px] bg-green-50">
-                  ✓ Já entrou?
                 </th>
                 <th className="px-4 py-3 w-24"></th>
               </tr>
@@ -371,17 +374,8 @@ export default function ListaConvidadosPage() {
               ) : (
                 list.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {c.nomeCompleto}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {formatCPF(c.cpf)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {formatTel(c.telefone)}
-                    </td>
-                    <td className="px-4 py-3 text-center bg-green-50/50 min-w-[140px]">
-                      <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <td className="px-4 py-3 text-center bg-green-50/70 border-r border-gray-100 w-40">
+                      <label className="inline-flex items-center justify-center gap-2 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={Boolean(c.entrou)}
@@ -393,6 +387,15 @@ export default function ListaConvidadosPage() {
                           {c.entrou ? 'Sim' : 'Não'}
                         </span>
                       </label>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                      {c.nomeCompleto}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {formatCPF(c.cpf)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {formatTel(c.telefone)}
                     </td>
                     <td className="px-4 py-3">
                       <button
