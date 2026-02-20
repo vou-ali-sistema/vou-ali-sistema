@@ -59,30 +59,45 @@ export async function POST(request: NextRequest) {
     }
 
     const toInsert: { nomeCompleto: string; cpf: string; telefone: string }[] = []
+    const cpfsVistos = new Set<string>()
     for (let i = 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i])
       const nome = (cols[nomeIdx] ?? '').trim().replace(/^"|"$/g, '')
       const cpf = (cols[cpfIdx] ?? '').trim().replace(/\D/g, '')
       const telefone = (cols[telIdx] ?? '').trim().replace(/\D/g, '')
-      if (nome && (cpf || telefone)) {
-        toInsert.push({
-          nomeCompleto: nome,
-          cpf: cpf || '0',
-          telefone: telefone || '',
-        })
-      }
+      if (!nome || !cpf) continue
+      if (cpfsVistos.has(cpf)) continue
+      cpfsVistos.add(cpf)
+      toInsert.push({
+        nomeCompleto: nome,
+        cpf,
+        telefone: telefone || '',
+      })
     }
 
     if (toInsert.length === 0) {
-      return NextResponse.json({ error: 'Nenhuma linha válida encontrada no CSV' }, { status: 400 })
+      return NextResponse.json({ error: 'Nenhuma linha válida encontrada no CSV (nome e CPF obrigatórios, sem CPF duplicado no arquivo)' }, { status: 400 })
     }
 
-    await prisma.convidado.createMany({
-      data: toInsert,
-      skipDuplicates: false,
+    const cpfsExistentes = await prisma.convidado.findMany({
+      where: { cpf: { in: toInsert.map((r) => r.cpf) } },
+      select: { cpf: true },
     })
+    const setExistentes = new Set(cpfsExistentes.map((r) => r.cpf))
+    const dataUnicos = toInsert.filter((r) => !setExistentes.has(r.cpf))
 
-    return NextResponse.json({ imported: toInsert.length })
+    if (dataUnicos.length > 0) {
+      await prisma.convidado.createMany({
+        data: dataUnicos,
+        skipDuplicates: true,
+      })
+    }
+
+    const ignorados = toInsert.length - dataUnicos.length
+    return NextResponse.json({
+      imported: dataUnicos.length,
+      skippedDuplicates: ignorados,
+    })
   } catch (error) {
     console.error('Erro ao importar CSV:', error)
     return NextResponse.json({ error: 'Erro ao importar lista' }, { status: 500 })

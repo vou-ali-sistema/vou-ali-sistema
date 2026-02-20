@@ -122,7 +122,12 @@ export default function ListaConvidadosPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Erro ao importar')
-      setMessage(`${data.imported ?? 0} convidado(s) importado(s).`)
+      const ignorados = data.skippedDuplicates ?? 0
+      setMessage(
+        ignorados > 0
+          ? `${data.imported ?? 0} convidado(s) importado(s). ${ignorados} ignorado(s) (CPF já na lista).`
+          : `${data.imported ?? 0} convidado(s) importado(s).`
+      )
       await fetchList()
     } catch (err: any) {
       setError(err.message || 'Erro ao importar')

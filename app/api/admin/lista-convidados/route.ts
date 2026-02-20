@@ -40,10 +40,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = createSchema.parse(body)
 
+    const cpfNormalizado = data.cpf.trim().replace(/\D/g, '')
+    if (!cpfNormalizado) {
+      return NextResponse.json({ error: 'CPF é obrigatório' }, { status: 400 })
+    }
+
+    const jaExiste = await prisma.convidado.findUnique({
+      where: { cpf: cpfNormalizado },
+    })
+    if (jaExiste) {
+      return NextResponse.json(
+        { error: 'Este CPF já está na lista de convidados.' },
+        { status: 400 }
+      )
+    }
+
     const created = await prisma.convidado.create({
       data: {
         nomeCompleto: data.nomeCompleto.trim(),
-        cpf: data.cpf.trim().replace(/\D/g, ''),
+        cpf: cpfNormalizado,
         telefone: data.telefone.trim().replace(/\D/g, ''),
       },
     })
@@ -52,6 +67,13 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       const msg = error.errors.map((e) => e.message).join(', ')
       return NextResponse.json({ error: msg }, { status: 400 })
+    }
+    const prismaError = error as { code?: string }
+    if (prismaError.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Este CPF já está na lista de convidados.' },
+        { status: 400 }
+      )
     }
     console.error('Erro ao criar convidado:', error)
     return NextResponse.json({ error: 'Erro ao criar convidado' }, { status: 500 })

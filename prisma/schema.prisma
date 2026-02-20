@@ -259,15 +259,14 @@ model AppSetting {
   @@index([key])
 }
 
-// Lista de convidados (template: Nome completo, CPF, Telefone)
+// Lista de convidados (template: Nome completo, CPF, Telefone) — CPF não pode repetir
 model Convidado {
   id           String   @id @default(cuid())
   nomeCompleto String
-  cpf          String
+  cpf          String   @unique
   telefone     String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@index([cpf])
   @@index([telefone])
 }
