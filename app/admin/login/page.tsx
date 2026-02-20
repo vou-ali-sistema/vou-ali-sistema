@@ -147,7 +147,11 @@ export default function AdminLoginPage() {
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
             <p className="font-semibold mb-1">Perfil Trocas (portaria / lista de convidados)</p>
             <p>Login: <strong>vouali.trocas</strong> · Senha: <strong>112233</strong></p>
-            <p className="mt-2 text-blue-700">Se der erro ao entrar: faça login como <strong>admin</strong>, vá no Dashboard e clique em &quot;Criar/atualizar usuário trocas&quot;. Depois tente de novo com vouali.trocas / 112233.</p>
+            <p className="mt-2 text-blue-700">Se der <strong>401 (Unauthorized)</strong>: o usuário ainda não existe no servidor. Abra no navegador (uma vez):</p>
+            <p className="mt-1 font-mono text-xs break-all bg-white px-2 py-1 rounded border border-blue-200">
+              https://www.blocovouali.com/api/setup-trocas-user?token=SEU_NEXTAUTH_SECRET
+            </p>
+            <p className="mt-1 text-blue-700">Troque <strong>SEU_NEXTAUTH_SECRET</strong> pelo valor da variável NEXTAUTH_SECRET na Vercel. Depois faça login de novo com vouali.trocas / 112233.</p>
           </div>
 
           {isLocalhost && (
