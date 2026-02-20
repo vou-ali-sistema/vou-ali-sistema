@@ -26,6 +26,7 @@ export default function CortesiasPage() {
   const [showModal, setShowModal] = useState(false)
   const [purging, setPurging] = useState(false)
   const [message, setMessage] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     fetchCortesias()
@@ -79,6 +80,15 @@ export default function CortesiasPage() {
       ? 'bg-blue-100 text-blue-800'
       : 'bg-red-100 text-red-800'
 
+  const searchLower = search.trim().toLowerCase()
+  const filteredCortesias = searchLower
+    ? cortesias.filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchLower) ||
+          (c.phone ?? '').toLowerCase().includes(searchLower)
+      )
+    : cortesias
+
   return (
     <div className="px-3 sm:px-4 py-4 sm:py-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
@@ -115,16 +125,40 @@ export default function CortesiasPage() {
         />
       )}
 
+      {/* Busca por nome (ou telefone) */}
+      {cortesias.length > 0 && (
+        <div className="mb-4">
+          <label htmlFor="cortesias-search" className="sr-only">
+            Procurar por nome
+          </label>
+          <input
+            id="cortesias-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Procurar por nome ou telefone..."
+            className="w-full max-w-md min-h-[44px] px-4 py-2.5 text-base border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          />
+          {search.trim() && (
+            <p className="mt-1 text-sm text-gray-600">
+              {filteredCortesias.length} de {cortesias.length} cortesia(s)
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Celular/tablet (iPhone etc.): cards com Ações sempre visíveis */}
       <div className="lg:hidden space-y-4">
-        {cortesias.length === 0 ? (
+        {filteredCortesias.length === 0 ? (
           <div className="bg-white rounded-xl border-2 border-purple-200 p-6 text-center text-gray-500">
-            Nenhuma cortesia. Clique em Nova Cortesia.
+            {cortesias.length === 0
+              ? 'Nenhuma cortesia. Clique em Nova Cortesia.'
+              : 'Nenhuma cortesia encontrada com esse nome ou telefone.'}
           </div>
         ) : (
           <>
             <p className="text-sm text-purple-800 font-medium px-1">Toque nos botões de cada cortesia para ver o QR Code ou gerenciar.</p>
-            {cortesias.map((cortesia) => (
+            {filteredCortesias.map((cortesia) => (
               <div
                 key={cortesia.id}
                 className="bg-white rounded-xl border-2 border-purple-300 shadow-sm overflow-visible"
@@ -186,7 +220,7 @@ export default function CortesiasPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {cortesias.map((cortesia) => (
+            {filteredCortesias.map((cortesia) => (
               <tr key={cortesia.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
                   {cortesia.name}
