@@ -23,7 +23,10 @@ export default function AdminLayout({
   const navItems = useMemo(
     () =>
       isTrocasOnly
-        ? [{ href: '/admin/trocas', label: 'Trocas (ler QR)' }]
+        ? [
+            { href: '/admin/trocas', label: 'Trocas (ler QR)' },
+            { href: '/admin/lista-convidados', label: 'Lista de Convidados' },
+          ]
         : [
             { href: '/admin', label: 'Dashboard' },
             { href: '/admin/pedidos', label: 'Pedidos' },
