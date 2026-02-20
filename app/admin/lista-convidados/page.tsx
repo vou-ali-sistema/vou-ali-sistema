@@ -239,7 +239,7 @@ export default function ListaConvidadosPage() {
   }
 
   return (
-    <div className="px-4 py-6">
+    <div className="px-4 py-6" data-listaconvidados-version="com-ja-entrou">
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-blue-900">Lista de Convidados</h1>
