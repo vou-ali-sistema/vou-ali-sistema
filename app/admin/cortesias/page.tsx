@@ -115,50 +115,53 @@ export default function CortesiasPage() {
         />
       )}
 
-      {/* Mobile: cards com Ações em destaque (Ver Página = QR code) */}
-      <div className="md:hidden space-y-4">
+      {/* Celular/tablet (iPhone etc.): cards com Ações sempre visíveis */}
+      <div className="lg:hidden space-y-4">
         {cortesias.length === 0 ? (
           <div className="bg-white rounded-xl border-2 border-purple-200 p-6 text-center text-gray-500">
             Nenhuma cortesia. Clique em Nova Cortesia.
           </div>
         ) : (
-          cortesias.map((cortesia) => (
-            <div
-              key={cortesia.id}
-              className="bg-white rounded-xl border-2 border-purple-200 shadow-sm overflow-hidden"
-            >
-              <div className="p-4 border-b border-gray-100">
-                <p className="font-semibold text-gray-900">{cortesia.name}</p>
-                <p className="text-sm text-gray-600">{cortesia.phone || '–'}</p>
-                <p className="text-sm text-gray-600">{cortesia.items.length} item(ns)</p>
-                <span className={`inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full ${statusClass(cortesia.status)}`}>
-                  {cortesia.status}
-                </span>
+          <>
+            <p className="text-sm text-purple-800 font-medium px-1">Toque nos botões de cada cortesia para ver o QR Code ou gerenciar.</p>
+            {cortesias.map((cortesia) => (
+              <div
+                key={cortesia.id}
+                className="bg-white rounded-xl border-2 border-purple-300 shadow-sm overflow-visible"
+              >
+                <div className="p-4 border-b border-gray-100">
+                  <p className="font-semibold text-gray-900 text-base">{cortesia.name}</p>
+                  <p className="text-sm text-gray-600">{cortesia.phone || '–'}</p>
+                  <p className="text-sm text-gray-600">{cortesia.items.length} item(ns)</p>
+                  <span className={`inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full ${statusClass(cortesia.status)}`}>
+                    {cortesia.status}
+                  </span>
+                </div>
+                <div className="p-4 bg-purple-100/80 flex flex-col gap-3">
+                  <p className="text-sm font-semibold text-purple-900">Ações</p>
+                  <a
+                    href={`/troca/${cortesia.exchangeToken}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="min-h-[52px] flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold text-base text-center touch-manipulation active:bg-blue-700 select-none"
+                  >
+                    📱 Ver Página (QR Code)
+                  </a>
+                  <a
+                    href={`/admin/trocas?token=${cortesia.exchangeToken}`}
+                    className="min-h-[52px] flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-xl font-semibold text-base text-center touch-manipulation active:bg-green-700 select-none"
+                  >
+                    ✓ Gerenciar
+                  </a>
+                </div>
               </div>
-              <div className="p-4 bg-purple-50/50 flex flex-col gap-2">
-                <p className="text-xs font-medium text-gray-600">Ações</p>
-                <Link
-                  href={`/troca/${cortesia.exchangeToken}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="min-h-[48px] flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold text-center touch-manipulation"
-                >
-                  Ver Página (QR Code)
-                </Link>
-                <Link
-                  href={`/admin/trocas?token=${cortesia.exchangeToken}`}
-                  className="min-h-[48px] flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg font-semibold text-center touch-manipulation"
-                >
-                  Gerenciar
-                </Link>
-              </div>
-            </div>
-          ))
+            ))}
+          </>
         )}
       </div>
 
-      {/* Desktop: tabela */}
-      <div className="hidden md:block bg-white rounded-xl shadow-lg overflow-hidden border-2 border-purple-600">
+      {/* Desktop (tela grande): tabela */}
+      <div className="hidden lg:block bg-white rounded-xl shadow-lg overflow-hidden border-2 border-purple-600">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gradient-to-r from-purple-600 to-blue-900">
             <tr>

@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Ex: admin@vouali.com ou vouali.trocas"
+              placeholder="Email ou usuário"
               className="w-full min-h-[48px] px-3 py-3 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
@@ -126,21 +126,8 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div className="space-y-2">
-              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-              {email.toLowerCase().includes('vouali.trocas') && (
-                <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 px-4 py-3 rounded-lg text-sm">
-                  <p className="font-semibold">Para corrigir o 401 com vouali.trocas:</p>
-                  <ol className="list-decimal list-inside mt-2 space-y-1">
-                    <li>Vercel → projeto → Settings → Environment Variables</li>
-                    <li>Copie o valor de <strong>NEXTAUTH_SECRET</strong></li>
-                    <li>Abra no navegador: <span className="font-mono text-xs break-all">https://www.blocovouali.com/api/setup-trocas-user?token=</span> + cole o valor</li>
-                    <li>Senha correta: <strong>112233</strong> (só números)</li>
-                  </ol>
-                </div>
-              )}
+            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
             </div>
           )}
 
@@ -157,16 +144,6 @@ export default function AdminLoginPage() {
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
-
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-            <p className="font-semibold mb-1">Perfil Trocas (portaria / lista de convidados)</p>
-            <p>Login: <strong>vouali.trocas</strong> · Senha: <strong>112233</strong></p>
-            <p className="mt-2 text-blue-700">Se der <strong>401 (Unauthorized)</strong>: o usuário ainda não existe no servidor. Abra no navegador (uma vez):</p>
-            <p className="mt-1 font-mono text-xs break-all bg-white px-2 py-1 rounded border border-blue-200">
-              https://www.blocovouali.com/api/setup-trocas-user?token=SEU_NEXTAUTH_SECRET
-            </p>
-            <p className="mt-1 text-blue-700">Troque <strong>SEU_NEXTAUTH_SECRET</strong> pelo valor da variável NEXTAUTH_SECRET na Vercel. Depois faça login de novo com vouali.trocas / 112233.</p>
-          </div>
 
           {isLocalhost && (
             <div className="pt-4 border-t border-gray-200">
