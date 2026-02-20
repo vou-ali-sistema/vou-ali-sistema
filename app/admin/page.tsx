@@ -6,6 +6,7 @@ import Link from 'next/link'
 import FinanceiroWidget from './FinanceiroWidget'
 import CompraToggle from './CompraToggle'
 import MercadoPagoTaxa from './MercadoPagoTaxa'
+import EnsureTrocasUserButton from './EnsureTrocasUserButton'
 import { isPurchaseEnabled, getMercadoPagoTaxaPercent } from '@/lib/settings'
 
 export const dynamic = 'force-dynamic'
@@ -304,6 +305,7 @@ export default async function DashboardPage() {
       <div className="mb-8 space-y-6">
         <CompraToggle initialEnabled={stats.purchaseEnabled} />
         <MercadoPagoTaxa initialTaxa={stats.mercadoPagoTaxaPercent ?? 9.0} />
+        {(session?.user as { role?: string })?.role === 'ADMIN' && <EnsureTrocasUserButton />}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

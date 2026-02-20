@@ -7,6 +7,7 @@ interface Convidado {
   nomeCompleto: string
   cpf: string
   telefone: string
+  entrou: boolean
   createdAt: string
 }
 
@@ -137,6 +138,22 @@ export default function ListaConvidadosPage() {
     }
   }
 
+  async function handleToggleEntrou(id: string, entrou: boolean) {
+    try {
+      const res = await fetch(`/api/admin/lista-convidados/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entrou }),
+      })
+      if (!res.ok) throw new Error('Erro ao atualizar')
+      setList((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, entrou } : c))
+      )
+    } catch (err: any) {
+      setError(err.message || 'Erro ao marcar entrada')
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm('Excluir este convidado?')) return
     try {
@@ -156,7 +173,7 @@ export default function ListaConvidadosPage() {
     const rows = list
       .map(
         (c) =>
-          `<tr><td>${escapeHtml(c.nomeCompleto)}</td><td>${formatCPF(c.cpf)}</td><td>${formatTel(c.telefone)}</td></tr>`
+          `<tr><td>${escapeHtml(c.nomeCompleto)}</td><td>${formatCPF(c.cpf)}</td><td>${formatTel(c.telefone)}</td><td>${c.entrou ? 'Sim' : 'Não'}</td></tr>`
       )
       .join('')
     const data = new Date().toLocaleDateString('pt-BR', {
@@ -187,7 +204,7 @@ export default function ListaConvidadosPage() {
   <h1>Lista de Convidados – Equipe da Portaria</h1>
   <p class="sub">Gerado em ${data} &nbsp;|&nbsp; Total: ${list.length} convidado(s)</p>
   <table>
-    <thead><tr><th>Nome completo</th><th>CPF</th><th>Telefone</th></tr></thead>
+    <thead><tr><th>Nome completo</th><th>CPF</th><th>Telefone</th><th>Entrou</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
 </body>
@@ -331,13 +348,16 @@ export default function ListaConvidadosPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Telefone
                 </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase w-28">
+                  Entrou
+                </th>
                 <th className="px-4 py-3 w-24"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {list.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
                     Nenhum convidado ainda. Adicione manualmente ou importe um CSV.
                   </td>
                 </tr>
@@ -352,6 +372,19 @@ export default function ListaConvidadosPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">
                       {formatTel(c.telefone)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={c.entrou ?? false}
+                          onChange={() => handleToggleEntrou(c.id, !c.entrou)}
+                          className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-sm text-gray-600">
+                          {c.entrou ? 'Sim' : 'Não'}
+                        </span>
+                      </label>
                     </td>
                     <td className="px-4 py-3">
                       <button
