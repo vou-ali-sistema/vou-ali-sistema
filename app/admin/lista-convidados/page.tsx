@@ -336,20 +336,22 @@ export default function ListaConvidadosPage() {
         </form>
       </div>
 
-      <div className="rounded-xl border-2 border-gray-200 overflow-hidden">
+      <div className="rounded-xl border-2 border-gray-200 overflow-visible">
         <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
           <p className="text-sm font-semibold text-gray-800">
             Total: {list.length} convidado(s)
           </p>
         </div>
-        <p className="text-xs text-gray-600 mb-2 px-1">
-          Use a coluna <strong>&quot;Já entrou?&quot;</strong> para marcar quem já confirmou entrada.
-        </p>
+        <div className="bg-green-100 border border-green-300 px-4 py-3 mb-2 rounded-lg">
+          <p className="text-sm font-semibold text-green-900">
+            ✓ Confirmar entrada: use a coluna <strong>&quot;Já entrou?&quot;</strong> (primeira coluna da tabela) para marcar com o checkbox quem já entrou.
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'auto' }}>
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap w-40 bg-green-100 border-r border-gray-200">
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap w-44 bg-green-200 border-r-2 border-green-400 sticky left-0 z-10 shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
                   Já entrou?
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
@@ -374,7 +376,7 @@ export default function ListaConvidadosPage() {
               ) : (
                 list.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-center bg-green-50/70 border-r border-gray-100 w-40">
+                    <td className="px-4 py-3 text-center bg-green-100 border-r-2 border-green-300 w-44 sticky left-0 z-10 shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
                       <label className="inline-flex items-center justify-center gap-2 cursor-pointer select-none">
                         <input
                           type="checkbox"
