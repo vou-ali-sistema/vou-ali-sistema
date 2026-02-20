@@ -83,8 +83,8 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 mx-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-green-600 to-yellow-400 p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-6 sm:p-8 mx-auto">
         <div className="mb-6 text-center">
           <div className="inline-block mb-4">
             <Logo size="medium" showSubtitle={false} />
@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="Ex: admin@vouali.com ou vouali.trocas"
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full min-h-[48px] px-3 py-3 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
 
@@ -120,7 +120,7 @@ export default function AdminLoginPage() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full min-h-[48px] px-3 py-3 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
 
@@ -139,10 +139,16 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-green-600 to-blue-900 text-white py-3 px-4 rounded-lg hover:from-green-700 hover:to-blue-950 font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+            className="w-full min-h-[48px] bg-gradient-to-r from-green-600 to-blue-900 text-white py-3 px-4 rounded-lg active:from-green-700 active:to-blue-950 font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-base touch-manipulation"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <p className="font-semibold mb-1">Perfil Trocas (portaria / lista de convidados)</p>
+            <p>Login: <strong>vouali.trocas</strong> · Senha: <strong>112233</strong></p>
+            <p className="mt-2 text-blue-700">Se der erro ao entrar: faça login como <strong>admin</strong>, vá no Dashboard e clique em &quot;Criar/atualizar usuário trocas&quot;. Depois tente de novo com vouali.trocas / 112233.</p>
+          </div>
 
           {isLocalhost && (
             <div className="pt-4 border-t border-gray-200">
@@ -150,7 +156,7 @@ export default function AdminLoginPage() {
               <button
                 type="button"
                 onClick={handleResetSenha}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                className="min-h-[44px] text-sm text-blue-600 active:text-blue-800 font-medium underline touch-manipulation"
               >
                 Redefinir senha do admin
               </button>

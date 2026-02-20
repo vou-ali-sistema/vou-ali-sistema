@@ -2,3 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Melhor resposta ao toque no mobile */
+@media (pointer: coarse) {
+  button, a, [role="button"], input[type="checkbox"], input[type="submit"], label[for] {
+    touch-action: manipulation;
+  }
+}
+

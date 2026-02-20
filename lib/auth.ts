@@ -24,10 +24,26 @@ export const authOptions: NextAuthOptions = {
             where: { email: { equals: email, mode: 'insensitive' } }
           })
 
-          if (!user || !user.active) return null
+          if (!user) {
+            if (email === 'vouali.trocas') {
+              console.warn('[Auth] Login vouali.trocas falhou: usuário não existe no banco. Crie pelo Dashboard (botão "Criar/atualizar usuário trocas").')
+            }
+            return null
+          }
+          if (!user.active) {
+            if (email === 'vouali.trocas') {
+              console.warn('[Auth] Login vouali.trocas falhou: usuário inativo.')
+            }
+            return null
+          }
 
           const senhaValida = await bcrypt.compare(senha, user.passwordHash)
-          if (!senhaValida) return null
+          if (!senhaValida) {
+            if (email === 'vouali.trocas') {
+              console.warn('[Auth] Login vouali.trocas falhou: senha incorreta. Use 112233 ou redefina pelo Dashboard.')
+            }
+            return null
+          }
 
           return {
             id: user.id,
@@ -35,7 +51,8 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             role: user.role,
           }
-        } catch {
+        } catch (e) {
+          console.error('[Auth] Erro no login:', e)
           return null
         }
       }

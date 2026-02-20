@@ -76,14 +76,14 @@ export default function AdminLayout({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-3">
-              {/* Botão menu (mobile) */}
+              {/* Botão menu (mobile) - área de toque mínima 44px */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="sm:hidden inline-flex items-center justify-center rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white hover:bg-white/15"
+                className="sm:hidden inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg border border-white/20 bg-white/10 text-white active:bg-white/20 touch-manipulation"
                 aria-label="Abrir menu"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
@@ -142,7 +142,7 @@ export default function AdminLayout({
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-900"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-900 text-lg font-bold active:bg-gray-100 touch-manipulation"
                 aria-label="Fechar menu"
               >
                 ✕
@@ -157,8 +157,8 @@ export default function AdminLayout({
                     key={item.href}
                     href={item.href}
                     className={[
-                      'block rounded-lg px-4 py-3 text-sm font-semibold',
-                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-900 hover:bg-gray-50',
+                      'flex items-center min-h-[48px] rounded-lg px-4 py-3 text-base font-semibold touch-manipulation',
+                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-900 active:bg-gray-50',
                     ].join(' ')}
                   >
                     {item.label}
@@ -175,7 +175,7 @@ export default function AdminLayout({
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-3 sm:px-6 lg:px-8">
         {children}
       </main>
     </div>

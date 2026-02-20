@@ -239,25 +239,25 @@ export default function ListaConvidadosPage() {
   }
 
   return (
-    <div className="px-4 py-6" data-listaconvidados-version="com-ja-entrou">
-      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-900">Lista de Convidados</h1>
-          <p className="text-sm text-green-700 font-medium mt-1">Confirmar entrada: marque quem já entrou na seção verde abaixo ou na coluna &quot;Já entrou?&quot; da tabela.</p>
+    <div className="px-3 sm:px-4 py-4 sm:py-6" data-listaconvidados-version="com-ja-entrou">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between sm:items-center gap-4 mb-4 sm:mb-6">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-3xl font-bold text-blue-900">Lista de Convidados</h1>
+          <p className="text-sm text-green-700 font-medium mt-1">Confirmar entrada: marque quem já entrou na seção verde abaixo.</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3">
           <button
             type="button"
             onClick={handleExportPDF}
             disabled={list.length === 0}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold border border-red-700 disabled:opacity-50"
+            className="min-h-[48px] px-4 py-3 rounded-lg bg-red-600 text-white font-semibold border border-red-700 disabled:opacity-50 active:bg-red-700 touch-manipulation text-base"
           >
             Exportar PDF para portaria
           </button>
           <button
             type="button"
             onClick={handleDownloadTemplate}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold border border-blue-700"
+            className="min-h-[48px] px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold border border-blue-700 active:bg-blue-700 touch-manipulation text-base"
           >
             Baixar template CSV
           </button>
@@ -265,7 +265,7 @@ export default function ListaConvidadosPage() {
             type="button"
             onClick={triggerImport}
             disabled={importing}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold border border-green-700 disabled:opacity-50"
+            className="min-h-[48px] px-4 py-3 rounded-lg bg-green-600 text-white font-semibold border border-green-700 disabled:opacity-50 active:bg-green-700 touch-manipulation text-base"
           >
             {importing ? 'Importando...' : 'Importar CSV'}
           </button>
@@ -294,7 +294,7 @@ export default function ListaConvidadosPage() {
         </div>
       )}
 
-      <div className="mb-8 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl">
+      <div className="mb-6 sm:mb-8 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl">
         <h2 className="text-lg font-bold text-gray-900 mb-3">Adicionar convidado</h2>
         <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -303,7 +303,7 @@ export default function ListaConvidadosPage() {
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full min-h-[48px] px-3 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Ex: Maria da Silva"
             />
           </div>
@@ -311,9 +311,10 @@ export default function ListaConvidadosPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
             <input
               type="text"
+              inputMode="numeric"
               value={cpf}
               onChange={(e) => setCpf(e.target.value.replace(/\D/g, '').slice(0, 11))}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full min-h-[48px] px-3 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Somente números"
             />
           </div>
@@ -321,9 +322,10 @@ export default function ListaConvidadosPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
             <input
               type="text"
+              inputMode="numeric"
               value={telefone}
               onChange={(e) => setTelefone(e.target.value.replace(/\D/g, '').slice(0, 11))}
-              className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full min-h-[48px] px-3 py-3 text-base border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               placeholder="Somente números"
             />
           </div>
@@ -331,7 +333,7 @@ export default function ListaConvidadosPage() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg hover:from-green-700 hover:to-blue-950 font-semibold disabled:opacity-50"
+              className="w-full sm:w-auto min-h-[48px] px-6 py-3 text-base bg-gradient-to-r from-green-600 to-blue-900 text-white rounded-lg active:from-green-700 active:to-blue-950 font-semibold disabled:opacity-50 touch-manipulation"
             >
               {saving ? 'Salvando...' : 'Adicionar'}
             </button>
@@ -339,26 +341,26 @@ export default function ListaConvidadosPage() {
         </form>
       </div>
 
-      <div className="mb-6 p-5 rounded-xl border-2 border-green-400 bg-green-50 shadow-sm" data-secao="ja-entrou">
+      <div className="mb-6 p-4 sm:p-5 rounded-xl border-2 border-green-400 bg-green-50 shadow-sm" data-secao="ja-entrou">
         <h2 className="text-lg font-bold text-green-900 mb-1">Quem já entrou?</h2>
         <p className="text-sm text-green-800 mb-4">Marque o checkbox quando o convidado confirmar a entrada.</p>
         {list.length === 0 ? (
           <p className="text-sm text-green-700 italic">Quando houver convidados, os checkboxes aparecerão aqui.</p>
         ) : (
-          <div className="flex flex-wrap gap-x-6 gap-y-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             {list.map((c) => (
               <label
                 key={c.id}
-                className="inline-flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-lg border-2 border-green-300 hover:border-green-500 hover:bg-green-50/50"
+                className="inline-flex items-center gap-3 cursor-pointer bg-white px-4 py-3 min-h-[52px] rounded-xl border-2 border-green-300 active:border-green-500 active:bg-green-50/50 touch-manipulation flex-1 sm:flex-none sm:min-w-0"
               >
                 <input
                   type="checkbox"
                   checked={Boolean(c.entrou)}
                   onChange={() => handleToggleEntrou(c.id, !c.entrou)}
-                  className="w-5 h-5 rounded border-2 border-gray-400 text-green-600 focus:ring-2 focus:ring-green-500 cursor-pointer"
+                  className="w-6 h-6 rounded border-2 border-gray-400 text-green-600 focus:ring-2 focus:ring-green-500 cursor-pointer flex-shrink-0"
                 />
-                <span className="text-sm font-medium text-gray-800">{c.nomeCompleto}</span>
-                {c.entrou && <span className="text-xs text-green-700 font-semibold">(entrou)</span>}
+                <span className="text-base font-medium text-gray-800 truncate">{c.nomeCompleto}</span>
+                {c.entrou && <span className="text-sm text-green-700 font-semibold flex-shrink-0">(entrou)</span>}
               </label>
             ))}
           </div>
@@ -371,11 +373,47 @@ export default function ListaConvidadosPage() {
             Total: {list.length} convidado(s)
           </p>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile: lista em cards (toque fácil) */}
+        <div className="md:hidden divide-y divide-gray-200 bg-white">
+          {list.length === 0 ? (
+            <div className="px-4 py-8 text-center text-gray-500 text-base">
+              Nenhum convidado ainda. Adicione manualmente ou importe um CSV.
+            </div>
+          ) : (
+            list.map((c) => (
+              <div key={c.id} className="p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-base font-semibold text-gray-900 flex-1 min-w-0 truncate">{c.nomeCompleto}</span>
+                  <label className="inline-flex items-center gap-2 cursor-pointer flex-shrink-0 touch-manipulation min-h-[44px] px-3">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(c.entrou)}
+                      onChange={() => handleToggleEntrou(c.id, !c.entrou)}
+                      className="w-6 h-6 rounded border-2 border-gray-400 text-green-600 focus:ring-2 focus:ring-green-500"
+                    />
+                    <span className="text-sm font-medium text-green-700">{c.entrou ? 'Entrou' : 'Não entrou'}</span>
+                  </label>
+                </div>
+                <p className="text-sm text-gray-600">CPF {formatCPF(c.cpf)} · {formatTel(c.telefone)}</p>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(c.id)}
+                  className="self-start min-h-[44px] px-4 py-2 text-red-600 font-semibold text-base border-2 border-red-200 rounded-lg active:bg-red-50 touch-manipulation"
+                >
+                  Excluir
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop: tabela */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'auto' }}>
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap w-44 bg-green-200 border-r-2 border-green-400 sticky left-0 z-10 shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap w-44 bg-green-200 border-r-2 border-green-400">
                   Já entrou?
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
@@ -394,13 +432,13 @@ export default function ListaConvidadosPage() {
               {list.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                    Nenhum convidado ainda. Adicione manualmente ou importe um CSV.
+                    Nenhum convidado ainda.
                   </td>
                 </tr>
               ) : (
                 list.map((c) => (
                   <tr key={c.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-center bg-green-100 border-r-2 border-green-300 w-44 sticky left-0 z-10 shadow-[2px_0_4px_rgba(0,0,0,0.06)]">
+                    <td className="px-4 py-3 text-center bg-green-100 border-r-2 border-green-300 w-44">
                       <label className="inline-flex items-center justify-center gap-2 cursor-pointer select-none">
                         <input
                           type="checkbox"
