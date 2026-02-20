@@ -29,8 +29,9 @@ export default function AdminLoginPage() {
     setLoading(true)
     try {
       const result = await signIn('credentials', {
-        email,
+        email: email.trim(),
         senha,
+        password: senha,
         redirect: false,
         callbackUrl: '/admin',
       })
@@ -125,8 +126,21 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="space-y-2">
+              <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+              {email.toLowerCase().includes('vouali.trocas') && (
+                <div className="bg-amber-50 border-2 border-amber-300 text-amber-900 px-4 py-3 rounded-lg text-sm">
+                  <p className="font-semibold">Para corrigir o 401 com vouali.trocas:</p>
+                  <ol className="list-decimal list-inside mt-2 space-y-1">
+                    <li>Vercel → projeto → Settings → Environment Variables</li>
+                    <li>Copie o valor de <strong>NEXTAUTH_SECRET</strong></li>
+                    <li>Abra no navegador: <span className="font-mono text-xs break-all">https://www.blocovouali.com/api/setup-trocas-user?token=</span> + cole o valor</li>
+                    <li>Senha correta: <strong>112233</strong> (só números)</li>
+                  </ol>
+                </div>
+              )}
             </div>
           )}
 
