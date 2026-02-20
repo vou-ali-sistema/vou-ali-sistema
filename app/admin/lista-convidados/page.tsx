@@ -55,7 +55,14 @@ export default function ListaConvidadosPage() {
       const res = await fetch('/api/admin/lista-convidados')
       if (res.ok) {
         const data = await res.json()
-        setList(data)
+        setList(
+          Array.isArray(data)
+            ? data.map((c: Convidado) => ({
+                ...c,
+                entrou: Boolean(c?.entrou),
+              }))
+            : []
+        )
       }
     } catch (e) {
       console.error(e)
@@ -336,7 +343,7 @@ export default function ListaConvidadosPage() {
           </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200" style={{ tableLayout: 'auto' }}>
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
@@ -348,8 +355,8 @@ export default function ListaConvidadosPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                   Telefone
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase w-28">
-                  Entrou
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase whitespace-nowrap min-w-[140px] bg-green-50">
+                  ✓ Já entrou?
                 </th>
                 <th className="px-4 py-3 w-24"></th>
               </tr>
@@ -373,15 +380,16 @@ export default function ListaConvidadosPage() {
                     <td className="px-4 py-3 text-sm text-gray-700">
                       {formatTel(c.telefone)}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <td className="px-4 py-3 text-center bg-green-50/50 min-w-[140px]">
+                      <label className="inline-flex items-center gap-2 cursor-pointer select-none">
                         <input
                           type="checkbox"
-                          checked={c.entrou ?? false}
+                          checked={Boolean(c.entrou)}
                           onChange={() => handleToggleEntrou(c.id, !c.entrou)}
-                          className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                          className="w-5 h-5 rounded border-2 border-gray-400 text-green-600 focus:ring-2 focus:ring-green-500 cursor-pointer"
+                          title="Marcar se o convidado já entrou"
                         />
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm font-medium text-gray-700">
                           {c.entrou ? 'Sim' : 'Não'}
                         </span>
                       </label>

@@ -22,6 +22,14 @@ export async function GET() {
 
     const list = await prisma.convidado.findMany({
       orderBy: { nomeCompleto: 'asc' },
+      select: {
+        id: true,
+        nomeCompleto: true,
+        cpf: true,
+        telefone: true,
+        entrou: true,
+        createdAt: true,
+      },
     })
     return NextResponse.json(list)
   } catch (error) {
