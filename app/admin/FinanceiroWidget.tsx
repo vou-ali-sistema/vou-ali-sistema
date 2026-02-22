@@ -58,7 +58,7 @@ export default function FinanceiroWidget({
     try {
       const [sRes, eRes] = await Promise.all([
         fetch('/api/admin/finance/summary', { cache: 'no-store' }),
-        fetch('/api/admin/finance/entries?take=20', { cache: 'no-store' }),
+        fetch('/api/admin/finance/entries?take=2000', { cache: 'no-store' }),
       ])
       if (!sRes.ok) {
         const t = await sRes.text().catch(() => '')
@@ -254,7 +254,7 @@ export default function FinanceiroWidget({
       )}
 
       <div className="border-t border-gray-200 pt-4">
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">Últimos lançamentos</h3>
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">Todos os lançamentos</h3>
         {loading ? (
           <p className="text-sm text-gray-600">Carregando...</p>
         ) : entries.length === 0 ? (
