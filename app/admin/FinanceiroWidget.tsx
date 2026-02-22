@@ -58,7 +58,7 @@ export default function FinanceiroWidget({
     try {
       const [sRes, eRes] = await Promise.all([
         fetch('/api/admin/finance/summary', { cache: 'no-store' }),
-        fetch('/api/admin/finance/entries?take=2000', { cache: 'no-store' }),
+        fetch('/api/admin/finance/entries?take=all', { cache: 'no-store' }),
       ])
       if (!sRes.ok) {
         const t = await sRes.text().catch(() => '')
@@ -260,7 +260,9 @@ export default function FinanceiroWidget({
         ) : entries.length === 0 ? (
           <p className="text-sm text-gray-600">Nenhum lançamento ainda.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <p className="text-xs text-gray-600 mb-2">Exibindo {entries.length} lançamento(s)</p>
+            <div className="overflow-x-auto">
             <table className="min-w-[760px] w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-600">
@@ -299,6 +301,7 @@ export default function FinanceiroWidget({
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>
